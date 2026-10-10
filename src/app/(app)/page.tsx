@@ -125,14 +125,21 @@ async function ProfileCard({
         <AvatarFallback>{name.slice(0, 1).toUpperCase()}</AvatarFallback>
       </Avatar>
       <SectionTitle>{name}</SectionTitle>
-      <div className="flex flex-wrap justify-center gap-1.5">
+      {/* 種目の札は2つずつ並べる（4つで3と1に割れていた。本人、2026-10-11）。1つだけなら真ん中に */}
+      <div
+        className={`grid w-full gap-1.5 ${events.length > 1 ? 'grid-cols-2' : 'justify-items-center'}`}
+      >
         {events.map((event) => (
-          <Badge key={event} tone="solid" className={EVENT_BG[event]}>
+          <Badge
+            key={event}
+            tone="solid"
+            className={`${EVENT_BG[event]} ${events.length > 1 ? 'w-full justify-center' : ''}`}
+          >
             {tEvents(event)}
           </Badge>
         ))}
       </div>
-      <div className="grid w-full grid-cols-2 gap-2 border-t border-border pt-4">
+      <div className="grid w-full grid-cols-2 gap-2 border-t border-border pt-4 [&>div]:items-center">
         <Stat size="sm" value={jumps} label={t('jumps')} />
         <Stat size="sm" value={daysLogged} label={t('daysLogged')} />
       </div>
