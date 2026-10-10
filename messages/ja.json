@@ -59,7 +59,7 @@
     "recordToday": "今日を記録",
     "list": "一覧",
     "calendar": "カレンダー",
-    "empty": "記録はまだありません",
+    "empty": "記録はありません",
     "eventLabel": "{event}・{count}本",
     "conditionLabel": "体調",
     "previousMonth": "前の月",
@@ -68,8 +68,8 @@
   "competitions": {
     "upcoming": "これからの大会",
     "past": "過去の大会",
-    "noUpcoming": "これからの大会はまだありません",
-    "noPast": "過去の大会はまだありません",
+    "noUpcoming": "これからの大会はありません",
+    "noPast": "過去の大会はありません",
     "result": "結果"
   },
   "profile": {
@@ -112,7 +112,7 @@
     "toGoal": "目標まで {distance}",
     "goalReached": "目標達成",
     "nextCompetition": "次の大会",
-    "noCompetition": "大会はまだありません",
+    "noCompetition": "大会はありません",
     "daysLeft": "{days, plural, =0 {今日} other {あと#日}}",
     "daysUnit": "日後",
     "weather": "天気",
@@ -145,7 +145,7 @@
     "save": "保存",
     "attempts": "試技",
     "add": "追加",
-    "noAttempts": "試技はまだありません",
+    "noAttempts": "試技はありません",
     "practice": "練習",
     "competition": "大会",
     "kind": "種別",
@@ -187,6 +187,6 @@
     "monthlyBest": "月別ベスト",
     "trend": "直近10回",
     "needTwo": "2本以上でグラフが出ます",
-    "noMarks": "記録はまだありません"
+    "noMarks": "記録はありません"
   }
 }

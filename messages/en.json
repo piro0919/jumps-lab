@@ -59,7 +59,7 @@
     "recordToday": "Log today",
     "list": "List",
     "calendar": "Calendar",
-    "empty": "No marks yet",
+    "empty": "No marks",
     "eventLabel": "{event} · {count, plural, one {# jump} other {# jumps}}",
     "conditionLabel": "Body",
     "previousMonth": "Previous month",
@@ -112,7 +112,7 @@
     "toGoal": "{distance} to go",
     "goalReached": "Goal reached",
     "nextCompetition": "Next competition",
-    "noCompetition": "No competitions yet",
+    "noCompetition": "No competitions",
     "daysLeft": "{days, plural, =0 {Today} one {# day} other {# days}}",
     "daysUnit": "{days, plural, one {day left} other {days left}}",
     "weather": "Weather",
@@ -145,7 +145,7 @@
     "save": "Save",
     "attempts": "Attempts",
     "add": "Add",
-    "noAttempts": "No attempts yet",
+    "noAttempts": "No attempts",
     "practice": "Practice",
     "competition": "Competition",
     "kind": "Type",
@@ -187,6 +187,6 @@
     "monthlyBest": "Monthly best",
     "trend": "Last 10 jumps",
     "needTwo": "The chart appears after two jumps",
-    "noMarks": "No marks yet"
+    "noMarks": "No marks"
   }
 }
