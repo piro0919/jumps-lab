@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { SiteHeader } from '@/components/site-header';
 import { TabBar } from '@/components/tab-bar';
+import { TimeZoneRepair } from '@/components/time-zone-repair';
 import { getActivityCounts, getProfile } from '@/lib/data';
 import { requireViewer } from '@/lib/viewer';
 
@@ -27,6 +28,7 @@ export default async function AppLayout({ children }: LayoutProps<'/'>) {
         {children}
       </div>
       <TabBar />
+      <TimeZoneRepair saved={profile.timeZone} />
     </>
   );
 }

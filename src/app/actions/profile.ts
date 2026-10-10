@@ -3,7 +3,7 @@
 import { refresh } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
-import { saveProfile, saveProfileDetails, saveRecordSettings } from '@/lib/data';
+import { repairTimeZone, saveProfile, saveProfileDetails, saveRecordSettings } from '@/lib/data';
 import { isTimeZone, todayIn } from '@/lib/dates';
 import { EVENTS } from '@/lib/events';
 import { type ActionResult, optionalNumber } from '@/lib/form';
@@ -143,4 +143,13 @@ export async function saveRecordSettingsAction(
   const result = await run(() => saveRecordSettings(viewer.userId, parsed.data));
   refresh();
   return result;
+}
+
+/** 時間帯が UTC のまま保存された人を、ブラウザの時間帯に直す（components/time-zone-repair.tsx） */
+export async function repairTimeZoneAction(value: string): Promise<boolean> {
+  const viewer = await requireViewer();
+  if (value === 'UTC' || !isTimeZone(value)) return false;
+  const repaired = await repairTimeZone(viewer.userId, value);
+  if (repaired) refresh();
+  return repaired;
 }

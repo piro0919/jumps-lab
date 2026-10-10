@@ -144,6 +144,18 @@ export async function saveProfileDetails(userId: string, input: ProfileDetails):
   }
 }
 
+/**
+ * 時間帯が UTC のままの人だけ、ブラウザの時間帯に直す。登録と設定の保存が、時間帯をみな UTC で
+ * 保存していた（2026-10-11 に直した）。UTC 以外の人には触れない（旅行先で開いても変わらないように）
+ */
+export async function repairTimeZone(userId: string, timeZone: string): Promise<boolean> {
+  const { rowCount } = await db().query(
+    `update profile set "timeZone" = $2, "updatedAt" = now() where "userId" = $1 and "timeZone" = 'UTC'`,
+    [userId, timeZone],
+  );
+  return rowCount === 1;
+}
+
 /** 設定の画面の「記録」の区画で保存するもの */
 export type RecordSettings = Pick<
   Profile,
