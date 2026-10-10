@@ -36,10 +36,13 @@ describe('見た目の決まり', () => {
     expect(offenders((l) => /\bfont-medium\b/.test(l))).toEqual([]);
   });
 
-  it('角は full・xl・2xl・3xl だけ', () => {
+  it('角は full・xl・2xl・3xl だけ（アプリのアイコンの 22% は AppIcon の中だけ）', () => {
     expect(
       offenders(
-        (l) => /\brounded(?!-(full|xl|2xl|3xl|\[inherit\])\b)(-[\w[\]]+)?\b/.test(l),
+        (l) =>
+          /\brounded(?!-(full|xl|2xl|3xl|\[inherit\])\b)(-[\w[\]]+)?\b/.test(
+            l.replace(/'rounded-\[22%\]'/, ''),
+          ),
         // 規約の本文の英文（rounded to about 100 m）
         ['app/(legal)/en/privacy/page.tsx'],
       ),

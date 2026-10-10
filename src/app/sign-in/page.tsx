@@ -3,7 +3,7 @@ import { headers } from 'next/headers';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getLocale, getTranslations } from 'next-intl/server';
-import { Wordmark } from '@/components/layout-ui';
+import { AppIcon, Wordmark } from '@/components/layout-ui';
 import { getAuth } from '@/lib/auth';
 import { GoogleButton } from './google-button';
 
@@ -24,8 +24,7 @@ export default async function SignIn() {
   return (
     <main className="mx-auto flex min-h-dvh max-w-sm flex-col items-center justify-center gap-10 px-6">
       <div className="flex flex-col items-center gap-4">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/icon-192x192.png" alt="" className="size-20 rounded-3xl" />
+        <AppIcon size="hero" />
         <h1>
           <Wordmark size="hero">{t('title')}</Wordmark>
         </h1>

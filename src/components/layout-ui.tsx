@@ -19,6 +19,19 @@ import type { ComponentProps, ReactNode } from 'react';
 export const LABEL = 'text-[13px] font-semibold text-muted-foreground';
 
 /**
+ * アプリのアイコン。角は辺の 22%（iPhone のアイコンと同じ形）。xl のままだと 36px でほぼ円になり、
+ * 右上の顔写真の丸と見分けがつかなかった（本人、2026-10-11）
+ */
+const APP_ICON_SIZE = { header: 'size-9', hero: 'size-20' } as const;
+
+export function AppIcon({ size }: { size: keyof typeof APP_ICON_SIZE }) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src="/icon-192x192.png" alt="" className={cn('rounded-[22%]', APP_ICON_SIZE[size])} />
+  );
+}
+
+/**
  * ロゴの文字（Kanit の極太の斜体、大文字）。ヘッダーとログインの画面だけで使う。
  * 書体は Google Fonts から10個を並べて本人が選んだ（2026-10-11。数字の Barlow Condensed とは分けた）
  */
