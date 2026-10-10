@@ -26,7 +26,8 @@ const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
 
 /**
  * プロフィールの入力。初回（from=welcome）と設定画面で同じものを使う。
- * 本人のこと（名前・生年月日・学年・性別・身長・体重）と、記録のつけ方（種目・単位・シーズンの始まり）の2つに分ける。
+ * 本人のこと（名前・生年月日・学年・性別・身長・体重）と、記録のつけ方（種目・単位・シーズンの始まり）を、
+ * 1枚のカードの中で見出しを分けて並べ、最後に保存のボタンを置く（保存は両方にかかるので、カードは分けない）。
  * 単位を切り替えたら、長さと重さの欄を保存済みの値からやり直す（換算の途中の値を混ぜない）
  */
 export function ProfileForm({
@@ -78,7 +79,7 @@ export function ProfileForm({
     );
 
   return (
-    <ActionForm action={action} className="flex flex-col gap-3 pb-4">
+    <ActionForm action={action} className="flex flex-col gap-3">
       <input type="hidden" name="from" value={from} />
       <input
         ref={timeZoneRef}
@@ -90,121 +91,130 @@ export function ProfileForm({
         <input key={event} type="hidden" name="events" value={event} />
       ))}
 
-      <Card>
-        <CardTitle>{t('sectionProfile')}</CardTitle>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="col-span-2">
-            <Field label={t('name')} required={t('required')}>
-              <Input name="name" defaultValue={defaultName} required maxLength={100} />
-            </Field>
-          </div>
-          <Field label={t('birthdate')}>
-            <Input
-              name="birthdate"
-              type="date"
-              min="1900-01-01"
-              defaultValue={initial?.birthdate ?? ''}
-              onChange={(e) => fillGrade(e.target.value)}
-            />
-          </Field>
-          <Field label={t('grade')}>
-            <Select name="grade" value={grade} onChange={(e) => setGrade(e.target.value)}>
-              <option value="">{t('notSet')}</option>
-              {GRADES.map((value) => (
-                <option key={value} value={value}>
-                  {tGrades(value)}
-                </option>
-              ))}
-            </Select>
-          </Field>
-          <Field label={t('gender')}>
-            <Select name="gender" defaultValue={initial?.gender ?? ''}>
-              <option value="">{t('notSet')}</option>
-              <option value="male">{tGenders('male')}</option>
-              <option value="female">{tGenders('female')}</option>
-              <option value="other">{tGenders('other')}</option>
-            </Select>
-          </Field>
-          <div className="col-span-2">
-            <Field label={t('height')}>
-              <HeightInput
-                key={units}
-                name="heightCm"
-                units={units}
-                defaultCm={initial?.heightCm}
-              />
-            </Field>
-          </div>
-          <div className="col-span-2">
-            <Field label={t('weight')}>
-              <WeightInput
-                key={units}
-                name="weightKg"
-                units={units}
-                defaultKg={initial?.weightKg}
-              />
-            </Field>
-          </div>
-        </div>
-      </Card>
-
-      <Card>
-        <CardTitle>{t('sectionRecords')}</CardTitle>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="col-span-2">
-            <div className="flex flex-col gap-1.5">
-              <FieldLabel label={t('events')} required={t('required')} />
-              <div className="flex flex-wrap gap-2">
-                {EVENTS.map((event) => {
-                  const on = events.includes(event);
-                  return (
-                    <button
-                      key={event}
-                      type="button"
-                      aria-pressed={on}
-                      onClick={() => toggle(event)}
-                      className={`h-9 rounded-full px-3.5 text-sm font-semibold transition active:scale-[0.98] ${
-                        on ? 'bg-secondary text-primary' : 'bg-muted text-muted-foreground'
-                      }`}
-                    >
-                      {tEvents(event)}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-          <Field label={t('units')}>
-            <Select name="units" value={units} onChange={(e) => setUnits(e.target.value as Units)}>
-              <option value="metric">{tUnits('metric')}</option>
-              <option value="imperial">{tUnits('imperial')}</option>
-            </Select>
-          </Field>
-          <Field label={t('seasonStart')}>
-            <Select name="seasonStartMonth" defaultValue={initial?.seasonStartMonth ?? 1}>
-              {MONTHS.map((month) => (
-                <option key={month} value={month}>
-                  {monthName(month)}
-                </option>
-              ))}
-            </Select>
-          </Field>
-          {from === 'welcome' && (
+      <Card className="flex flex-col gap-6">
+        <div>
+          <CardTitle>{t('sectionProfile')}</CardTitle>
+          <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
-              <Field label={t('goal')}>
-                <MarkInput key={units} name="goalM" units={units} />
+              <Field label={t('name')} required={t('required')}>
+                <Input name="name" defaultValue={defaultName} required maxLength={100} />
               </Field>
             </div>
-          )}
+            <Field label={t('birthdate')}>
+              <Input
+                name="birthdate"
+                type="date"
+                min="1900-01-01"
+                defaultValue={initial?.birthdate ?? ''}
+                onChange={(e) => fillGrade(e.target.value)}
+              />
+            </Field>
+            <Field label={t('grade')}>
+              <Select name="grade" value={grade} onChange={(e) => setGrade(e.target.value)}>
+                <option value="">{t('notSet')}</option>
+                {GRADES.map((value) => (
+                  <option key={value} value={value}>
+                    {tGrades(value)}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <Field label={t('gender')}>
+              <Select name="gender" defaultValue={initial?.gender ?? ''}>
+                <option value="">{t('notSet')}</option>
+                <option value="male">{tGenders('male')}</option>
+                <option value="female">{tGenders('female')}</option>
+                <option value="other">{tGenders('other')}</option>
+              </Select>
+            </Field>
+            <div className="col-span-2">
+              <Field label={t('height')}>
+                <HeightInput
+                  key={units}
+                  name="heightCm"
+                  units={units}
+                  defaultCm={initial?.heightCm}
+                />
+              </Field>
+            </div>
+            <div className="col-span-2">
+              <Field label={t('weight')}>
+                <WeightInput
+                  key={units}
+                  name="weightKg"
+                  units={units}
+                  defaultKg={initial?.weightKg}
+                />
+              </Field>
+            </div>
+          </div>
+        </div>
+
+        <div className="border-t border-border pt-6">
+          <CardTitle>{t('sectionRecords')}</CardTitle>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="col-span-2">
+              <div className="flex flex-col gap-1.5">
+                <FieldLabel label={t('events')} required={t('required')} />
+                <div className="flex flex-wrap gap-2">
+                  {EVENTS.map((event) => {
+                    const on = events.includes(event);
+                    return (
+                      <button
+                        key={event}
+                        type="button"
+                        aria-pressed={on}
+                        onClick={() => toggle(event)}
+                        className={`h-9 rounded-full px-3.5 text-sm font-semibold transition active:scale-[0.98] ${
+                          on ? 'bg-secondary text-primary' : 'bg-muted text-muted-foreground'
+                        }`}
+                      >
+                        {tEvents(event)}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+            <Field label={t('units')}>
+              <Select
+                name="units"
+                value={units}
+                onChange={(e) => setUnits(e.target.value as Units)}
+              >
+                <option value="metric">{tUnits('metric')}</option>
+                <option value="imperial">{tUnits('imperial')}</option>
+              </Select>
+            </Field>
+            <Field label={t('seasonStart')}>
+              <Select name="seasonStartMonth" defaultValue={initial?.seasonStartMonth ?? 1}>
+                {MONTHS.map((month) => (
+                  <option key={month} value={month}>
+                    {monthName(month)}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            {from === 'welcome' && (
+              <div className="col-span-2">
+                <Field label={t('goal')}>
+                  <MarkInput key={units} name="goalM" units={units} />
+                </Field>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 保存はカードの中の右下に（記録の日の画面と同じ）。プロフィールと記録の両方をまとめて保存する。
+            カードの外に幅いっぱいで置いていて笑われた（本人、2026-10-11） */}
+        <div className="flex items-center justify-end gap-3">
+          <ErrorText>{state?.ok === false ? tErrors(state.error as 'generic') : null}</ErrorText>
+          {state?.ok && !pending && <span className="text-sm text-good">{t('saved')}</span>}
+          <Button type="submit" disabled={pending || events.length === 0}>
+            {from === 'welcome' ? t('start') : t('save')}
+          </Button>
         </div>
       </Card>
-
-      <div className="flex flex-col gap-2 px-4">
-        <ErrorText>{state?.ok === false ? tErrors(state.error as 'generic') : null}</ErrorText>
-        <Button type="submit" disabled={pending || events.length === 0} className="w-full">
-          {from === 'welcome' ? t('start') : t('save')}
-        </Button>
-      </div>
     </ActionForm>
   );
 }
