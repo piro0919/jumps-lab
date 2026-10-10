@@ -45,6 +45,10 @@ describe('formatMark', () => {
     expect(formatMark(2.0, 'imperial')).toBe(`6' 6½"`);
     expect(formatMark(1.8288, 'imperial')).toBe(`6' 0"`);
   });
+
+  it('1フィート未満はインチだけ', () => {
+    expect(formatMark(0.05, 'imperial')).toBe(`1¾"`);
+  });
 });
 
 describe('身長と体重', () => {

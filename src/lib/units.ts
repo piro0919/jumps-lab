@@ -32,7 +32,8 @@ export function formatMark(meters: number, units: Units): string {
   const { feet, inches } = metersToFeetInches(meters);
   const whole = Math.floor(inches);
   const fraction = ['', '¼', '½', '¾'][Math.round((inches - whole) * 4)];
-  return `${feet}' ${whole}${fraction}"`;
+  // 目標までの差のような1フィート未満の長さは、インチだけで書く
+  return feet === 0 ? `${whole}${fraction}"` : `${feet}' ${whole}${fraction}"`;
 }
 
 export function cmToFeetInches(cm: number): FeetInches {
