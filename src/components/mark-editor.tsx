@@ -5,7 +5,7 @@ import { ActionForm } from '@/components/action-form';
 import { useActionState, useState } from 'react';
 import { saveTargetAction } from '@/app/actions/targets';
 import { MarkInput } from '@/components/measure-inputs';
-import { Badge, ErrorText, Field, Stat } from '@/components/layout-ui';
+import { Badge, ErrorText, Stat } from '@/components/layout-ui';
 import { Sheet } from '@/components/sheet';
 import { Button } from '@/components/ui/button';
 import { EVENT_BG, type JumpEvent } from '@/lib/events';
@@ -81,9 +81,11 @@ export function MarkEditor({
         <ActionForm action={action} className="flex flex-col gap-4">
           <input type="hidden" name="event" value={event} />
           <input type="hidden" name="field" value={field} />
-          <Field label={label}>
+          {/* 欄の名前は窓の題と同じなので、画面には出さず読み上げにだけ渡す（PB が2回出ていた。本人、2026-10-11） */}
+          <label>
+            <span className="sr-only">{label}</span>
             <MarkInput name="markM" units={units} defaultMeters={manual} autoFocus />
-          </Field>
+          </label>
           <ErrorText>{state?.ok === false ? tErrors('generic') : null}</ErrorText>
           <div className={`grid gap-3 ${manual !== null ? 'grid-cols-3' : 'grid-cols-2'}`}>
             {/* 手で入れた値があるときだけ、消す（記録から出した値に戻す）ボタンを出す */}
