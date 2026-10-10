@@ -89,8 +89,10 @@ export function AttemptsCard({
                         {index + 1}
                       </span>
                       <span className="flex min-w-0 flex-1 flex-col">
-                        <span className="flex items-baseline gap-2">
-                          <DisplayNumber size="md">
+                        {/* 数字は折らず、入りきらない札を次の行へ回す（「ベスト」と「追い風参考」が並ぶと、
+                            幅 375px で m が次の行に落ち、札が鉛筆に重なった。2026-10-11） */}
+                        <span className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                          <DisplayNumber size="md" className="whitespace-nowrap">
                             {formatMark(attempt.markM, units)}
                           </DisplayNumber>
                           {attempt.markM === best && (
