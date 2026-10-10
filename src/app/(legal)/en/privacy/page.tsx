@@ -28,8 +28,8 @@ export default function PrivacyEn() {
           for sign-in)
         </li>
         <li>
-          Your profile (name, grade, age, gender, height, weight, events, units, season start and
-          time zone)
+          Your profile (name, grade, date of birth, gender, height, weight, events, units, season
+          start and time zone)
         </li>
         <li>Your marks (date, event, practice or competition, mark, wind and note)</li>
         <li>
@@ -41,8 +41,8 @@ export default function PrivacyEn() {
         <li>Your goal marks and the bests you enter by hand</li>
       </ul>
       <p>
-        Grade, age, gender, height, weight and the injury field are optional. Write only what you
-        need about injuries or discomfort.
+        Grade, date of birth, gender, height, weight and the injury field are optional. Write only
+        what you need about injuries or discomfort.
       </p>
 
       <h2>3. How we use it</h2>

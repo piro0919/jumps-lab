@@ -19,7 +19,7 @@ A record-keeping service for jumpers (high jump, long jump, triple jump, pole va
 - Storage: Neon (Singapore). Vercel functions in sin1. Both on the owner's own accounts.
 - Legal: privacy policy and terms in Japanese and English at /privacy, /terms, /en/privacy, /en/terms. Operator "kk-web", contact kk.web.kawamura@gmail.com. Japanese is the authoritative text, English is a translation with matching sections (spatto)
 - Features in v1 (same as the prototype):
-  - Profile: name, grade, age, gender, height, weight, events, goal
+  - Profile: name, grade, date of birth (replaced age, agreed 2026-10-11), gender, height, weight, events, goal
   - Home: season goal, PB / SB / practice best, weather (Open-Meteo, location permission), days until next competition
   - Today: condition (physical condition 1–10, fatigue 1–10, sleep hours, injury note), attempts, practice note
   - Attempt: one at a time, with type (practice / competition), mark, wind (optional), note

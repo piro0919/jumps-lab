@@ -115,14 +115,12 @@ export function ProfileForm({
             ))}
           </Select>
         </Field>
-        <Field label={t('age')}>
+        <Field label={t('birthdate')}>
           <Input
-            name="age"
-            type="number"
-            inputMode="numeric"
-            min={5}
-            max={120}
-            defaultValue={initial?.age ?? ''}
+            name="birthdate"
+            type="date"
+            min="1900-01-01"
+            defaultValue={initial?.birthdate ?? ''}
           />
         </Field>
         <Field label={t('gender')}>

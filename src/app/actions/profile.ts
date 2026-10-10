@@ -13,7 +13,13 @@ import { requireViewer } from '@/lib/viewer';
 const schema = z.object({
   name: z.string().trim().min(1, 'name').max(100),
   grade: z.preprocess((v) => (v === '' ? null : v), z.enum(GRADES).nullable()),
-  age: optionalNumber(5, 120),
+  birthdate: z.preprocess(
+    (v) => (v === '' || v === undefined ? null : v),
+    z.iso
+      .date()
+      .refine((d) => d >= '1900-01-01' && d <= new Date().toISOString().slice(0, 10))
+      .nullable(),
+  ),
   gender: z.preprocess(
     (v) => (v === '' ? null : v),
     z.enum(['male', 'female', 'other']).nullable(),
