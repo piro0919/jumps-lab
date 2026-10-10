@@ -146,6 +146,12 @@ Copy the shape of `~/Repository/onigiri` (which itself copies vocafy). Read its 
 
 ## Current state
 
-- Google Cloud project `jumps-lab-kkweb` (billing account kk-web). OAuth client "Jumps Lab web", redirect URIs `http://localhost:3110/api/auth/callback/google` and `https://jumpslab.kkweb.io/api/auth/callback/google`. Consent screen is External and still in Testing; `piro.haniwa@gmail.com` is the only test user
+- Released 2026-10-11 at https://jumpslab.kkweb.io. GitHub `piro0919/jumps-lab` is public (the owner: nothing special in it)
+- Vercel team `kkweb`, project `jumps-lab`: framework nextjs, functions sin1, Vercel Authentication off for the custom domain only, `jumps-lab.vercel.app` removed. Renovate branches skip builds (`ignoreCommand` in vercel.json)
+- Neon `jumps-lab-db` (free plan, sin1) through the Vercel Neon integration, which sets DATABASE_URL and friends. Migrations 0001–0006 applied to production by hand with DATABASE_URL_UNPOOLED. The 0.25 CU fixed compute is not checked yet
+- Production env: BETTER_AUTH_SECRET (its own, not the local one), BETTER_AUTH_URL, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
+- DNS in Cloudflare (kkweb.io): CNAME `jumpslab` to Vercel (proxy off) and a `_vercel` TXT, added with the DNS-only token in janify's .env.local
+- Google Cloud project `jumps-lab-kkweb`, OAuth client "Jumps Lab web". Consent screen External and in production since 2026-10-11, with home, /privacy and /terms set and no logo (a logo would need Google's review)
+- Listed in the Notion portfolio DB and kk-web (WEB SERVICE, order 17)
+- Not done: Web Analytics (needs the privacy policy to mention it, then the owner turns it on), videos, AI advice, coach questions, e2e tests
 - Dev server runs on port 3110 (`pnpm dev`); local Postgres on 5436 (`pnpm db:up`, then `pnpm migrate`)
-- Google sign-in works locally end to end
