@@ -118,6 +118,7 @@
   },
   "weather": {
     "clear": "Clear",
+    "partlyCloudy": "Partly cloudy",
     "cloudy": "Cloudy",
     "fog": "Fog",
     "drizzle": "Drizzle",

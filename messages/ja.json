@@ -118,6 +118,7 @@
   },
   "weather": {
     "clear": "晴れ",
+    "partlyCloudy": "晴れ時々曇り",
     "cloudy": "曇り",
     "fog": "霧",
     "drizzle": "霧雨",
