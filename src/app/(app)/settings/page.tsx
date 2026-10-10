@@ -12,7 +12,7 @@ export default async function Settings() {
   const t = await getTranslations('nav');
 
   return (
-    <main className="flex flex-col gap-3 pb-6 lg:max-w-2xl">
+    <main className="flex flex-col gap-3 pb-6 lg:mx-auto lg:w-full lg:max-w-2xl">
       <PageTitle>{t('settings')}</PageTitle>
       <ProfileForm
         from="settings"
