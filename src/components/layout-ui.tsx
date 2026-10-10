@@ -5,9 +5,18 @@ import { Textarea } from '@/components/ui/textarea';
 import type { ComponentProps, ReactNode } from 'react';
 
 /**
- * 画面の部品。どの画面も同じ形を使う。
- * 大見出し → 白い面 → 項目、の並び（Strong の画面の型）
+ * 画面の部品と見た目の決まり。どの画面もここの部品と値だけを使い、その場で寸法を書き起こさない
+ * （CLAUDE.md の「Design rules」。外れた書き方は test/design-rules.test.ts が落とす）。
+ *
+ * 字: 大見出し 32px（PageTitle）・塊の見出し 16px（SectionTitle）・本文 14px（text-sm）・
+ *     欄のラベル 13px（LABEL）・小さな字 12px（text-xs）。数字は DisplayNumber と Stat だけ
+ * 太さ: semibold・bold・extrabold の3つ（medium は使わない）
+ * 角: ボタン・札・丸いもの full、入力欄と行 xl、面の中の小さな面 2xl、カード 3xl
+ * 余白: カードどうし 12px（gap-3）、カードの内側 20px（p-5）、カードの中の塊どうし 16px（gap-4）
  */
+
+/** 欄のラベル。入力欄の上、数字の下、スライダーの名前 */
+export const LABEL = 'text-[13px] font-semibold text-muted-foreground';
 
 export function PageTitle({ children, action }: { children: ReactNode; action?: ReactNode }) {
   return (
@@ -40,32 +49,31 @@ export function Stat({
 }) {
   const parts =
     value === null ? null : typeof value === 'object' ? value : { value: String(value), unit: '' };
-  const numberSize = {
-    giant: 'text-[88px] leading-[0.85]',
-    hero: 'text-[64px] leading-[0.95]',
-    md: 'text-[30px] leading-none',
-    sm: 'text-[22px] leading-none',
-  }[size];
-  const sub = inverse ? 'text-white' : 'text-muted-foreground';
 
   return (
     <div className="flex flex-col gap-1">
       <span className="flex items-baseline gap-1">
-        <span
+        <DisplayNumber
+          size={size}
           className={cn(
-            'font-display font-extrabold tracking-tight tabular-nums italic',
-            numberSize,
             parts !== null && color,
             parts === null && (inverse ? 'text-white/50' : 'text-muted-foreground/40'),
           )}
         >
           {parts === null ? '—' : parts.value}
-        </span>
+        </DisplayNumber>
         {parts?.unit && (
-          <span className={cn('font-display text-xl font-bold italic', sub)}>{parts.unit}</span>
+          <span
+            className={cn(
+              'font-display text-lg font-bold italic',
+              inverse ? 'text-white' : 'text-muted-foreground',
+            )}
+          >
+            {parts.unit}
+          </span>
         )}
       </span>
-      <span className={cn('text-[13px] font-semibold', sub)}>{label}</span>
+      <span className={cn(LABEL, inverse && 'text-white')}>{label}</span>
     </div>
   );
 }
@@ -74,12 +82,107 @@ export function Card({ children, className = '' }: { children: ReactNode; classN
   return <section className={cn('mx-4 rounded-3xl bg-card p-5', className)}>{children}</section>;
 }
 
+/** 塊の見出し（16px）。色付きのカードの上では inverse で白い字 */
+export function SectionTitle({
+  children,
+  inverse = false,
+}: {
+  children: ReactNode;
+  inverse?: boolean;
+}) {
+  return (
+    <h2 className={cn('text-base font-extrabold', inverse ? 'text-white' : 'text-foreground')}>
+      {children}
+    </h2>
+  );
+}
+
+/** カードの見出しの行。見出しの右にボタンを置ける */
 export function CardTitle({ children, action }: { children: ReactNode; action?: ReactNode }) {
   return (
-    <div className="mb-3 flex items-center justify-between gap-3">
-      <h2 className="text-[15px] font-semibold">{children}</h2>
+    <div className="mb-4 flex items-center justify-between gap-3">
+      <SectionTitle>{children}</SectionTitle>
       {action}
     </div>
+  );
+}
+
+/**
+ * 大きな数字。字は細長く太い斜体（Barlow Condensed）。数字はかならずこれか Stat を通す。
+ * 大きさは5段: giant 88px・hero 64px・md 30px・sm 22px
+ */
+const DISPLAY_SIZE = {
+  giant: 'text-[88px] leading-[0.85]',
+  hero: 'text-[64px] leading-[0.95]',
+  md: 'text-[30px] leading-none',
+  sm: 'text-[22px] leading-none',
+} as const;
+
+export function DisplayNumber({
+  children,
+  size,
+  className,
+}: {
+  children: ReactNode;
+  size: keyof typeof DISPLAY_SIZE;
+  className?: string;
+}) {
+  return (
+    <span
+      className={cn(
+        'font-display font-extrabold tracking-tight tabular-nums italic',
+        DISPLAY_SIZE[size],
+        className,
+      )}
+    >
+      {children}
+    </span>
+  );
+}
+
+/** 色付きのカードの右下に、大きく薄く透かす英字（種目の略字など）。カードに relative と overflow-hidden が要る */
+export function Watermark({ children }: { children: ReactNode }) {
+  return (
+    <span
+      aria-hidden
+      className="pointer-events-none absolute -right-3 -bottom-8 font-display text-[160px] leading-none font-extrabold text-white/10 italic select-none"
+    >
+      {children}
+    </span>
+  );
+}
+
+/**
+ * 小さな札（ベスト・追い風参考・あと◯日・必須・種目の名前）。形はどれも同じで、色だけ選ぶ。
+ * event は種目の色の地のクラス（EVENT_BG）を className で渡す
+ */
+const BADGE_TONE = {
+  neutral: 'bg-muted text-muted-foreground',
+  accent: 'bg-secondary text-primary',
+  danger: 'bg-destructive/10 text-destructive',
+  inverse: 'bg-white/15 text-white',
+  solid: 'text-white',
+} as const;
+
+export function Badge({
+  children,
+  tone,
+  className,
+}: {
+  children: ReactNode;
+  tone: keyof typeof BADGE_TONE;
+  className?: string;
+}) {
+  return (
+    <span
+      className={cn(
+        'inline-flex w-fit shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-bold',
+        BADGE_TONE[tone],
+        className,
+      )}
+    >
+      {children}
+    </span>
   );
 }
 
@@ -89,13 +192,9 @@ export function CardTitle({ children, action }: { children: ReactNode; action?: 
  */
 export function FieldLabel({ label, required }: { label: string; required?: string }) {
   return (
-    <span className="flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground">
+    <span className={cn('flex items-center gap-1.5', LABEL)}>
       {label}
-      {required && (
-        <span className="rounded bg-destructive/10 px-1.5 py-px text-[11px] font-semibold text-destructive">
-          {required}
-        </span>
-      )}
+      {required && <Badge tone="danger">{required}</Badge>}
     </span>
   );
 }

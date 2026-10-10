@@ -6,7 +6,16 @@ import { useActionState, useState, useTransition } from 'react';
 import { addAttemptAction, deleteAttemptAction } from '@/app/actions/today';
 import { ActionForm } from '@/components/action-form';
 import { ConfirmDialog } from '@/components/confirm-dialog';
-import { Card, CardTitle, ErrorText, Field, Input, segmentClass } from '@/components/layout-ui';
+import {
+  Badge,
+  Card,
+  CardTitle,
+  DisplayNumber,
+  ErrorText,
+  Field,
+  Input,
+  segmentClass,
+} from '@/components/layout-ui';
 import { Button } from '@/components/ui/button';
 import { cn } from 'cn';
 import { MarkInput } from '@/components/measure-inputs';
@@ -81,7 +90,7 @@ function AddForm({
       action={action}
       className="flex flex-col gap-4 overflow-y-auto p-5 pb-[calc(20px+env(safe-area-inset-bottom))]"
     >
-      <DrawerTitle className="text-lg font-bold">{t('addAttempt')}</DrawerTitle>
+      <DrawerTitle className="text-lg font-extrabold">{t('addAttempt')}</DrawerTitle>
       <input type="hidden" name="day" value={day} />
       <input type="hidden" name="event" value={event} />
       <input type="hidden" name="kind" value={kind} />
@@ -173,10 +182,10 @@ export function AttemptsCard({
             const best = Math.max(...rows.map((r) => r.markM));
             return (
               <section key={event}>
-                <h3
-                  className={`w-fit rounded-full px-3 py-1 text-xs font-bold text-white ${EVENT_BG[event]}`}
-                >
-                  {tEvents(event)}
+                <h3 className="flex">
+                  <Badge tone="solid" className={EVENT_BG[event]}>
+                    {tEvents(event)}
+                  </Badge>
                 </h3>
                 <ol className="flex flex-col divide-y divide-border">
                   {rows.map((attempt, index) => (
@@ -186,21 +195,17 @@ export function AttemptsCard({
                       </span>
                       <span className="flex min-w-0 flex-1 flex-col">
                         <span className="flex items-baseline gap-2">
-                          <span className="font-display text-[26px] leading-none font-extrabold italic tabular-nums">
+                          <DisplayNumber size="md">
                             {formatMark(attempt.markM, units)}
-                          </span>
+                          </DisplayNumber>
                           {attempt.markM === best && (
-                            <span
-                              className={`rounded-full px-2 text-xs font-bold text-white ${EVENT_BG[event]}`}
-                            >
+                            <Badge tone="solid" className={EVENT_BG[event]}>
                               {t('best')}
-                            </span>
+                            </Badge>
                           )}
                           {/* 追い風 2.0 m/s 超え。PB・SB には数えていない */}
                           {isWindAided(attempt.windMs) && (
-                            <span className="rounded-full bg-muted px-2 text-xs font-semibold text-muted-foreground">
-                              {t('windAided')}
-                            </span>
+                            <Badge tone="neutral">{t('windAided')}</Badge>
                           )}
                         </span>
                         <span className="truncate text-xs text-muted-foreground">

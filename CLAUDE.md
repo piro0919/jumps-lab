@@ -55,6 +55,15 @@ Copy the shape of `~/Repository/onigiri` (which itself copies vocafy). Read its 
 - Next.js 16 App Router, React 19.2, TypeScript 5, ESLint 9 (do not take TS/ESLint majors; renovate.json blocks them), Tailwind 4, pnpm 11 with `packageManager`, Node 24
 - shadcn/ui on Base UI (nova preset, like waraiba and spatto). Generated parts live in `src/components/ui/` (knip ignores them); `src/components/layout-ui.tsx` wraps them with this app's sizes. Colors use the shadcn token names in `globals.css`
 - Buttons come only from `src/components/ui/button.tsx` by name: variant default (black) / secondary (grey) / ghost (icon only) / destructive / outline, size sm (36px, beside titles and in cards) / default (44px, form submit) / icon (36px). Never add height or padding where a button is used; link buttons take `buttonVariants(...)`. Segment pills are 36px too (`segmentClass`). The owner caught mixed sizes on 2026-10-11
+- Design rules (the owner caught screens drifting apart on 2026-10-11). The values live at the top of `src/components/layout-ui.tsx`; `test/design-rules.test.ts` (vocafy's shape) fails on anything outside them. Change all three together
+  - Type: page title 32px (`PageTitle`), section title 16px extrabold (`SectionTitle`, `CardTitle`), item titles and drawer titles `text-lg font-extrabold`, body `text-sm`, field labels 13px (`LABEL`), small text `text-xs`. Nothing above `text-lg` outside the parts
+  - Weights: semibold, bold, extrabold. No medium
+  - Numbers: always `DisplayNumber` or `Stat` (giant 88 / hero 64 / md 30 / sm 22). `font-display` is not written anywhere else
+  - Badges (best, wind-aided, days left, required, event name, goal gap): `Badge` with a tone. Watermarks: `Watermark`
+  - Radius: full (buttons, badges, pills), xl (inputs, rows), 2xl (small panels inside a card), 3xl (cards)
+  - Spacing: gap-3 between cards, p-5 inside, gap-4 between blocks inside a card
+  - No hex colors outside Google's button and the OG image
+  - Header buttons beside a page title must fit at 375px in English: a short verb ("Add"), the title says what
 - No ORM (decided 2026-10-11): the data layer is one file of raw SQL in `src/lib/data.ts`; catch mistakes with tests instead of code generation
 - `pnpm-workspace.yaml`: `allowBuilds` and `minimumReleaseAge: 4320`
 - Prettier: singleQuote, trailingComma all, printWidth 100. ESLint and Prettier ignore `.claude/**` and `.playwright-mcp/**`

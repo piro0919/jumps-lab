@@ -2,7 +2,7 @@ import { ChevronRight, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { buttonVariants } from '@/components/ui/button';
-import { PageTitle } from '@/components/layout-ui';
+import { Badge, DisplayNumber, PageTitle, SectionTitle, Watermark } from '@/components/layout-ui';
 import { MarkEditor } from '@/components/mark-editor';
 import { WeatherCard } from '@/components/weather-card';
 import { computeBests } from '@/lib/bests';
@@ -38,14 +38,9 @@ async function EventHero({
     <section
       className={`relative mx-4 overflow-hidden rounded-3xl p-5 text-white ${EVENT_BG[event]}`}
     >
-      <span
-        aria-hidden
-        className="pointer-events-none absolute -right-3 -bottom-8 font-display text-[160px] leading-none font-extrabold text-white/10 italic select-none"
-      >
-        {EVENT_MARK[event]}
-      </span>
+      <Watermark>{EVENT_MARK[event]}</Watermark>
       <div className="relative flex flex-col gap-4">
-        <h2 className="text-base font-extrabold">{tEvents(event)}</h2>
+        <SectionTitle inverse>{tEvents(event)}</SectionTitle>
         <MarkEditor
           event={event}
           field="manualPbM"
@@ -86,9 +81,9 @@ async function EventHero({
           />
         </div>
         {gap !== null && (
-          <p className="w-fit rounded-full bg-white/15 px-3 py-1 text-sm font-bold">
+          <Badge tone="inverse">
             {gap <= 0 ? t('goalReached') : t('toGoal', { distance: formatMark(gap, units) })}
-          </p>
+          </Badge>
         )}
       </div>
     </section>
@@ -168,13 +163,11 @@ export default async function Home() {
             </div>
             {/* 当日は数字を出さず「今日」とだけ出す */}
             {days === 0 && (
-              <span className="shrink-0 text-2xl font-extrabold">{t('daysLeft', { days })}</span>
+              <span className="shrink-0 text-lg font-extrabold">{t('daysLeft', { days })}</span>
             )}
             {days !== null && days > 0 && (
               <div className="flex shrink-0 flex-col items-end">
-                <span className="font-display text-[56px] leading-[0.9] font-extrabold tabular-nums italic">
-                  {days}
-                </span>
+                <DisplayNumber size="hero">{days}</DisplayNumber>
                 <span className="text-sm font-bold">{t('daysUnit', { days })}</span>
               </div>
             )}

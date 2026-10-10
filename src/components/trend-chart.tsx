@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import type { MarkRow } from '@/lib/bests';
+import { DisplayNumber } from '@/components/layout-ui';
 import { formatMark, type Units } from '@/lib/units';
 
 const WIDTH = 320;
@@ -48,7 +49,7 @@ export function TrendChart({
     <div className="flex flex-col gap-2">
       {point && (
         <div className="flex items-baseline justify-between">
-          <span className="text-2xl font-bold tabular-nums">{formatMark(point.markM, units)}</span>
+          <DisplayNumber size="sm">{formatMark(point.markM, units)}</DisplayNumber>
           <span className="text-sm text-muted-foreground tabular-nums">{dayLabel(point.day)}</span>
         </div>
       )}

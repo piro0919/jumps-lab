@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
-import { Card, CardTitle } from '@/components/layout-ui';
+import { Card, CardTitle, DisplayNumber } from '@/components/layout-ui';
 import { Button } from '@/components/ui/button';
 
 type Weather = { temperature: number; code: number; windMs: number };
@@ -78,8 +78,9 @@ export function WeatherCard() {
       <CardTitle>{t('weather')}</CardTitle>
       {state.kind === 'ready' ? (
         <div className="flex items-baseline justify-between">
-          <span className="text-xl font-bold">
-            {tWeather(weatherKey(state.weather.code))} {Math.round(state.weather.temperature)}°
+          <span className="flex items-baseline gap-2">
+            <DisplayNumber size="md">{Math.round(state.weather.temperature)}°</DisplayNumber>
+            <span className="text-base font-bold">{tWeather(weatherKey(state.weather.code))}</span>
           </span>
           <span className="text-sm text-muted-foreground tabular-nums">
             {t('wind', { speed: state.weather.windMs.toFixed(1) })}

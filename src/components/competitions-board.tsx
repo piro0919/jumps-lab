@@ -6,7 +6,7 @@ import { useState, useTransition } from 'react';
 import { deleteCompetitionAction } from '@/app/actions/competitions';
 import { CompetitionForm } from '@/components/competition-form';
 import { ConfirmDialog } from '@/components/confirm-dialog';
-import { Card, CardTitle, PageTitle, Stat } from '@/components/layout-ui';
+import { Badge, Card, CardTitle, DisplayNumber, PageTitle, Stat } from '@/components/layout-ui';
 import { Button } from '@/components/ui/button';
 import type { Competition } from '@/lib/data';
 import type { CompetitionResult } from '@/lib/competition-results';
@@ -47,13 +47,11 @@ function CompetitionItem({
           upcoming ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground'
         }`}
       >
-        <span className="text-[11px] font-bold">
+        <span className="text-xs font-bold">
           {format.dateTime(date, { month: 'short', timeZone: 'UTC' })}
         </span>
-        <span className="font-display text-[30px] leading-none font-extrabold italic tabular-nums">
-          {date.getUTCDate()}
-        </span>
-        <span className="text-[11px] font-bold">
+        <DisplayNumber size="md">{date.getUTCDate()}</DisplayNumber>
+        <span className="text-xs font-bold">
           {format.dateTime(date, { weekday: 'short', timeZone: 'UTC' })}
         </span>
       </div>
@@ -61,9 +59,9 @@ function CompetitionItem({
         <span className="flex items-start justify-between gap-2">
           <span className="text-base font-extrabold">{competition.name}</span>
           {upcoming && (
-            <span className="shrink-0 rounded-full bg-secondary px-2.5 py-0.5 text-xs font-bold text-primary">
+            <Badge tone="accent">
               {tHome('daysLeft', { days: daysBetween(today, competition.day) })}
-            </span>
+            </Badge>
           )}
         </span>
         {competition.venue && (
@@ -198,7 +196,7 @@ export function CompetitionsBoard({
             onClick={() => setEditing('new')}
           >
             <Plus aria-hidden className="size-4" />
-            {tCalendar('addCompetition')}
+            {tCalendar('add')}
           </Button>
         }
       >

@@ -35,7 +35,7 @@ export function TabBar() {
         <Link
           href={href}
           aria-current={active ? 'page' : undefined}
-          className={`flex h-10 items-center gap-3 rounded-xl px-3 text-[15px] font-medium ${
+          className={`flex h-10 items-center gap-3 rounded-xl px-3 text-sm font-bold ${
             active ? 'bg-secondary text-primary' : 'text-foreground hover:bg-accent'
           }`}
         >
@@ -57,7 +57,7 @@ export function TabBar() {
                 <Link
                   href={href}
                   aria-current={active ? 'page' : undefined}
-                  className={`flex h-full flex-col items-center justify-center gap-0.5 text-[11px] font-medium ${
+                  className={`flex h-full flex-col items-center justify-center gap-0.5 text-xs font-semibold ${
                     active ? 'text-primary' : 'text-muted-foreground'
                   }`}
                 >

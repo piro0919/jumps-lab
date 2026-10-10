@@ -150,6 +150,7 @@
     "windAided": "Wind-aided"
   },
   "calendar": {
+    "add": "Add",
     "addCompetition": "Add competition",
     "editCompetition": "Edit competition",
     "competitionName": "Competition",

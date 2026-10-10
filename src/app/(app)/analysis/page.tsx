@@ -1,7 +1,16 @@
 import Link from 'next/link';
 import { getFormatter, getLocale, getTranslations } from 'next-intl/server';
 import { TrendChart } from '@/components/trend-chart';
-import { Card, CardTitle, PageTitle, SEGMENTS, Stat, segmentClass } from '@/components/layout-ui';
+import {
+  Card,
+  CardTitle,
+  DisplayNumber,
+  PageTitle,
+  SEGMENTS,
+  Stat,
+  Watermark,
+  segmentClass,
+} from '@/components/layout-ui';
 import { analyze } from '@/lib/analysis';
 import { getProfile, listAttempts } from '@/lib/data';
 import { cn } from 'cn';
@@ -80,12 +89,7 @@ export default async function Analysis({ searchParams }: PageProps<'/analysis'>)
           <Card
             className={`relative grid gap-4 overflow-hidden text-white sm:grid-cols-2 ${EVENT_BG[event]}`}
           >
-            <span
-              aria-hidden
-              className="pointer-events-none absolute -right-3 -bottom-8 font-display text-[160px] leading-none font-extrabold text-white/10 italic select-none"
-            >
-              {EVENT_MARK[event]}
-            </span>
+            <Watermark>{EVENT_MARK[event]}</Watermark>
             <Stat size="hero" inverse value={result.total} label={t('total')} />
             <Stat
               size="hero"
@@ -126,11 +130,9 @@ export default async function Analysis({ searchParams }: PageProps<'/analysis'>)
                       timeZone: 'UTC',
                     })}
                   </span>
-                  <span
-                    className={`font-display text-2xl font-extrabold italic tabular-nums ${EVENT_TEXT[event]}`}
-                  >
+                  <DisplayNumber size="sm" className={EVENT_TEXT[event]}>
                     {formatMark(bestM, profile.units)}
-                  </span>
+                  </DisplayNumber>
                 </li>
               ))}
             </ul>

@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 import { ActionForm } from '@/components/action-form';
 import { useActionState, useState } from 'react';
 import { saveDayLogAction } from '@/app/actions/today';
-import { Card, CardTitle, ErrorText, Field, Input, TextArea } from '@/components/layout-ui';
+import { Card, CardTitle, ErrorText, Field, Input, LABEL, TextArea } from '@/components/layout-ui';
 import { Button } from '@/components/ui/button';
 import type { DayLog } from '@/lib/data';
 
@@ -28,9 +28,9 @@ function Slider({
   const [value, setValue] = useState(initial);
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="flex items-baseline justify-between text-[13px] font-medium text-muted-foreground">
+      <span className={`flex items-baseline justify-between ${LABEL}`}>
         {label}
-        <span className="text-[15px] font-bold text-foreground tabular-nums">
+        <span className="text-base font-bold text-foreground tabular-nums">
           {value}
           {suffix}
         </span>

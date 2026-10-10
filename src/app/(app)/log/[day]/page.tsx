@@ -35,7 +35,7 @@ export default async function LogDay({ params }: PageProps<'/log/[day]'>) {
     <main className="flex flex-col gap-3">
       <Link
         href="/log"
-        className="-mb-4 flex w-fit items-center gap-0.5 px-3 pt-4 text-sm font-medium text-primary"
+        className="-mb-4 flex w-fit items-center gap-0.5 px-3 pt-4 text-sm font-bold text-primary"
       >
         <ChevronLeft aria-hidden className="size-4" />
         {tNav('log')}

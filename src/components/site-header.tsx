@@ -14,7 +14,7 @@ export async function SiteHeader({ name, image }: { name: string; image: string 
     <header className="sticky top-0 z-40 flex h-16 items-center gap-3 px-4">
       <Link href="/" className="flex items-center gap-2.5">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/icon-192x192.png" alt="" className="size-8 rounded-lg" />
+        <img src="/icon-192x192.png" alt="" className="size-8 rounded-xl" />
         <span className="text-lg font-bold tracking-tight">{tMeta('title')}</span>
       </Link>
       <div className="ml-auto flex items-center gap-2">

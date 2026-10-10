@@ -58,7 +58,7 @@ export async function LogCalendar({
         >
           <ChevronLeft aria-hidden className="size-5" />
         </Link>
-        <span className="text-[17px] font-bold">
+        <span className="text-lg font-extrabold">
           {format.dateTime(utc(first), { year: 'numeric', month: 'long', timeZone: 'UTC' })}
         </span>
         <Link
@@ -69,7 +69,7 @@ export async function LogCalendar({
           <ChevronRight aria-hidden className="size-5" />
         </Link>
       </div>
-      <div className="grid grid-cols-7 text-center text-xs font-medium text-muted-foreground">
+      <div className="grid grid-cols-7 text-center text-xs font-semibold text-muted-foreground">
         {weekdays.map((weekday, i) => (
           <span key={i} className="py-1">
             {weekday}
@@ -87,7 +87,7 @@ export async function LogCalendar({
               </span>
             </>
           );
-          const className = `flex h-12 flex-col items-center justify-center gap-1 rounded-xl text-[15px] tabular-nums ${
+          const className = `flex h-12 flex-col items-center justify-center gap-1 rounded-xl text-base tabular-nums ${
             cell === today ? 'font-bold text-primary' : ''
           }`;
           return cell > today ? (

@@ -5,7 +5,7 @@ import { ActionForm } from '@/components/action-form';
 import { useActionState, useState } from 'react';
 import { saveTargetAction } from '@/app/actions/targets';
 import { MarkInput } from '@/components/measure-inputs';
-import { Stat } from '@/components/layout-ui';
+import { LABEL, Stat } from '@/components/layout-ui';
 import { Button } from '@/components/ui/button';
 import type { JumpEvent } from '@/lib/events';
 import { formatMarkParts, type Units } from '@/lib/units';
@@ -49,7 +49,7 @@ export function MarkEditor({
         action={action}
         className="flex flex-col gap-2 rounded-2xl bg-card p-3 text-card-foreground"
       >
-        <span className="text-[13px] font-medium text-muted-foreground">{label}</span>
+        <span className={LABEL}>{label}</span>
         <input type="hidden" name="event" value={event} />
         <input type="hidden" name="field" value={field} />
         <MarkInput name="markM" units={units} defaultMeters={manual} autoFocus />

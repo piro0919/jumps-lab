@@ -150,6 +150,7 @@
     "windAided": "追い風参考"
   },
   "calendar": {
+    "add": "追加",
     "addCompetition": "大会を追加",
     "editCompetition": "大会を編集",
     "competitionName": "大会名",
