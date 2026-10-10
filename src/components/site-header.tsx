@@ -10,7 +10,8 @@ import { AppIcon, Wordmark } from '@/components/layout-ui';
  * 画面の上端に貼り付く、幅いっぱいのヘッダー（手本の Strava）。
  * 左にアイコンと名前、幅 1024px 以上は真ん中に画面の切り替え。
  * 右端に今日の記録を足すボタン（スマホは下のタブの真ん中にあるので出さない）と、自分のアイコン（設定とログアウト）。
- * 地の色と下の線は付けない（本人、2026-10-11）。左のアイコンと右の自分のアイコンは、
+ * 地は画面の地の色を 7 割の濃さで塗ったすりガラス、下の線は付けない（本人、2026-10-11。はじめは地なしで、
+ * 下を流れる本文と重なっていた）。左のアイコンと右の自分のアイコンは、
  * 「今日を記録」のボタンと同じ 36px にそろえる（32px だと小さく見えると言われた）。
  * minimal はようこその画面用。まだプロフィールが無く、ほかの画面へ進めないので、切り替えと記録のボタンを出さない
  */
@@ -32,7 +33,7 @@ export async function SiteHeader({
   const tLog = await getTranslations('log');
 
   return (
-    <header className="sticky top-0 z-40 flex h-16 items-center gap-6 px-4 lg:grid lg:grid-cols-[1fr_auto_1fr]">
+    <header className="sticky top-0 z-40 flex h-16 items-center gap-6 bg-background/70 px-4 backdrop-blur-xl backdrop-saturate-150 lg:grid lg:grid-cols-[1fr_auto_1fr]">
       <Link href="/" className="flex w-fit items-center gap-2.5">
         <AppIcon size="header" />
         <Wordmark size="header">{tMeta('title')}</Wordmark>
