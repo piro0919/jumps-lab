@@ -97,25 +97,24 @@ function ProfileFields({
           ))}
         </Select>
       </Field>
-      <Field label={t('gender')}>
-        <Select name="gender" defaultValue={initial?.gender ?? ''}>
-          <option value="">{t('notSet')}</option>
-          <option value="male">{tGenders('male')}</option>
-          <option value="female">{tGenders('female')}</option>
-          <option value="other">{tGenders('other')}</option>
-        </Select>
+      {/* 性別は1行を取り、身長と体重を次の行に横並びにする */}
+      <div className="col-span-2">
+        <Field label={t('gender')}>
+          <Select name="gender" defaultValue={initial?.gender ?? ''}>
+            <option value="">{t('notSet')}</option>
+            <option value="male">{tGenders('male')}</option>
+            <option value="female">{tGenders('female')}</option>
+            <option value="other">{tGenders('other')}</option>
+          </Select>
+        </Field>
+      </div>
+      {/* 身長と体重は横に並べる（本人、2026-10-11）。単位を切り替えたら、保存済みの値からやり直す（換算の途中の値を混ぜない） */}
+      <Field label={t('height')}>
+        <HeightInput key={units} name="heightCm" units={units} defaultCm={initial?.heightCm} />
       </Field>
-      {/* 単位を切り替えたら、保存済みの値からやり直す（換算の途中の値を混ぜない） */}
-      <div className="col-span-2">
-        <Field label={t('height')}>
-          <HeightInput key={units} name="heightCm" units={units} defaultCm={initial?.heightCm} />
-        </Field>
-      </div>
-      <div className="col-span-2">
-        <Field label={t('weight')}>
-          <WeightInput key={units} name="weightKg" units={units} defaultKg={initial?.weightKg} />
-        </Field>
-      </div>
+      <Field label={t('weight')}>
+        <WeightInput key={units} name="weightKg" units={units} defaultKg={initial?.weightKg} />
+      </Field>
     </div>
   );
 }
