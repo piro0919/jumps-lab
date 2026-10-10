@@ -91,7 +91,7 @@ export default function Privacy() {
       <h2>10. 変更</h2>
       <p>
         内容を変えたときは、このページを書き換えてお知らせします。利用条件は
-        <Link href="/terms" className="text-primary">
+        <Link href="/terms" className="underline">
           利用規約
         </Link>
         にあります。

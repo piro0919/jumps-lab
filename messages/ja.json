@@ -120,9 +120,7 @@
     "useLocation": "現在地の天気を表示",
     "locationDenied": "位置情報が使えません",
     "wind": "風 {speed} m/s",
-    "clear": "消去",
-    "jumps": "本数",
-    "daysLogged": "記録した日"
+    "clear": "消去"
   },
   "weather": {
     "clear": "晴れ",

@@ -64,6 +64,7 @@ Copy the shape of `~/Repository/onigiri` (which itself copies vocafy). Read its 
   - Choices: pick exactly one → a switch (`SEGMENTS` + `segmentClass`; gender, theme, list/calendar, kind); pick several → separate pills (events). The owner caught gender drawn as pills next to the multi-select events (2026-10-11)
   - Radius: full (buttons, badges, pills), xl (inputs, rows), 2xl (small panels inside a card), 3xl (cards)
   - Spacing: gap-3 between cards, p-5 inside, gap-4 between blocks inside a card
+  - Colors (owner, 2026-10-11: buttons looked too colorful): no accent color. Buttons you press, selected switches and links are ink (`primary` now has the same value as the text color). Color only comes from the four event colors, the neon `brand` on "Log today", and red `destructive` for delete confirmations. No Tailwind palette classes (blue-600 etc.) outside the weather card's skies
   - No hex colors outside Google's button and the OG image
   - Header buttons beside a page title must fit at 375px in English: a short verb ("Add"), the title says what
 - No ORM (decided 2026-10-11): the data layer is one file of raw SQL in `src/lib/data.ts`; catch mistakes with tests instead of code generation

@@ -89,6 +89,19 @@ describe('見た目の決まり', () => {
     expect(tags).toEqual([]);
   });
 
+  it('Tailwind の色の名前（blue-600 など）を使わない（天気の空の色だけ例外）', () => {
+    expect(
+      offenders(
+        (l) =>
+          /\b(bg|text|from|via|to|fill|stroke|border|ring|accent)-(slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\d/.test(
+            l,
+          ),
+        // 天気のカードは空の色のグラデーションを天気ごとに持つ
+        ['components/weather-card.tsx'],
+      ),
+    ).toEqual([]);
+  });
+
   it('色を直に書かない（Google のボタンの決まりの色だけ例外）', () => {
     expect(
       offenders(

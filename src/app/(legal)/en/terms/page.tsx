@@ -63,7 +63,7 @@ export default function TermsEn() {
 
       <p>
         How we handle your information is described in the{' '}
-        <Link href="/en/privacy" className="text-primary">
+        <Link href="/en/privacy" className="underline">
           Privacy Policy
         </Link>
         .

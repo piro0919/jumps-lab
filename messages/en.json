@@ -120,9 +120,7 @@
     "useLocation": "Show weather here",
     "locationDenied": "Location is off",
     "wind": "Wind {speed} m/s",
-    "clear": "Clear",
-    "jumps": "Jumps",
-    "daysLogged": "Days logged"
+    "clear": "Clear"
   },
   "weather": {
     "clear": "Clear",

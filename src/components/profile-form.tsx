@@ -182,7 +182,7 @@ function RecordFields({
                 aria-pressed={on}
                 onClick={() => onToggle(event)}
                 className={`h-9 rounded-full px-3 text-sm font-semibold transition active:scale-[0.98] ${
-                  on ? 'bg-secondary text-primary' : 'bg-muted text-muted-foreground'
+                  on ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground'
                 }`}
               >
                 {tEvents(event)}
@@ -234,7 +234,7 @@ function SaveRow({
   return (
     <div className="flex items-center justify-end gap-3">
       <ErrorText>{state?.ok === false ? tErrors(state.error as 'generic') : null}</ErrorText>
-      {state?.ok && !pending && <span className="text-sm text-good">{t('saved')}</span>}
+      {state?.ok && !pending && <span className="text-sm text-muted-foreground">{t('saved')}</span>}
       <Button type="submit" disabled={pending || disabled}>
         {label}
       </Button>

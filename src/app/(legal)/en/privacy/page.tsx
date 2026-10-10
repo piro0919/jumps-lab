@@ -99,7 +99,7 @@ export default function PrivacyEn() {
       <h2>10. Changes</h2>
       <p>
         When we change this policy, we will update this page. The terms of use are in the{' '}
-        <Link href="/en/terms" className="text-primary">
+        <Link href="/en/terms" className="underline">
           Terms of Use
         </Link>
         .

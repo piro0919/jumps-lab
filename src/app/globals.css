@@ -18,7 +18,6 @@
   --font-heading: var(--font-sans);
   --font-display: var(--font-barlow), var(--font-sans);
   --font-logo: var(--font-kanit), var(--font-sans);
-  --color-good: var(--good);
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
   /*
@@ -72,14 +71,14 @@
   --popover: #ffffff;
   --popover-foreground: #1c1c1e;
   /*
-   * 選んでいるもの・戻るリンクの青。白い字を載せても、薄い青や灰色の地の上の字にしても 4.5 を超える濃さ
-   * （#1e6fd9 だと薄い青の地で 4.21・灰色の地で 4.35 に落ちた。2026-10-11 に測って濃くした）
+   * 差し色は持たない（本人、2026-10-11「ボタンがやたらカラフル」）。選んでいるもの・押すボタン・リンクは
+   * すべて文字の色（黒）。色が付くのは、種目の4色・「今日を記録」の黄緑（--brand）・消すときの赤だけ
    */
-  --primary: #1a64c8;
+  --primary: #1c1c1e;
   --primary-foreground: #ffffff;
   /* 控えめなボタン（追加・キャンセル）と、選ばれていることの表示 */
-  --secondary: #e6f0fc;
-  --secondary-foreground: #1a64c8;
+  --secondary: #e5e5ea;
+  --secondary-foreground: #1c1c1e;
   /* 入力欄の地 */
   --muted: #f2f2f7;
   /* 白い面の上で 4.5 を超える灰色 */
@@ -88,7 +87,6 @@
   --accent: #ebebf0;
   --accent-foreground: #1c1c1e;
   --destructive: #d0312d;
-  --good: #1f8a4c;
   /*
    * 記録を足すボタンだけの色（蛍光の黄緑に黒い字、コントラスト 17）。若い選手の気分が上がる1色として、
    * 手本の Strava のオレンジの代わりに置く（オレンジは走幅跳の色とぶつかる）。ほかには使わない
@@ -101,7 +99,7 @@
   --pole-vault-ink: #a21caf;
   --border: #e5e5ea;
   --input: #e5e5ea;
-  --ring: #1a64c8;
+  --ring: #8e8e93;
   --radius: 0.75rem;
 }
 
@@ -113,16 +111,15 @@
   --card-foreground: #f2f2f7;
   --popover: #1c1c1e;
   --popover-foreground: #f2f2f7;
-  --primary: #4b93f0;
-  --primary-foreground: #0b1a2e;
-  --secondary: #15243a;
-  --secondary-foreground: #4b93f0;
+  --primary: #f2f2f7;
+  --primary-foreground: #1c1c1e;
+  --secondary: #2c2c2e;
+  --secondary-foreground: #f2f2f7;
   --muted: #2c2c2e;
   --muted-foreground: #a1a1a8;
   --accent: #2c2c2e;
   --accent-foreground: #f2f2f7;
   --destructive: #ff6b66;
-  --good: #4cc27d;
   --brand: #d4ff3a;
   --brand-foreground: #111111;
   --high-jump-ink: #60a5fa;
@@ -131,7 +128,7 @@
   --pole-vault-ink: #e879f9;
   --border: #2c2c2e;
   --input: #3a3a3c;
-  --ring: #4b93f0;
+  --ring: #8e8e93;
 }
 
 @layer base {

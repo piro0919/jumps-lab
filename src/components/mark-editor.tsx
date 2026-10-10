@@ -91,7 +91,7 @@ export function MarkEditor({
             {/* 手で入れた値があるときだけ、消す（記録から出した値に戻す）ボタンを出す */}
             {manual !== null && (
               <Button
-                variant="destructive"
+                variant="secondary"
                 type="submit"
                 name="markM"
                 value=""

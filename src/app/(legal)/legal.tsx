@@ -39,7 +39,7 @@ export function Legal({
         <Link href="/" className="font-bold">
           Jumps Lab
         </Link>
-        <Link href={locale === 'ja' ? `/en/${doc}` : `/${doc}`} className="text-primary">
+        <Link href={locale === 'ja' ? `/en/${doc}` : `/${doc}`} className="underline">
           {copy.other}
         </Link>
       </div>

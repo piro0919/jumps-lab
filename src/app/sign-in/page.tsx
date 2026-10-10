@@ -36,12 +36,12 @@ export default async function SignIn() {
         <p className="text-center text-xs leading-relaxed text-balance text-muted-foreground [word-break:auto-phrase]">
           {tSignIn.rich('consent', {
             terms: (chunks) => (
-              <Link href={`${prefix}/terms`} className="text-primary underline">
+              <Link href={`${prefix}/terms`} className="text-foreground underline">
                 {chunks}
               </Link>
             ),
             privacy: (chunks) => (
-              <Link href={`${prefix}/privacy`} className="text-primary underline">
+              <Link href={`${prefix}/privacy`} className="text-foreground underline">
                 {chunks}
               </Link>
             ),
