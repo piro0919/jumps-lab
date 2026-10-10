@@ -1,6 +1,7 @@
 import 'server-only';
 import { db } from '@/lib/db';
 import type { JumpEvent } from '@/lib/events';
+import type { Grade } from '@/lib/profile-options';
 import type { Units } from '@/lib/units';
 
 /**
@@ -13,7 +14,10 @@ const num = (value: string | null): number | null => (value === null ? null : Nu
 
 export type Profile = {
   name: string;
-  grade: string | null;
+  /** 手で選んだ学年。学年を計算する人（src/lib/grade.ts の computesGrade）は使わない */
+  grade: Grade | null;
+  /** 計算した学年とのずれ（年数） */
+  gradeOffset: number;
   birthdate: string | null;
   gender: 'male' | 'female' | 'other' | null;
   heightCm: number | null;
@@ -32,7 +36,7 @@ type ProfileRow = Omit<Profile, 'heightCm' | 'weightKg'> & {
 
 export async function getProfile(userId: string): Promise<Profile | null> {
   const { rows } = await db().query<ProfileRow>(
-    `select u.name, p.grade, to_char(p.birthdate, 'YYYY-MM-DD') as birthdate, p.gender, p."heightCm", p."weightKg", p.events,
+    `select u.name, p.grade, p."gradeOffset", to_char(p.birthdate, 'YYYY-MM-DD') as birthdate, p.gender, p."heightCm", p."weightKg", p.events,
             p."currentEvent", p.units, p."seasonStartMonth", p."timeZone"
        from profile p join "user" u on u.id = p."userId"
       where p."userId" = $1`,
@@ -59,11 +63,12 @@ export async function saveProfile(userId: string, input: ProfileInput): Promise<
       input.name,
     ]);
     await client.query(
-      `insert into profile ("userId", grade, birthdate, gender, "heightCm", "weightKg", events,
+      `insert into profile ("userId", grade, "gradeOffset", birthdate, gender, "heightCm", "weightKg", events,
                             "currentEvent", units, "seasonStartMonth", "timeZone")
-       values ($1, $2, $3, $4, $5, $6, $7::text[], ($7::text[])[1], $8, $9, $10)
+       values ($1, $2, $11, $3, $4, $5, $6, $7::text[], ($7::text[])[1], $8, $9, $10)
        on conflict ("userId") do update set
-         grade = excluded.grade, birthdate = excluded.birthdate, gender = excluded.gender,
+         grade = excluded.grade, "gradeOffset" = excluded."gradeOffset",
+         birthdate = excluded.birthdate, gender = excluded.gender,
          "heightCm" = excluded."heightCm", "weightKg" = excluded."weightKg",
          events = excluded.events,
          "currentEvent" = case when profile."currentEvent" = any(excluded.events)
@@ -81,6 +86,7 @@ export async function saveProfile(userId: string, input: ProfileInput): Promise<
         input.units,
         input.seasonStartMonth,
         input.timeZone,
+        input.gradeOffset,
       ],
     );
     if (input.goalM !== null) {

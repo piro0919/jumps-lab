@@ -3,6 +3,8 @@ import { ProfileForm } from '@/components/profile-form';
 import { SignOutButton } from '@/components/sign-out-button';
 import { PageTitle } from '@/components/ui';
 import { getProfile } from '@/lib/data';
+import { todayIn } from '@/lib/dates';
+import { currentGrade } from '@/lib/grade';
 import { requireViewer } from '@/lib/viewer';
 
 export default async function Settings() {
@@ -16,6 +18,13 @@ export default async function Settings() {
       <ProfileForm
         from="settings"
         initial={profile}
+        initialGrade={currentGrade(
+          profile.birthdate,
+          profile.timeZone,
+          profile.gradeOffset,
+          profile.grade,
+          todayIn(profile.timeZone),
+        )}
         defaultName={profile.name}
         locale={await getLocale()}
       />

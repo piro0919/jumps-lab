@@ -10,6 +10,17 @@ A record-keeping service for jumpers (high jump, long jump, triple jump, pole va
 - Reference only: <https://choyaku.renren-life.com/>
 - Look and interaction are rebuilt for usability, modeled on the workout app **Strong** (open a session, add attempts one by one, bests detected automatically, bottom tabs). Check the real Strong screens before building a screen.
 
+## Built for the whole world
+
+The owner will make this app usable worldwide (said 2026-10-11). Do not design anything that only works in Japan.
+
+- Before adding anything that depends on a country (school years, week start, dates, units, holidays, laws), decide what happens outside Japan first
+- Grade: computed from the date of birth only for users whose time zone is Asia/Tokyo (Japanese school year: April, born April 2 to April 1). Everyone else picks it by hand. Stored as `grade` (manual) or `gradeOffset` (years off the computation)
+- Still Japan-shaped, to revisit before going global:
+  - The grade choices are the Japanese system (junior high, high school, college)
+  - The calendar week starts on Sunday for everyone
+  - Terms are under Japanese law with the Japanese text authoritative
+
 ## Decisions (agreed 2026-10-11)
 
 - Name: Jumps Lab. URL: jumpslab.kkweb.io

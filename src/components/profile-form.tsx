@@ -8,6 +8,8 @@ import { HeightInput, MarkInput, WeightInput } from '@/components/measure-inputs
 import { Card, ErrorText, Field, Input, PrimaryButton, Select } from '@/components/ui';
 import type { Profile } from '@/lib/data';
 import { EVENTS } from '@/lib/events';
+import { todayIn } from '@/lib/dates';
+import { computesGrade, gradeFromNumber, gradeNumber } from '@/lib/grade';
 import { GRADES } from '@/lib/profile-options';
 import type { Units } from '@/lib/units';
 
@@ -20,11 +22,14 @@ const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
 export function ProfileForm({
   from,
   initial,
+  initialGrade,
   defaultName,
   locale,
 }: {
   from: 'welcome' | 'settings';
   initial: Profile | null;
+  /** いまの学年（計算する人は計算した値） */
+  initialGrade: string | null;
   defaultName: string;
   locale: string;
 }) {
@@ -44,6 +49,15 @@ export function ProfileForm({
       timeZoneRef.current.value = Intl.DateTimeFormat().resolvedOptions().timeZone;
     }
   }, []);
+
+  // 学年。生年月日を入れたら、日本の時間帯の人には計算した学年を入れる（直してよい）。
+  // 保存する側でも同じ線で決める（src/app/actions/profile.ts）
+  const [grade, setGrade] = useState<string>(initialGrade ?? '');
+  const fillGrade = (birthdate: string) => {
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(birthdate) || !computesGrade(birthdate, timeZone)) return;
+    setGrade(gradeFromNumber(gradeNumber(birthdate, todayIn(timeZone))) ?? '');
+  };
 
   const monthName = (month: number) =>
     new Intl.DateTimeFormat(locale, { month: 'long' }).format(new Date(2026, month - 1, 1));
@@ -105,23 +119,24 @@ export function ProfileForm({
       </Card>
 
       <Card className="grid grid-cols-2 gap-4">
-        <Field label={t('grade')}>
-          <Select name="grade" defaultValue={initial?.grade ?? ''}>
-            <option value="">{t('notSet')}</option>
-            {GRADES.map((grade) => (
-              <option key={grade} value={grade}>
-                {tGrades(grade)}
-              </option>
-            ))}
-          </Select>
-        </Field>
         <Field label={t('birthdate')}>
           <Input
             name="birthdate"
             type="date"
             min="1900-01-01"
             defaultValue={initial?.birthdate ?? ''}
+            onChange={(e) => fillGrade(e.target.value)}
           />
+        </Field>
+        <Field label={t('grade')}>
+          <Select name="grade" value={grade} onChange={(e) => setGrade(e.target.value)}>
+            <option value="">{t('notSet')}</option>
+            {GRADES.map((value) => (
+              <option key={value} value={value}>
+                {tGrades(value)}
+              </option>
+            ))}
+          </Select>
         </Field>
         <Field label={t('gender')}>
           <Select name="gender" defaultValue={initial?.gender ?? ''}>

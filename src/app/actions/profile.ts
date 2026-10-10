@@ -4,9 +4,10 @@ import { refresh } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { saveProfile, setCurrentEvent } from '@/lib/data';
-import { isTimeZone } from '@/lib/dates';
+import { isTimeZone, todayIn } from '@/lib/dates';
 import { EVENTS, isJumpEvent } from '@/lib/events';
 import { type ActionResult, optionalNumber } from '@/lib/form';
+import { computesGrade, offsetFor } from '@/lib/grade';
 import { GRADES } from '@/lib/profile-options';
 import { requireViewer } from '@/lib/viewer';
 
@@ -52,8 +53,21 @@ export async function saveProfileAction(
     return { ok: false, error: message === 'name' || message === 'events' ? message : 'generic' };
   }
 
+  // 学年を計算する人は、選んだ学年を計算とのずれに直して持つ（学年そのものは保存しない）。
+  // ほかの人は選んだ学年をそのまま持つ
+  const { grade: chosen, birthdate, timeZone } = parsed.data;
+  const computes = computesGrade(birthdate, timeZone);
+  const gradeOffset =
+    computes && chosen
+      ? Math.max(-10, Math.min(10, offsetFor(birthdate, chosen, todayIn(timeZone))))
+      : 0;
+
   try {
-    await saveProfile(viewer.userId, parsed.data);
+    await saveProfile(viewer.userId, {
+      ...parsed.data,
+      grade: computes ? null : chosen,
+      gradeOffset,
+    });
   } catch (error) {
     console.error(error);
     return { ok: false, error: 'generic' };

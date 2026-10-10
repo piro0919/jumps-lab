@@ -17,6 +17,7 @@ export default async function Welcome() {
       <ProfileForm
         from="welcome"
         initial={null}
+        initialGrade={null}
         defaultName={viewer.name}
         locale={await getLocale()}
       />

@@ -12,3 +12,5 @@ export const GRADES = [
   'univ4',
   'adult',
 ] as const;
+
+export type Grade = (typeof GRADES)[number];
