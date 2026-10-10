@@ -19,6 +19,8 @@
   --font-heading: var(--font-sans);
   --font-display: var(--font-barlow), var(--font-sans);
   --color-good: var(--good);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
   /* 種目の色。白い字を載せて 4.5 を超える濃さ（走高跳 4.85・走幅跳 5.18・三段跳 5.12・棒高跳 7.10） */
   --color-high-jump: #1e6fd9;
   --color-long-jump: #c2410c;
@@ -75,6 +77,12 @@
   --accent-foreground: #1c1c1e;
   --destructive: #d0312d;
   --good: #1f8a4c;
+  /*
+   * 記録を足すボタンだけの色（蛍光の黄緑に黒い字、コントラスト 17）。若い選手の気分が上がる1色として、
+   * 手本の Strava のオレンジの代わりに置く（オレンジは走幅跳の色とぶつかる）。ほかには使わない
+   */
+  --brand: #d4ff3a;
+  --brand-foreground: #111111;
   --border: #e5e5ea;
   --input: #e5e5ea;
   --ring: #1e6fd9;
@@ -99,6 +107,8 @@
   --accent-foreground: #f2f2f7;
   --destructive: #ff6b66;
   --good: #4cc27d;
+  --brand: #d4ff3a;
+  --brand-foreground: #111111;
   --border: #2c2c2e;
   --input: #3a3a3c;
   --ring: #4b93f0;

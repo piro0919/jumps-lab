@@ -1,8 +1,16 @@
-import { ChevronRight, Plus } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
-import { buttonVariants } from '@/components/ui/button';
-import { Badge, DisplayNumber, PageTitle, SectionTitle, Watermark } from '@/components/layout-ui';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  Badge,
+  Card,
+  DisplayNumber,
+  PageTitle,
+  SectionTitle,
+  Stat,
+  Watermark,
+} from '@/components/layout-ui';
 import { MarkEditor } from '@/components/mark-editor';
 import { WeatherCard } from '@/components/weather-card';
 import { computeBests } from '@/lib/bests';
@@ -90,7 +98,52 @@ async function EventHero({
   );
 }
 
-/** ホーム。本人の選んだ種目ごとの色付きのカードと、次の大会・天気 */
+/**
+ * 自分のカード（手本の Strava のホームの左の列）。顔・名前・種目と、跳んだ本数・記録した日の数。
+ * 幅 1024px 以上だけに出す
+ */
+async function ProfileCard({
+  name,
+  image,
+  events,
+  jumps,
+  daysLogged,
+}: {
+  name: string;
+  image: string | null;
+  events: JumpEvent[];
+  jumps: number;
+  daysLogged: number;
+}) {
+  const t = await getTranslations('home');
+  const tEvents = await getTranslations('events');
+
+  return (
+    <Card className="flex flex-col items-center gap-4 text-center">
+      <Avatar className="size-20">
+        {image && <AvatarImage src={image} alt="" referrerPolicy="no-referrer" />}
+        <AvatarFallback>{name.slice(0, 1).toUpperCase()}</AvatarFallback>
+      </Avatar>
+      <SectionTitle>{name}</SectionTitle>
+      <div className="flex flex-wrap justify-center gap-1.5">
+        {events.map((event) => (
+          <Badge key={event} tone="solid" className={EVENT_BG[event]}>
+            {tEvents(event)}
+          </Badge>
+        ))}
+      </div>
+      <div className="grid w-full grid-cols-2 gap-2 border-t border-border pt-4">
+        <Stat size="sm" value={jumps} label={t('jumps')} />
+        <Stat size="sm" value={daysLogged} label={t('daysLogged')} />
+      </div>
+    </Card>
+  );
+}
+
+/**
+ * ホーム。幅 1024px 以上は3列（手本の Strava のホーム）：左に自分のカード、真ん中に種目ごとの色付きのカード、
+ * 右に次の大会と天気。スマホは種目のカードから縦に積む
+ */
 export default async function Home() {
   const viewer = await requireViewer();
   const profile = (await getProfile(viewer.userId))!;
@@ -102,23 +155,22 @@ export default async function Home() {
   ]);
   const t = await getTranslations('home');
   const tNav = await getTranslations('nav');
-  const tLog = await getTranslations('log');
   const days = competition ? daysBetween(today, competition.day) : null;
 
   return (
     <main className="flex flex-col gap-3">
-      <PageTitle
-        action={
-          <Link href="/log/today" className={buttonVariants({ size: 'sm' })}>
-            <Plus aria-hidden className="size-4" />
-            {tLog('recordToday')}
-          </Link>
-        }
-      >
-        {tNav('home')}
-      </PageTitle>
+      <PageTitle>{tNav('home')}</PageTitle>
 
-      <div className="flex flex-col gap-3 lg:grid lg:grid-cols-2 lg:items-start">
+      <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[17rem_1fr_19rem] lg:items-start">
+        <div className="hidden lg:block">
+          <ProfileCard
+            name={profile.name}
+            image={viewer.image}
+            events={profile.events}
+            jumps={attempts.length}
+            daysLogged={new Set(attempts.map((a) => a.day)).size}
+          />
+        </div>
         <div className="flex flex-col gap-3">
           {profile.events.map((event) => {
             const target = targets.get(event)!;

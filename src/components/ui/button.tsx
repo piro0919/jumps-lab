@@ -6,7 +6,7 @@ import { cn } from 'cn';
  * ボタンの決まり（shadcn/ui の生成物を、この画面の決まりに書き換えたもの）。
  * 形はどれも丸いボタン（手本の Nike Run Club）。置く場所で寸法を足さず、variant と size で選ぶ。
  *
- * variant: default（黒。押すと結果が起きるもの）・secondary（灰色。追加以外の控えめな操作・キャンセル）・
+ * variant: brand（蛍光の黄緑。今日の記録を足す入口だけ）・default（黒。押すと結果が起きるもの）・secondary（灰色。追加以外の控えめな操作・キャンセル）・
  *          ghost（地なし。アイコンだけのボタン）・destructive（消す）・outline（確認の窓のキャンセル）
  * size:    sm（36px。見出しの横・カードの中）・default（44px。フォームの下の送信）・icon（36px 角）
  *
@@ -18,6 +18,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: 'bg-foreground text-background hover:bg-foreground/85',
+        brand: 'bg-brand text-brand-foreground shadow-sm hover:brightness-95',
         secondary: 'bg-muted text-foreground hover:bg-accent',
         ghost: 'text-muted-foreground hover:bg-accent hover:text-foreground',
         destructive: 'bg-destructive/10 text-destructive hover:bg-destructive/20',

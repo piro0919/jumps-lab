@@ -11,13 +11,15 @@ import { requireViewer } from '@/lib/viewer';
 
 /**
  * 1日分の記録と体調。/log/today は本人の時間帯での今日を開く。
- * 先の日は記録できないので今日へ送る（日付の形でないものも同じ）
+ * 先の日は記録できないので今日へ送る（日付の形でないものも同じ）。?add=1 で追加の窓を開いて出す
  */
-export default async function LogDay({ params }: PageProps<'/log/[day]'>) {
+export default async function LogDay({ params, searchParams }: PageProps<'/log/[day]'>) {
   const viewer = await requireViewer();
   const profile = (await getProfile(viewer.userId))!;
   const today = todayIn(profile.timeZone);
   const { day: requested } = await params;
+  // 下のタブの真ん中とヘッダーの「今日を記録」から来たら、追加の窓を開いた状態で出す
+  const { add } = await searchParams;
   if (requested !== 'today' && (!/^\d{4}-\d{2}-\d{2}$/.test(requested) || requested > today)) {
     redirect('/log/today');
   }
@@ -52,7 +54,13 @@ export default async function LogDay({ params }: PageProps<'/log/[day]'>) {
             })}
       </PageTitle>
       <div className="flex flex-col gap-3 lg:grid lg:grid-cols-2 lg:items-start">
-        <AttemptsCard day={day} events={profile.events} units={profile.units} attempts={attempts} />
+        <AttemptsCard
+          day={day}
+          events={profile.events}
+          units={profile.units}
+          attempts={attempts}
+          startAdding={add === '1'}
+        />
         <DayLogForm day={day} log={log} />
       </div>
     </main>

@@ -9,6 +9,7 @@ A record-keeping service for jumpers (high jump, long jump, triple jump, pole va
 - Spec source: <https://earnest-peony-78beee.netlify.app/> (the friend's prototype, "跳躍ラボ"). Clone its **spec only**.
 - Reference only: <https://choyaku.renren-life.com/>
 - Look and interaction are rebuilt for usability. The visual model is **Nike Run Club** (since 2026-10-11; Strong was the first model and the screens kept the prototype's stacked cards, which the owner found uncool): numbers are the hero in Barlow Condensed extra bold italic with the label small below, secondary numbers in a row, rounded pill switches with the chosen one filled, recent items as cards with a row of numbers. Check the real NRC screens before building a screen.
+- The frame follows **Strava** (since 2026-10-11; the owner wanted a sporty service instead of koidamashii and spatto). Read from the signed-in strava.com: the menu sits in the header, settings only in the avatar menu, the home is three columns (own card, feed, side cards), one loud color only on the action. The app's bottom tabs have Record in the middle. Take what fits, not everything (owner). The users are young athletes: aim for something that gets them fired up
 
 ## Built for the whole world
 
@@ -32,7 +33,7 @@ The owner will make this app usable worldwide (said 2026-10-11). Do not design a
 - Features in v1 (same as the prototype):
   - Profile: name, grade, date of birth (replaced age, agreed 2026-10-11), gender, height, weight, events, goal
   - Home: season goal, PB / SB / practice best, weather (Open-Meteo, location permission), days until next competition
-  - Menu (agreed 2026-10-11): Home, Log, Competitions, Analysis. Settings from the avatar menu and the bottom of the side menu
+  - Menu (agreed 2026-10-11): Home, Log, Competitions, Analysis. Settings from the avatar menu only
   - No app-wide "current event" (dropped 2026-10-11): home shows one card per chosen event, a day lists every event's attempts grouped by event, the event is picked in the add-mark drawer, and only analysis filters by event (`?event=`)
   - Log: days with marks or a condition, newest first, with a calendar view; a day (`/log/YYYY-MM-DD`, `/log/today`) holds its attempts, condition (physical condition 1–10, fatigue 1–10, sleep hours, injury note) and practice note
   - Attempt: one at a time, with type (practice / competition), mark, wind (optional), note
@@ -117,7 +118,9 @@ Copy the shape of `~/Repository/onigiri` (which itself copies vocafy). Read its 
 ### Screens
 
 - Light theme only for now (owner, 2026-10-11: "いったんライトで固定"). Dark values are parked under `.dark`, which nothing applies; see the comment at the top of globals.css to restore
-- Frame (koidamashii and spatto): a sticky full-width header (icon and name left, the account avatar menu right), the menu under it on the left from 1024px, a bottom tab bar on phones. Settings sits in the avatar menu (name, settings, sign out) and at the bottom of the side menu, not in the tabs (agreed 2026-10-11)
+- Frame (Strava): a sticky full-width header with icon and name left, the four menus beside it from 1024px, and on the right "Log today" plus the avatar menu (name, settings, sign out). Phones get a bottom tab bar of Home, Log, a raised round "Log today" in the middle, Competitions, Analysis. "Log today" opens `/log/today?add=1`, which shows the add drawer at once
+- The brand color (neon yellow-green `--brand`, black text) is only for "Log today". Strava's orange clashes with the long jump color
+- Home from 1024px: three columns, own card (photo, name, events, jumps, days logged), event cards, next competition and weather
 - System Japanese font stack; shadcn's Geist (Latin only) was removed
 - Minimum width 375px, `viewportFit: 'cover'` with safe-area insets for the bottom tabs
 - No explanatory text or notes on screens

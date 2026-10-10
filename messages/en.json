@@ -112,7 +112,9 @@
     "locationDenied": "Location is off",
     "wind": "Wind {speed} m/s",
     "edit": "Edit",
-    "clear": "Clear"
+    "clear": "Clear",
+    "jumps": "Jumps",
+    "daysLogged": "Days logged"
   },
   "weather": {
     "clear": "Clear",

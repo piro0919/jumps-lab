@@ -137,6 +137,7 @@ export function AttemptsCard({
   events,
   units,
   attempts,
+  startAdding = false,
 }: {
   day: string;
   /** 本人の選んだ種目 */
@@ -144,10 +145,12 @@ export function AttemptsCard({
   units: Units;
   /** その日の記録（全種目）。古い順 */
   attempts: Attempt[];
+  /** 追加の窓を開いた状態で出す */
+  startAdding?: boolean;
 }) {
   const t = useTranslations('today');
   const tEvents = useTranslations('events');
-  const [adding, setAdding] = useState(false);
+  const [adding, setAdding] = useState(startAdding);
   // 消す前に確かめている記録
   const [removing, setRemoving] = useState<string | null>(null);
   const [, startTransition] = useTransition();
