@@ -15,20 +15,24 @@ export type FeetInches = { feet: number; inches: number };
  * 記録を実際より良く見せないため（米国の換算表と同じ向き）
  */
 export function metersToFeetInches(meters: number): FeetInches {
-  // 浮動小数の誤差で 0.25 の境目を下に割らないよう、ごく小さく足してから切る
-  const quarters = Math.floor((meters / INCH_M) * 4 + 1e-6);
+  // 0.1mm で丸めて持つので、フィート・インチで入れた値はインチに戻すと境目のわずかに下になることがある。
+  // 4分の1インチの 1% （約 0.06mm）だけ足してから切り、入れた値に戻す
+  const quarters = Math.floor((meters / INCH_M) * 4 + 0.01);
   const totalInches = quarters / 4;
   const feet = Math.floor(totalInches / INCHES_PER_FOOT);
   return { feet, inches: totalInches - feet * INCHES_PER_FOOT };
 }
 
+/** フィートとインチをメートルへ。0.1mm で丸める（DB の列と同じ。センチで丸めると戻らない） */
 export function feetInchesToMeters({ feet, inches }: FeetInches): number {
-  return Math.round((feet * INCHES_PER_FOOT + inches) * INCH_M * 100) / 100;
+  return Math.round((feet * INCHES_PER_FOOT + inches) * INCH_M * 10000) / 10000;
 }
 
-/** 記録の表示。metric は「1.85 m」、imperial は「6' 0¾"」 */
+/**
+ * 記録の表示。metric は「1.85 m」（センチで切り捨て。陸上の計測と同じ向き）、imperial は「6' 0¾"」
+ */
 export function formatMark(meters: number, units: Units): string {
-  if (units === 'metric') return `${meters.toFixed(2)} m`;
+  if (units === 'metric') return `${(Math.floor(meters * 100 + 1e-6) / 100).toFixed(2)} m`;
   const { feet, inches } = metersToFeetInches(meters);
   const whole = Math.floor(inches);
   const fraction = ['', '¼', '½', '¾'][Math.round((inches - whole) * 4)];
