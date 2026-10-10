@@ -50,7 +50,7 @@
     "analysis": "分析",
     "settings": "設定",
     "theme": "テーマ",
-    "themeSystem": "端末に合わせる",
+    "themeSystem": "自動",
     "themeLight": "ライト",
     "themeDark": "ダーク"
   },

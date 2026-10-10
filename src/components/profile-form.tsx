@@ -1,5 +1,6 @@
 'use client';
 
+import { cn } from 'cn';
 import { useTranslations } from 'next-intl';
 import { ActionForm } from '@/components/action-form';
 import { useActionState, useEffect, useRef, useState } from 'react';
@@ -16,7 +17,9 @@ import {
   Field,
   FieldLabel,
   Input,
+  SEGMENTS,
   Select,
+  segmentClass,
 } from '@/components/layout-ui';
 import { Button } from '@/components/ui/button';
 import type { Profile } from '@/lib/data';
@@ -35,6 +38,9 @@ import type { Units } from '@/lib/units';
  */
 
 const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
+
+/** 性別の札の並び。空は「未設定」 */
+const GENDERS = ['', 'male', 'female', 'other'] as const;
 
 /** 時間帯はブラウザが知っている。サーバーの描画と食い違わないよう、描いた後に欄へ入れる */
 function TimeZoneInput({ initial }: { initial: string }) {
@@ -65,6 +71,7 @@ function ProfileFields({
   // 学年。生年月日を入れたら、日本の時間帯の人には計算した学年を入れる（直してよい）。
   // 保存する側でも同じ線で決める（src/app/actions/profile.ts）
   const [grade, setGrade] = useState<string>(initialGrade ?? '');
+  const [gender, setGender] = useState<(typeof GENDERS)[number]>(initial?.gender ?? '');
   const fillGrade = (birthdate: string) => {
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     if (!/^\d{4}-\d{2}-\d{2}$/.test(birthdate) || !computesGrade(birthdate, timeZone)) return;
@@ -72,20 +79,37 @@ function ProfileFields({
   };
 
   return (
-    // 2つずつ横に並べる：名前・性別／生年月日・学年／身長・体重（本人、2026-10-11。
-    // 性別だけ1行を取る形は好きじゃないと言われた）
+    // 名前は1行、性別は切り替えを1行に並べ、生年月日・学年と身長・体重はそれぞれ横に並べる。
+    // 性別を長い選択欄で1行にする形と、名前を半分の幅にする形は、どちらも好きじゃないと言われた（本人、2026-10-11）
     <div className="grid grid-cols-2 gap-4">
-      <Field label={t('name')} required={t('required')}>
-        <Input name="name" defaultValue={defaultName} required maxLength={100} />
-      </Field>
-      <Field label={t('gender')}>
-        <Select name="gender" defaultValue={initial?.gender ?? ''}>
-          <option value="">{t('notSet')}</option>
-          <option value="male">{tGenders('male')}</option>
-          <option value="female">{tGenders('female')}</option>
-          <option value="other">{tGenders('other')}</option>
-        </Select>
-      </Field>
+      <div className="col-span-2">
+        <Field label={t('name')} required={t('required')}>
+          <Input name="name" defaultValue={defaultName} required maxLength={100} />
+        </Field>
+      </div>
+      <div className="col-span-2 flex flex-col gap-1.5">
+        <input type="hidden" name="gender" value={gender} />
+        <FieldLabel label={t('gender')} />
+        {/* 1つだけ選ぶものは切り替えの形（複数選べる種目は丸い札。本人、2026-10-11） */}
+        <div
+          role="radiogroup"
+          aria-label={t('gender')}
+          className={cn(SEGMENTS, 'grid w-full grid-cols-4')}
+        >
+          {GENDERS.map((value) => (
+            <button
+              key={value || 'none'}
+              type="button"
+              role="radio"
+              aria-checked={gender === value}
+              onClick={() => setGender(value)}
+              className={cn(segmentClass(gender === value), 'px-2')}
+            >
+              {value === '' ? t('notSet') : tGenders(value)}
+            </button>
+          ))}
+        </div>
+      </div>
       <Field label={t('birthdate')}>
         <Input
           name="birthdate"
@@ -157,7 +181,7 @@ function RecordFields({
                 type="button"
                 aria-pressed={on}
                 onClick={() => onToggle(event)}
-                className={`h-9 rounded-full px-3.5 text-sm font-semibold transition active:scale-[0.98] ${
+                className={`h-9 rounded-full px-3 text-sm font-semibold transition active:scale-[0.98] ${
                   on ? 'bg-secondary text-primary' : 'bg-muted text-muted-foreground'
                 }`}
               >

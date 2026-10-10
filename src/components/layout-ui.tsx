@@ -258,7 +258,7 @@ export function ErrorText({ children }: { children: ReactNode }) {
 
 /**
  * 切り替えの1つ分の見た目（手本の Nike Run Club の W・M・Y・All）。選んだものを丸く塗る。
- * 並べる外側は SEGMENTS
+ * 並べる外側は SEGMENTS。1つだけ選ぶものはこの形にし、複数選べるもの（種目）は離れた丸い札にする
  */
 export function segmentClass(active: boolean) {
   return cn(

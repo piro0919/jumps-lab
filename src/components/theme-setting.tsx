@@ -29,7 +29,11 @@ export function ThemeSetting() {
   );
 
   return (
-    <div role="radiogroup" aria-label={t('theme')} className={cn(SEGMENTS, 'max-w-full flex-wrap')}>
+    <div
+      role="radiogroup"
+      aria-label={t('theme')}
+      className={cn(SEGMENTS, 'grid w-full grid-cols-3')}
+    >
       {OPTIONS.map(({ value, key, Icon }) => {
         const on = mounted && theme === value;
         return (
@@ -39,7 +43,7 @@ export function ThemeSetting() {
             role="radio"
             aria-checked={on}
             onClick={() => setTheme(value)}
-            className={cn(segmentClass(on), 'gap-1.5')}
+            className={cn(segmentClass(on), 'gap-1.5 px-2')}
           >
             <Icon aria-hidden className="size-4" />
             {t(key)}

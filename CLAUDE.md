@@ -61,6 +61,7 @@ Copy the shape of `~/Repository/onigiri` (which itself copies vocafy). Read its 
   - Weights: semibold, bold, extrabold. No medium
   - Numbers: always `DisplayNumber` or `Stat` (giant 88 / hero 64 / md 30 / sm 22). `font-display` is not written anywhere else
   - Badges (best, wind-aided, days left, required, event name, goal gap): `Badge` with a tone. Watermarks: `Watermark`
+  - Choices: pick exactly one → a switch (`SEGMENTS` + `segmentClass`; gender, theme, list/calendar, kind); pick several → separate pills (events). The owner caught gender drawn as pills next to the multi-select events (2026-10-11)
   - Radius: full (buttons, badges, pills), xl (inputs, rows), 2xl (small panels inside a card), 3xl (cards)
   - Spacing: gap-3 between cards, p-5 inside, gap-4 between blocks inside a card
   - No hex colors outside Google's button and the OG image
