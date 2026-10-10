@@ -3,7 +3,7 @@
 import { cn } from 'cn';
 import { useTranslations } from 'next-intl';
 import { ActionForm } from '@/components/action-form';
-import { useActionState, useEffect, useRef, useState } from 'react';
+import { useActionState, useState, useSyncExternalStore } from 'react';
 import {
   saveProfileAction,
   saveProfileDetailsAction,
@@ -26,13 +26,14 @@ import type { Profile } from '@/lib/data';
 import { EVENTS } from '@/lib/events';
 import type { ActionResult } from '@/lib/form';
 import { todayIn } from '@/lib/dates';
-import { computesGrade, gradeFromNumber, gradeNumber } from '@/lib/grade';
+import { computesGrade, gradeFromNumber, gradeNumber, usesGrade } from '@/lib/grade';
 import { GRADES } from '@/lib/profile-options';
 import type { Units } from '@/lib/units';
+import { weekStartFor } from '@/lib/week';
 
 /*
  * プロフィールの入力。本人のこと（名前・生年月日・学年・性別・身長・体重）と、
- * 記録のつけ方（種目・単位・シーズンの始まり）の2つに分ける。
+ * 記録のつけ方（種目・単位・シーズンの始まり・週の始まり）の2つに分ける。
  * 設定の画面ではカードも保存も別々（本人、2026-10-11「別々のほうがわかりやすい」）。
  * 初回（ようこそ画面）は1枚のカードにまとめて、一度に保存する
  */
@@ -42,13 +43,25 @@ const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
 /** 性別の札の並び。空は「未設定」 */
 const GENDERS = ['', 'male', 'female', 'other'] as const;
 
-/** 時間帯はブラウザが知っている。サーバーの描画と食い違わないよう、描いた後に欄へ入れる */
+/** 変わらない値の購読（ブラウザでしか読めない値を、サーバーの描画と食い違わずに読むため） */
+const never = () => () => {};
+
+/** いまのブラウザの時間帯。サーバーで描くときは initial */
+function useBrowserTimeZone(initial: string) {
+  return useSyncExternalStore(
+    never,
+    () => Intl.DateTimeFormat().resolvedOptions().timeZone,
+    () => initial,
+  );
+}
+
+/**
+ * 時間帯はブラウザが知っている。サーバーで描くときは initial、ブラウザではその時間帯を値に持つ。
+ * はじめは描いた後に ref で書き込んでいて、種目を選ぶなどで描き直すたびに React が隠し欄を initial に戻し、
+ * 登録した人の時間帯がみな UTC で保存されていた（2026-10-11 に見つけた）
+ */
 function TimeZoneInput({ initial }: { initial: string }) {
-  const ref = useRef<HTMLInputElement>(null);
-  useEffect(() => {
-    if (ref.current) ref.current.value = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  }, []);
-  return <input ref={ref} type="hidden" name="timeZone" defaultValue={initial} />;
+  return <input type="hidden" name="timeZone" value={useBrowserTimeZone(initial)} />;
 }
 
 /** 本人のこと。身長と体重は units の単位で入れる */
@@ -72,6 +85,8 @@ function ProfileFields({
   // 保存する側でも同じ線で決める（src/app/actions/profile.ts）
   const [grade, setGrade] = useState<string>(initialGrade ?? '');
   const [gender, setGender] = useState<(typeof GENDERS)[number]>(initial?.gender ?? '');
+  // 学年の欄は日本の時間帯の人だけ（保存も同じ線で決める）。保存のときと同じく、いまのブラウザの時間帯で決める
+  const showGrade = usesGrade(useBrowserTimeZone(initial?.timeZone ?? 'UTC'));
   const fillGrade = (birthdate: string) => {
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     if (!/^\d{4}-\d{2}-\d{2}$/.test(birthdate) || !computesGrade(birthdate, timeZone)) return;
@@ -110,25 +125,29 @@ function ProfileFields({
           ))}
         </div>
       </div>
-      <Field label={t('birthdate')}>
-        <Input
-          name="birthdate"
-          type="date"
-          min="1900-01-01"
-          defaultValue={initial?.birthdate ?? ''}
-          onChange={(e) => fillGrade(e.target.value)}
-        />
-      </Field>
-      <Field label={t('grade')}>
-        <Select name="grade" value={grade} onChange={(e) => setGrade(e.target.value)}>
-          <option value="">{t('notSet')}</option>
-          {GRADES.map((value) => (
-            <option key={value} value={value}>
-              {tGrades(value)}
-            </option>
-          ))}
-        </Select>
-      </Field>
+      <div className={showGrade ? undefined : 'col-span-2'}>
+        <Field label={t('birthdate')}>
+          <Input
+            name="birthdate"
+            type="date"
+            min="1900-01-01"
+            defaultValue={initial?.birthdate ?? ''}
+            onChange={(e) => fillGrade(e.target.value)}
+          />
+        </Field>
+      </div>
+      {showGrade && (
+        <Field label={t('grade')}>
+          <Select name="grade" value={grade} onChange={(e) => setGrade(e.target.value)}>
+            <option value="">{t('notSet')}</option>
+            {GRADES.map((value) => (
+              <option key={value} value={value}>
+                {tGrades(value)}
+              </option>
+            ))}
+          </Select>
+        </Field>
+      )}
       {/* 単位を切り替えたら、保存済みの値からやり直す（換算の途中の値を混ぜない） */}
       <Field label={t('height')}>
         <HeightInput key={units} name="heightCm" units={units} defaultCm={initial?.heightCm} />
@@ -148,6 +167,8 @@ function RecordFields({
   onToggle,
   units,
   onUnits,
+  weekStart,
+  onWeekStart,
   showGoal,
 }: {
   initial: Profile | null;
@@ -156,6 +177,9 @@ function RecordFields({
   onToggle: (event: string) => void;
   units: Units;
   onUnits: (units: Units) => void;
+  /** 週の始まり。0 が日曜、1 が月曜 */
+  weekStart: 0 | 1;
+  onWeekStart: (weekStart: 0 | 1) => void;
   /** 初回だけ、先頭の種目の今季目標を入れる */
   showGoal: boolean;
 }) {
@@ -164,6 +188,11 @@ function RecordFields({
   const tUnits = useTranslations('units');
   const monthName = (month: number) =>
     new Intl.DateTimeFormat(locale, { month: 'long' }).format(new Date(2026, month - 1, 1));
+  // 曜日の名前は言語に合わせて Intl で出す（2026-10-11 は日曜、12 は月曜）
+  const dayName = (day: 0 | 1) =>
+    new Intl.DateTimeFormat(locale, { weekday: 'long', timeZone: 'UTC' }).format(
+      new Date(Date.UTC(2026, 9, 11 + day)),
+    );
 
   return (
     <div className="grid grid-cols-2 gap-4">
@@ -206,6 +235,29 @@ function RecordFields({
           ))}
         </Select>
       </Field>
+      <div className="col-span-2 flex flex-col gap-1.5">
+        <input type="hidden" name="weekStart" value={weekStart} />
+        <FieldLabel label={t('weekStart')} />
+        {/* 1つだけ選ぶので切り替えの形（性別と同じ） */}
+        <div
+          role="radiogroup"
+          aria-label={t('weekStart')}
+          className={cn(SEGMENTS, 'grid w-full grid-cols-2')}
+        >
+          {([0, 1] as const).map((day) => (
+            <button
+              key={day}
+              type="button"
+              role="radio"
+              aria-checked={weekStart === day}
+              onClick={() => onWeekStart(day)}
+              className={cn(segmentClass(weekStart === day), 'px-2')}
+            >
+              {dayName(day)}
+            </button>
+          ))}
+        </div>
+      </div>
       {showGoal && (
         <div className="col-span-2">
           <Field label={t('goal')}>
@@ -263,6 +315,14 @@ export function ProfileForm({ defaultName, locale }: { defaultName: string; loca
   const [state, action, pending] = useActionState(saveProfileAction, null);
   const [units, setUnits] = useState<Units>('metric');
   const [events, toggle] = useEvents(null);
+  // 週の始まりは、選ぶまではブラウザの地域から決めた値（src/lib/week.ts。サーバーで描くときは日曜）
+  const [chosenWeekStart, setWeekStart] = useState<0 | 1 | null>(null);
+  const browserWeekStart = useSyncExternalStore(
+    never,
+    () => weekStartFor(navigator.language, Intl.DateTimeFormat().resolvedOptions().timeZone),
+    () => 0 as const,
+  );
+  const weekStart = chosenWeekStart ?? browserWeekStart;
 
   return (
     <ActionForm action={action}>
@@ -286,6 +346,8 @@ export function ProfileForm({ defaultName, locale }: { defaultName: string; loca
             onToggle={toggle}
             units={units}
             onUnits={setUnits}
+            weekStart={weekStart}
+            onWeekStart={setWeekStart}
             showGoal
           />
         </div>
@@ -336,6 +398,7 @@ export function RecordSettingsForm({ initial, locale }: { initial: Profile; loca
   const [state, action, pending] = useActionState(saveRecordSettingsAction, null);
   const [units, setUnits] = useState<Units>(initial.units);
   const [events, toggle] = useEvents(initial);
+  const [weekStart, setWeekStart] = useState<0 | 1>(initial.weekStart);
 
   return (
     <ActionForm action={action}>
@@ -350,6 +413,8 @@ export function RecordSettingsForm({ initial, locale }: { initial: Profile; loca
             onToggle={toggle}
             units={units}
             onUnits={setUnits}
+            weekStart={weekStart}
+            onWeekStart={setWeekStart}
             showGoal={false}
           />
         </div>

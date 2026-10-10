@@ -39,6 +39,12 @@ test('登録から試技を足して直し、大会を足す', async ({ page, co
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByRole('heading', { name: '走幅跳' })).toBeVisible();
 
+  // 時間帯が保存されている（東京の人にだけ学年の欄が出る）。描き直すたびに隠し欄が UTC に戻り、
+  // 登録した人がみな UTC になっていた（2026-10-11）
+  await page.goto('/settings');
+  await expect(page.getByRole('combobox', { name: '学年' })).toBeVisible();
+  await page.goto('/');
+
   // 今日を記録（パソコンはヘッダー、スマホは下のタブの真ん中）
   await page.getByRole('link', { name: '今日を記録' }).filter({ visible: true }).first().click();
   await expect(page).toHaveURL(/\/log\/today\/new$/);

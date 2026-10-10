@@ -15,7 +15,7 @@ function shiftMonth(month: string, n: number): string {
 /**
  * 記録をカレンダーの形で見る。記録か体調のある日に点を付け、押すとその日を開く（先の日は開かない）。
  * 週の頭と終わりの空きには、前の月と次の月の日を薄く出す（本人、2026-10-11）。押せば同じように開く。
- * 週は日曜から（全員。国ごとの週の始まりはまだ合わせていない。CLAUDE.md）。
+ * 週は本人の設定の曜日から（日曜か月曜。はじめの値は登録したときのブラウザの地域、src/lib/week.ts）。
  * パソコンでは画面の幅いっぱいに広げ、マスを高くして日付を左上に置く（壁掛けのカレンダーの形）。
  * 最初は幅 448px に収めていて、小さいと言われた（本人、2026-10-11）
  */
@@ -23,12 +23,15 @@ export async function LogCalendar({
   month,
   today,
   recorded,
+  weekStart,
 }: {
   /** YYYY-MM */
   month: string;
   today: string;
   /** 記録か体調のある日 */
   recorded: Set<string>;
+  /** 週の始まり。0 が日曜、1 が月曜 */
+  weekStart: 0 | 1;
 }) {
   const t = await getTranslations('log');
   const format = await getFormatter();
@@ -38,15 +41,16 @@ export async function LogCalendar({
   const daysInMonth = new Date(
     Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0),
   ).getUTCDate();
-  const leading = utc(first).getUTCDay();
-  // 2026-10-11 は日曜。曜日の頭文字を言語に合わせて出すための基準の週
+  // 月の1日より前に並べる前の月の日の数
+  const leading = (utc(first).getUTCDay() - weekStart + 7) % 7;
+  // 2026-10-11 は日曜、12 は月曜。曜日の頭文字を言語に合わせて出すための基準の週
   const weekdays = Array.from({ length: 7 }, (_, i) =>
-    format.dateTime(utc(`2026-10-${String(11 + i).padStart(2, '0')}`), {
+    format.dateTime(utc(`2026-10-${String(11 + weekStart + i).padStart(2, '0')}`), {
       weekday: 'narrow',
       timeZone: 'UTC',
     }),
   );
-  // 月の1日がある週の日曜から、月の末日がある週の土曜まで
+  // 月の1日がある週の頭から、月の末日がある週の終わりまで
   const weeks = Math.ceil((leading + daysInMonth) / 7);
   const cells = Array.from({ length: weeks * 7 }, (_, i) => {
     const date = utc(first);

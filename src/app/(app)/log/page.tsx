@@ -55,7 +55,12 @@ export default async function Log({ searchParams }: PageProps<'/log'>) {
       </nav>
 
       {calendar ? (
-        <LogCalendar month={month} today={today} recorded={new Set(days.map((d) => d.day))} />
+        <LogCalendar
+          month={month}
+          today={today}
+          recorded={new Set(days.map((d) => d.day))}
+          weekStart={profile.weekStart}
+        />
       ) : days.length === 0 ? (
         <Card>
           <EmptyState

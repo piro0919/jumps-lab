@@ -29,7 +29,7 @@ export default function PrivacyEn() {
         </li>
         <li>
           Your profile (name, grade, date of birth, gender, height, weight, events, units, season
-          start and time zone)
+          start, week start and time zone)
         </li>
         <li>Your marks (date, event, practice or competition, mark, wind and note)</li>
         <li>

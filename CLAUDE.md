@@ -16,11 +16,9 @@ A record-keeping service for jumpers (high jump, long jump, triple jump, pole va
 The owner will make this app usable worldwide (said 2026-10-11). Do not design anything that only works in Japan.
 
 - Before adding anything that depends on a country (school years, week start, dates, units, holidays, laws), decide what happens outside Japan first
-- Grade: computed from the date of birth only for users whose time zone is Asia/Tokyo (Japanese school year: April, born April 2 to April 1). Everyone else picks it by hand. Stored as `grade` (manual) or `gradeOffset` (years off the computation)
-- Still Japan-shaped, to revisit before going global:
-  - The grade choices are the Japanese system (junior high, high school, college)
-  - The calendar week starts on Sunday for everyone
-  - Terms are under Japanese law with the Japanese text authoritative
+- Grade (agreed 2026-10-11): only people in the Asia/Tokyo time zone have one (`usesGrade`). It is computed from the date of birth (Japanese school year: April, born April 2 to April 1) and stored as `gradeOffset` (years off the computation), or picked by hand as `grade` when there is no date of birth. Everyone else sees no grade field and stores none: school systems differ by country and nothing uses the grade yet. Add per-country grades if, say, US high schoolers ask for them
+- Week start (agreed 2026-10-11): Sunday or Monday, a profile column (`weekStart`, migration 0008) set in Settings > Records. Sign-up starts from the browser's region (`src/lib/week.ts`: Intl week info, Saturday regions folded into Sunday; without it, the Americas and Sunday-first East Asian zones get Sunday). Existing people keep Sunday
+- Terms (agreed 2026-10-11): Japanese law and Japanese text stay authoritative (the operator is in Japan), with one added sentence in Article 8 (ja and en) keeping consumers' mandatory rights under their own country's law, including suing there. Not reviewed by a lawyer
 
 ## Decisions (agreed 2026-10-11)
 
@@ -177,6 +175,5 @@ Copy the shape of `~/Repository/onigiri` (which itself copies vocafy). Read its 
   - Web Analytics: `<Analytics />` in the root layout. Turned on in the Vercel dashboard (Analytics tab) by the owner on 2026-10-11. No cookies; Vercel keeps the page, referrer, country, device, OS and browser (https://vercel.com/docs/analytics/privacy-policy)
   - Sentry: server errors only, through `onRequestError` in `src/instrumentation.ts`; settings in `src/lib/monitoring.ts` (koidamashii's). v11 collects user, cookies, headers, bodies and query strings by default, so `dataCollection` turns them all off and `scrubEvent` (`src/lib/scrub-event.ts`, tested) deletes them again. The project is `jumps-lab` in the owner's Sentry org `kk-web` (team `piro`, US region, free Developer plan: 5k errors a month shared with koidamashii, spatto and chappie), created 2026-10-11. SENTRY_DSN (the project's client key) is set in Vercel production since 2026-10-11 (SENTRY_AUTH_TOKEN, SENTRY_ORG and SENTRY_PROJECT would add source maps; not set). Breadcrumbs are dropped entirely (console breadcrumbs can carry a failed row's marks and notes). Keep what it sends inside what the privacy policy promises
 - The landing page and videos are live since 2026-10-11. Not yet checked: uploading and playing a video in production (needs the owner's Google sign-in on a phone; works locally against jumps-lab-dev)
-- Open: the Japan-shaped parts under "Built for the whole world"
 - Not done: AI advice, coach questions
 - Dev server runs on port 3110 (`pnpm dev`); local Postgres on 5436 (`pnpm db:up`, then `pnpm migrate`)

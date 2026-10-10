@@ -60,6 +60,11 @@ export default function TermsEn() {
         These terms are governed by the laws of Japan. The Tokyo District Court has exclusive
         jurisdiction in the first instance over any dispute about the Service.
       </p>
+      <p>
+        This article does not take away any rights you have as a consumer under the mandatory laws
+        of the country or region where you live, including any right to bring a claim in the courts
+        there.
+      </p>
 
       <p>
         How we handle your information is described in the{' '}

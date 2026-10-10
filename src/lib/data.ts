@@ -25,6 +25,8 @@ export type Profile = {
   events: JumpEvent[];
   units: Units;
   seasonStartMonth: number;
+  /** 週の始まり。0 が日曜、1 が月曜 */
+  weekStart: 0 | 1;
   timeZone: string;
 };
 
@@ -36,7 +38,7 @@ type ProfileRow = Omit<Profile, 'heightCm' | 'weightKg'> & {
 export async function getProfile(userId: string): Promise<Profile | null> {
   const { rows } = await db().query<ProfileRow>(
     `select u.name, p.grade, p."gradeOffset", to_char(p.birthdate, 'YYYY-MM-DD') as birthdate, p.gender, p."heightCm", p."weightKg", p.events,
-            p.units, p."seasonStartMonth", p."timeZone"
+            p.units, p."seasonStartMonth", p."weekStart", p."timeZone"
        from profile p join "user" u on u.id = p."userId"
       where p."userId" = $1`,
     [userId],
@@ -62,15 +64,15 @@ export async function saveProfile(userId: string, input: ProfileInput): Promise<
     ]);
     await client.query(
       `insert into profile ("userId", grade, "gradeOffset", birthdate, gender, "heightCm", "weightKg", events,
-                            units, "seasonStartMonth", "timeZone")
-       values ($1, $2, $11, $3, $4, $5, $6, $7::text[], $8, $9, $10)
+                            units, "seasonStartMonth", "timeZone", "weekStart")
+       values ($1, $2, $11, $3, $4, $5, $6, $7::text[], $8, $9, $10, $12)
        on conflict ("userId") do update set
          grade = excluded.grade, "gradeOffset" = excluded."gradeOffset",
          birthdate = excluded.birthdate, gender = excluded.gender,
          "heightCm" = excluded."heightCm", "weightKg" = excluded."weightKg",
          events = excluded.events,
          units = excluded.units, "seasonStartMonth" = excluded."seasonStartMonth",
-         "timeZone" = excluded."timeZone", "updatedAt" = now()`,
+         "timeZone" = excluded."timeZone", "weekStart" = excluded."weekStart", "updatedAt" = now()`,
       [
         userId,
         input.grade,
@@ -83,6 +85,7 @@ export async function saveProfile(userId: string, input: ProfileInput): Promise<
         input.seasonStartMonth,
         input.timeZone,
         input.gradeOffset,
+        input.weekStart,
       ],
     );
     if (input.goalM !== null) {
@@ -142,15 +145,18 @@ export async function saveProfileDetails(userId: string, input: ProfileDetails):
 }
 
 /** 設定の画面の「記録」の区画で保存するもの */
-export type RecordSettings = Pick<Profile, 'events' | 'units' | 'seasonStartMonth' | 'timeZone'>;
+export type RecordSettings = Pick<
+  Profile,
+  'events' | 'units' | 'seasonStartMonth' | 'weekStart' | 'timeZone'
+>;
 
 /** 設定の画面の「記録」の区画だけを保存する。名前や身長などには触れない */
 export async function saveRecordSettings(userId: string, input: RecordSettings): Promise<void> {
   await db().query(
     `update profile set events = $2::text[], units = $3, "seasonStartMonth" = $4, "timeZone" = $5,
-            "updatedAt" = now()
+            "weekStart" = $6, "updatedAt" = now()
       where "userId" = $1`,
-    [userId, input.events, input.units, input.seasonStartMonth, input.timeZone],
+    [userId, input.events, input.units, input.seasonStartMonth, input.timeZone, input.weekStart],
   );
 }
 
