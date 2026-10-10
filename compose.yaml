@@ -3,7 +3,7 @@
 # ポートは Vocafy（5434）・onigiri（5435）とぶつからないように 5436 にする
 services:
   db:
-    image: postgres:17-alpine
+    image: postgres:18-alpine
     environment:
       POSTGRES_USER: jumpslab
       POSTGRES_PASSWORD: jumpslab
