@@ -27,6 +27,12 @@ import type { ComponentProps, ReactNode } from 'react';
 export const MAIN_SIDE = 'flex flex-col gap-3 lg:grid lg:grid-cols-[1fr_20rem] lg:items-start';
 export const HALVES = 'flex flex-col gap-3 lg:grid lg:grid-cols-2 lg:items-start';
 
+/**
+ * 入力の画面（試技の追加・コンディション・大会の追加と編集・設定）の main。PC では幅 42rem で真ん中に置く。
+ * 一覧や表示の画面は画面いっぱい。入力の画面ごとに幅を決めていて、設定だけ広かった（本人、2026-10-11）
+ */
+export const FORM_PAGE = 'flex flex-col gap-3 pb-6 lg:mx-auto lg:w-full lg:max-w-2xl';
+
 /** 欄のラベル。入力欄の上、数字の下、スライダーの名前 */
 export const LABEL = 'text-[13px] font-semibold text-muted-foreground';
 

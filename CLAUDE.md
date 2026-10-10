@@ -64,6 +64,7 @@ Copy the shape of `~/Repository/onigiri` (which itself copies vocafy). Read its 
   - Choices: pick exactly one → a switch (`SEGMENTS` + `segmentClass`; gender, theme, list/calendar, kind); pick several → separate pills (events). The owner caught gender drawn as pills next to the multi-select events (2026-10-11)
   - Radius: full (buttons, badges, pills), xl (inputs, rows), 2xl (small panels inside a card), 3xl (cards)
   - Spacing: gap-3 between cards, p-5 inside, gap-4 between blocks inside a card
+  - Page widths on desktop: list and view pages use the full frame; input pages (add attempt, condition, competition add/edit, settings) use `FORM_PAGE` (42rem, centered). Settings was wider than the other input pages until 2026-10-11
   - Desktop columns: `MAIN_SIDE` (main column plus a 20rem side column: home, analysis) or `HALVES` (two equal columns: the day page, competitions). Never write column widths per page; home and analysis drifted apart that way (owner, 2026-10-11)
   - Colors (owner, 2026-10-11): the app has one color, blue (`primary`), for buttons you press, what is selected, and the next-competition card. Nothing is filled black: black buttons, tabs and cards felt scary to the owner. Links stay ink. Other color only comes from the four event colors, the neon `brand` on "Log today", and red `destructive` for delete confirmations. No Tailwind palette classes (blue-600 etc.) outside the weather card's skies
   - No hex colors outside Google's button and the OG image

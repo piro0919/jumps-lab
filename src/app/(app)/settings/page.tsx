@@ -1,6 +1,6 @@
 import { getLocale, getTranslations } from 'next-intl/server';
 import { ProfileSettingsForm, RecordSettingsForm } from '@/components/profile-form';
-import { Card, CardTitle, LABEL, PageTitle } from '@/components/layout-ui';
+import { Card, CardTitle, LABEL, PageTitle, FORM_PAGE } from '@/components/layout-ui';
 import { SignOutButton } from '@/components/sign-out-button';
 import { ThemeSetting } from '@/components/theme-setting';
 import { getProfile } from '@/lib/data';
@@ -20,7 +20,7 @@ export default async function Settings() {
   const tProfile = await getTranslations('profile');
 
   return (
-    <main className="flex flex-col gap-3 pb-6 lg:mx-auto lg:w-full lg:max-w-2xl">
+    <main className={FORM_PAGE}>
       <PageTitle>{t('settings')}</PageTitle>
       <ProfileSettingsForm
         initial={profile}

@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import { DayLogForm } from '@/components/day-log-form';
-import { BackLink, Card, PageTitle } from '@/components/layout-ui';
+import { BackLink, Card, PageTitle, FORM_PAGE } from '@/components/layout-ui';
 import { getDayLog, getProfile } from '@/lib/data';
 import { resolveLogDay, todayIn } from '@/lib/dates';
 import { requireViewer } from '@/lib/viewer';
@@ -38,7 +38,7 @@ export default async function EditCondition({
         });
 
   return (
-    <main className="flex flex-col gap-3 lg:mx-auto lg:w-full lg:max-w-xl">
+    <main className={FORM_PAGE}>
       <BackLink href={backHref}>{dayLabel}</BackLink>
       {/* まだ入れていない日は「入力」、入れてある日は「編集」（ホームのボタンの「入力する」と合わせる） */}
       <PageTitle>{t(log ? 'editCondition' : 'newCondition')}</PageTitle>
