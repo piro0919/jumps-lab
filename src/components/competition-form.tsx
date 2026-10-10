@@ -54,7 +54,7 @@ export function CompetitionForm({
         <TextArea name="notes" defaultValue={initial?.notes ?? ''} maxLength={2000} />
       </Field>
       <ErrorText>{state?.ok === false ? tErrors(state.error as 'generic') : null}</ErrorText>
-      <div className="flex justify-end gap-3">
+      <div className="grid grid-cols-2 gap-3">
         <Button variant="secondary" type="button" onClick={onDone}>
           {t('cancel')}
         </Button>

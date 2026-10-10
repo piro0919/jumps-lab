@@ -6,6 +6,7 @@ import { useState, useTransition } from 'react';
 import { deleteCompetitionAction } from '@/app/actions/competitions';
 import { CompetitionForm } from '@/components/competition-form';
 import { ConfirmDialog } from '@/components/confirm-dialog';
+import { Sheet } from '@/components/sheet';
 import { Badge, Card, CardTitle, DisplayNumber, PageTitle, Stat } from '@/components/layout-ui';
 import { Button } from '@/components/ui/button';
 import type { Competition } from '@/lib/data';
@@ -35,6 +36,7 @@ function CompetitionItem({
   const tHome = useTranslations('home');
   const tEvents = useTranslations('events');
   const tCompetitions = useTranslations('competitions');
+  const tToday = useTranslations('today');
   const format = useFormatter();
   const upcoming = competition.day >= today;
   const date = new Date(`${competition.day}T00:00:00Z`);
@@ -91,17 +93,16 @@ function CompetitionItem({
             </span>
             <div className="flex flex-wrap gap-x-5 gap-y-2">
               {results.map((r) => (
-                <Stat
-                  key={r.event}
-                  size="sm"
-                  color={EVENT_TEXT[r.event]}
-                  value={formatMarkParts(r.bestM, units)}
-                  label={
-                    r.windAided
-                      ? tCompetitions('windAidedLabel', { event: tEvents(r.event) })
-                      : tEvents(r.event)
-                  }
-                />
+                <div key={r.event} className="flex flex-col gap-1">
+                  <Stat
+                    size="sm"
+                    color={EVENT_TEXT[r.event]}
+                    value={formatMarkParts(r.bestM, units)}
+                    label={tEvents(r.event)}
+                  />
+                  {/* 追い風参考は記録の日の画面と同じ札で（括弧書きと札の2通りになっていた） */}
+                  {r.windAided && <Badge tone="neutral">{tToday('windAided')}</Badge>}
+                </div>
               ))}
             </div>
           </div>
@@ -160,24 +161,14 @@ export function CompetitionsBoard({
         <ul className="flex flex-col divide-y divide-border">
           {items.map((competition) => (
             <li key={competition.id}>
-              {editing === competition.id ? (
-                <div className="py-3">
-                  <CompetitionForm
-                    initial={competition}
-                    defaultDay={competition.day}
-                    onDone={() => setEditing(null)}
-                  />
-                </div>
-              ) : (
-                <CompetitionItem
-                  competition={competition}
-                  results={results[competition.day] ?? []}
-                  units={units}
-                  today={today}
-                  onEdit={() => setEditing(competition.id)}
-                  onDelete={() => setRemoving(competition.id)}
-                />
-              )}
+              <CompetitionItem
+                competition={competition}
+                results={results[competition.day] ?? []}
+                units={units}
+                today={today}
+                onEdit={() => setEditing(competition.id)}
+                onDelete={() => setRemoving(competition.id)}
+              />
             </li>
           ))}
         </ul>
@@ -202,12 +193,31 @@ export function CompetitionsBoard({
       >
         {title}
       </PageTitle>
-      {editing === 'new' && (
-        <Card>
-          <CardTitle>{tCalendar('addCompetition')}</CardTitle>
-          <CompetitionForm initial={null} defaultDay={today} onDone={() => setEditing(null)} />
-        </Card>
-      )}
+      {/* 足すのも直すのも窓で（試技を足す窓と同じ出方。ページに差し込む形と2通りになっていた） */}
+      <Sheet
+        open={editing !== null}
+        onOpenChange={(open) => {
+          if (!open) setEditing(null);
+        }}
+        title={editing === 'new' ? tCalendar('addCompetition') : tCalendar('editCompetition')}
+      >
+        {editing !== null && (
+          <CompetitionForm
+            key={editing}
+            initial={
+              editing === 'new'
+                ? null
+                : ([...upcoming, ...past].find((c) => c.id === editing) ?? null)
+            }
+            defaultDay={
+              editing === 'new'
+                ? today
+                : ([...upcoming, ...past].find((c) => c.id === editing)?.day ?? today)
+            }
+            onDone={() => setEditing(null)}
+          />
+        )}
+      </Sheet>
       <div className="flex flex-col gap-3 lg:grid lg:grid-cols-2 lg:items-start">
         {section(t('upcoming'), upcoming, t('noUpcoming'))}
         {section(t('past'), past, t('noPast'))}

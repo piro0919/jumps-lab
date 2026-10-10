@@ -59,7 +59,7 @@
     "recordToday": "Log today",
     "list": "List",
     "calendar": "Calendar",
-    "empty": "No marks yet.",
+    "empty": "No marks yet",
     "eventLabel": "{event} · {count, plural, one {# jump} other {# jumps}}",
     "conditionLabel": "Body",
     "previousMonth": "Previous month",
@@ -68,10 +68,9 @@
   "competitions": {
     "upcoming": "Upcoming",
     "past": "Past",
-    "noUpcoming": "No upcoming competitions.",
-    "noPast": "No past competitions.",
-    "result": "Result",
-    "windAidedLabel": "{event} (wind-aided)"
+    "noUpcoming": "No upcoming competitions",
+    "noPast": "No past competitions",
+    "result": "Result"
   },
   "profile": {
     "sectionProfile": "Profile",
@@ -144,16 +143,16 @@
     "injury": "Injuries or discomfort",
     "note": "Practice note",
     "save": "Save",
-    "attempts": "Marks",
+    "attempts": "Attempts",
     "add": "Add",
-    "noAttempts": "No marks yet.",
+    "noAttempts": "No attempts yet",
     "practice": "Practice",
     "competition": "Competition",
     "kind": "Type",
     "mark": "Mark",
     "wind": "Wind (m/s)",
     "attemptNote": "Note",
-    "addAttempt": "Add mark",
+    "addAttempt": "Add attempt",
     "delete": "Delete",
     "cancel": "Cancel",
     "ok": "OK",
@@ -183,11 +182,11 @@
     "all": "All",
     "practice": "Practice",
     "competition": "Competition",
-    "total": "Marks",
+    "total": "Jumps",
     "average": "Average",
     "monthlyBest": "Monthly best",
-    "trend": "Last 10 marks",
-    "needTwo": "The chart appears after two marks.",
-    "noMarks": "No marks yet."
+    "trend": "Last 10 jumps",
+    "needTwo": "The chart appears after two jumps",
+    "noMarks": "No marks yet"
   }
 }
