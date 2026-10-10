@@ -2,7 +2,8 @@
 
 import { Plus, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useActionState, useState, useTransition } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { useActionState, useEffect, useState, useTransition } from 'react';
 import { addAttemptAction, deleteAttemptAction } from '@/app/actions/today';
 import { ActionForm } from '@/components/action-form';
 import { ConfirmDialog } from '@/components/confirm-dialog';
@@ -147,6 +148,19 @@ export function AttemptsCard({
   const t = useTranslations('today');
   const tEvents = useTranslations('events');
   const [adding, setAdding] = useState(startAdding);
+  const router = useRouter();
+  const pathname = usePathname();
+  // 「今日を記録」から来たら窓を開き、アドレスの ?add=1 は消す。残すと読み込み直すたびに開き、
+  // 同じアドレスのまま押し直しても開かなかった（本人、2026-10-11）。開いている画面で押し直したときは
+  // ?add=1 が付き直して startAdding が false から true に変わるので、描くときにそれを見て開く
+  const [lastStart, setLastStart] = useState(startAdding);
+  if (startAdding !== lastStart) {
+    setLastStart(startAdding);
+    if (startAdding) setAdding(true);
+  }
+  useEffect(() => {
+    if (startAdding) router.replace(pathname, { scroll: false });
+  }, [startAdding, pathname, router]);
   // 消す前に確かめている記録
   const [removing, setRemoving] = useState<string | null>(null);
   const [, startTransition] = useTransition();
