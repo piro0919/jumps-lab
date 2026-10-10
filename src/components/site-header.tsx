@@ -11,16 +11,19 @@ import { Wordmark } from '@/components/layout-ui';
  * 左にアイコンと名前、幅 1024px 以上は真ん中に画面の切り替え。
  * 右端に今日の記録を足すボタン（スマホは下のタブの真ん中にあるので出さない）と、自分のアイコン（設定とログアウト）。
  * 地の色と下の線は付けない（本人、2026-10-11）。左のアイコンと右の自分のアイコンは、
- * 「今日を記録」のボタンと同じ 36px にそろえる（32px だと小さく見えると言われた）
+ * 「今日を記録」のボタンと同じ 36px にそろえる（32px だと小さく見えると言われた）。
+ * minimal はようこその画面用。まだプロフィールが無く、ほかの画面へ進めないので、切り替えと記録のボタンを出さない
  */
 export async function SiteHeader({
   name,
   email,
   image,
+  minimal = false,
 }: {
   name: string;
   email: string;
   image: string | null;
+  minimal?: boolean;
 }) {
   const tMeta = await getTranslations('metadata');
   const tLog = await getTranslations('log');
@@ -32,15 +35,17 @@ export async function SiteHeader({
         <img src="/icon-192x192.png" alt="" className="size-9 rounded-xl" />
         <Wordmark size="header">{tMeta('title')}</Wordmark>
       </Link>
-      <HeaderNav />
+      {minimal ? <span className="max-lg:hidden" /> : <HeaderNav />}
       <div className="ml-auto flex items-center gap-3">
-        <Link
-          href={RECORD_HREF}
-          className={buttonVariants({ variant: 'brand', size: 'sm', className: 'max-lg:hidden' })}
-        >
-          <Plus aria-hidden className="size-4" strokeWidth={3} />
-          {tLog('recordToday')}
-        </Link>
+        {!minimal && (
+          <Link
+            href={RECORD_HREF}
+            className={buttonVariants({ variant: 'brand', size: 'sm', className: 'max-lg:hidden' })}
+          >
+            <Plus aria-hidden className="size-4" strokeWidth={3} />
+            {tLog('recordToday')}
+          </Link>
+        )}
         <AccountMenu name={name} email={email} image={image} />
       </div>
     </header>
