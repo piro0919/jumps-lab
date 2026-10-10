@@ -107,6 +107,7 @@
     "nextCompetition": "次の大会",
     "noCompetition": "大会はまだありません",
     "daysLeft": "{days, plural, =0 {今日} other {あと#日}}",
+    "daysUnit": "日後",
     "weather": "天気",
     "useLocation": "現在地の天気を表示",
     "locationDenied": "位置情報が使えません",

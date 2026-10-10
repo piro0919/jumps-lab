@@ -107,6 +107,7 @@
     "nextCompetition": "Next competition",
     "noCompetition": "No competitions yet",
     "daysLeft": "{days, plural, =0 {Today} one {# day} other {# days}}",
+    "daysUnit": "{days, plural, one {day left} other {days left}}",
     "weather": "Weather",
     "useLocation": "Show weather here",
     "locationDenied": "Location is off",

@@ -22,3 +22,11 @@ export function hasWind(event: JumpEvent): boolean {
 export function isWindAided(windMs: number | null): boolean {
   return windMs !== null && windMs > 2.0;
 }
+
+/** 種目の色（globals.css）。色付きのカードの地に使い、上の字は白にする */
+export const EVENT_BG: Record<JumpEvent, string> = {
+  high_jump: 'bg-high-jump',
+  long_jump: 'bg-long-jump',
+  triple_jump: 'bg-triple-jump',
+  pole_vault: 'bg-pole-vault',
+};

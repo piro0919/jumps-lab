@@ -17,6 +17,11 @@
   --font-heading: var(--font-sans);
   --font-display: var(--font-barlow), var(--font-sans);
   --color-good: var(--good);
+  /* 種目の色。白い字を載せて 4.5 を超える濃さ（走高跳 4.85・走幅跳 5.18・三段跳 5.12・棒高跳 7.10） */
+  --color-high-jump: #1e6fd9;
+  --color-long-jump: #c2410c;
+  --color-triple-jump: #2f7d32;
+  --color-pole-vault: #6d28d9;
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);

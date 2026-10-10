@@ -28,18 +28,23 @@ export function Stat({
   value,
   label,
   size = 'md',
+  inverse = false,
 }: {
   value: { value: string; unit: string } | string | number | null;
   label: string;
-  size?: 'hero' | 'md' | 'sm';
+  size?: 'giant' | 'hero' | 'md' | 'sm';
+  /** 色付きの地の上。字をすべて白にする（薄めると 4.5 を割るので薄めない） */
+  inverse?: boolean;
 }) {
   const parts =
     value === null ? null : typeof value === 'object' ? value : { value: String(value), unit: '' };
   const numberSize = {
+    giant: 'text-[88px] leading-[0.85]',
     hero: 'text-[64px] leading-[0.95]',
     md: 'text-[30px] leading-none',
     sm: 'text-[22px] leading-none',
   }[size];
+  const sub = inverse ? 'text-white' : 'text-muted-foreground';
 
   return (
     <div className="flex flex-col gap-1">
@@ -48,18 +53,16 @@ export function Stat({
           className={cn(
             'font-display font-extrabold tracking-tight tabular-nums italic',
             numberSize,
-            parts === null && 'text-muted-foreground/40',
+            parts === null && (inverse ? 'text-white/50' : 'text-muted-foreground/40'),
           )}
         >
           {parts === null ? '—' : parts.value}
         </span>
         {parts?.unit && (
-          <span className="font-display text-lg font-bold text-muted-foreground italic">
-            {parts.unit}
-          </span>
+          <span className={cn('font-display text-xl font-bold italic', sub)}>{parts.unit}</span>
         )}
       </span>
-      <span className="text-[13px] font-medium text-muted-foreground">{label}</span>
+      <span className={cn('text-[13px] font-semibold', sub)}>{label}</span>
     </div>
   );
 }
