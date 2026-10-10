@@ -28,7 +28,6 @@ export default async function OpengraphImage() {
         color: '#ffffff',
       }}
     >
-      { }
       <img src={src} width={280} height={280} alt="" style={{ borderRadius: 64 }} />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div style={{ fontSize: 96, fontWeight: 700, letterSpacing: -2 }}>Jumps Lab</div>
