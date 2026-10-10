@@ -1,0 +1,107 @@
+import { getTranslations } from 'next-intl/server';
+import Link from 'next/link';
+import { EventSwitcher } from '@/components/event-switcher';
+import { MarkEditor } from '@/components/mark-editor';
+import { Card, CardTitle, PageTitle } from '@/components/ui';
+import { WeatherCard } from '@/components/weather-card';
+import { computeBests } from '@/lib/bests';
+import { getProfile, getTarget, listAttempts, nextCompetition } from '@/lib/data';
+import { daysBetween, todayIn } from '@/lib/dates';
+import { formatMark } from '@/lib/units';
+import { requireViewer } from '@/lib/viewer';
+
+export default async function Home() {
+  const viewer = await requireViewer();
+  const profile = (await getProfile(viewer.userId))!;
+  const today = todayIn(profile.timeZone);
+  const [target, attempts, competition] = await Promise.all([
+    getTarget(viewer.userId, profile.currentEvent),
+    listAttempts(viewer.userId, profile.currentEvent),
+    nextCompetition(viewer.userId, today),
+  ]);
+  const bests = computeBests(
+    attempts,
+    {
+      pbM: target.manualPbM,
+      sbM: target.manualSbM,
+      sbSeason: target.manualSbSeason,
+      practiceBestM: target.manualPracticeBestM,
+    },
+    today,
+    profile.seasonStartMonth,
+  );
+  const t = await getTranslations('home');
+  const tNav = await getTranslations('nav');
+
+  // 目標までの差は SB から測る（今季の目標なので）
+  const gap =
+    target.seasonGoalM !== null && bests.sbM !== null ? target.seasonGoalM - bests.sbM : null;
+
+  return (
+    <main className="flex flex-col gap-3">
+      <PageTitle action={<EventSwitcher events={profile.events} current={profile.currentEvent} />}>
+        {tNav('home')}
+      </PageTitle>
+
+      <Card className="flex flex-col gap-2">
+        <MarkEditor
+          field="seasonGoalM"
+          label={t('goal')}
+          shown={target.seasonGoalM}
+          manual={target.seasonGoalM}
+          units={profile.units}
+          large
+        />
+        {gap !== null && (
+          <p className={`text-sm font-semibold ${gap <= 0 ? 'text-good' : 'text-sub'}`}>
+            {gap <= 0
+              ? t('goalReached')
+              : t('toGoal', { distance: formatMark(gap, profile.units) })}
+          </p>
+        )}
+      </Card>
+
+      <Card className="flex flex-col divide-y divide-line [&>*]:py-3 [&>*:first-child]:pt-0 [&>*:last-child]:pb-0">
+        <MarkEditor
+          field="manualPbM"
+          label={t('pb')}
+          shown={bests.pbM}
+          manual={target.manualPbM}
+          units={profile.units}
+        />
+        <MarkEditor
+          field="manualSbM"
+          label={t('sb')}
+          shown={bests.sbM}
+          manual={target.manualSbSeason === null ? null : target.manualSbM}
+          units={profile.units}
+        />
+        <MarkEditor
+          field="manualPracticeBestM"
+          label={t('practiceBest')}
+          shown={bests.practiceBestM}
+          manual={target.manualPracticeBestM}
+          units={profile.units}
+        />
+      </Card>
+
+      <Link href={competition ? `/calendar?day=${competition.day}` : '/calendar'}>
+        <Card>
+          <CardTitle>{t('nextCompetition')}</CardTitle>
+          {competition ? (
+            <div className="flex items-baseline justify-between gap-3">
+              <span className="min-w-0 truncate text-lg font-bold">{competition.name}</span>
+              <span className="shrink-0 text-lg font-bold text-accent tabular-nums">
+                {t('daysLeft', { days: daysBetween(today, competition.day) })}
+              </span>
+            </div>
+          ) : (
+            <p className="text-sm text-sub">{t('noCompetition')}</p>
+          )}
+        </Card>
+      </Link>
+
+      <WeatherCard />
+    </main>
+  );
+}
