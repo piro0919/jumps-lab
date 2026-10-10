@@ -4,6 +4,8 @@ import { LogOut, Settings } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { authClient } from '@/lib/auth-client';
+import { Badge, Stat } from '@/components/layout-ui';
+import { EVENT_BG, type JumpEvent } from '@/lib/events';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -15,18 +17,24 @@ import {
 
 /**
  * ヘッダーの右端の、自分のアイコン（Google の顔写真）。押すとメニューが開く（Vercel のアカウントメニューの形）：
- * 上に顔・名前・メール、設定、ログアウト。設定への入口はここだけ（配色は設定の画面で選ぶ）。
+ * 上に顔・名前・メール、その下に種目と、跳んだ本数・記録した日（ホームの自分のカードから移した。本人、2026-10-11）。
+ * 続けて設定、ログアウト。設定への入口はここだけ（配色は設定の画面で選ぶ）。
  * 写真が無い・読めないときは名前の頭文字を出す
  */
+export type AccountSummary = { events: JumpEvent[]; jumps: number; daysLogged: number };
+
 export function AccountMenu({
   name,
   email,
   image,
+  summary,
 }: {
   name: string;
   email: string;
   image: string | null;
+  summary?: AccountSummary;
 }) {
+  const tEvents = useTranslations('events');
   const t = useTranslations('profile');
   const tNav = useTranslations('nav');
   const router = useRouter();
@@ -54,6 +62,25 @@ export function AccountMenu({
             <span className="truncate text-xs text-muted-foreground">{email}</span>
           </div>
         </div>
+        {summary && (
+          <div className="flex flex-col gap-3 px-3 pb-3">
+            <div className="grid grid-cols-2 gap-1.5">
+              {summary.events.map((event) => (
+                <Badge
+                  key={event}
+                  tone="solid"
+                  className={`${EVENT_BG[event]} w-full justify-center`}
+                >
+                  {tEvents(event)}
+                </Badge>
+              ))}
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Stat size="sm" value={summary.jumps} label={t('jumps')} />
+              <Stat size="sm" value={summary.daysLogged} label={t('daysLogged')} />
+            </div>
+          </div>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => router.push('/settings')}>
           <Settings aria-hidden />

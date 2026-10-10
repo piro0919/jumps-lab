@@ -1,7 +1,7 @@
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
-import { AccountMenu } from '@/components/account-menu';
+import { AccountMenu, type AccountSummary } from '@/components/account-menu';
 import { HeaderNav, RECORD_HREF } from '@/components/tab-bar';
 import { buttonVariants } from '@/components/ui/button';
 import { AppIcon, Wordmark } from '@/components/layout-ui';
@@ -19,11 +19,14 @@ export async function SiteHeader({
   email,
   image,
   minimal = false,
+  profile,
 }: {
   name: string;
   email: string;
   image: string | null;
   minimal?: boolean;
+  /** ユーザーメニューに出す種目と数（ようこその画面ではまだ無い） */
+  profile?: AccountSummary;
 }) {
   const tMeta = await getTranslations('metadata');
   const tLog = await getTranslations('log');
@@ -45,7 +48,7 @@ export async function SiteHeader({
             {tLog('recordToday')}
           </Link>
         )}
-        <AccountMenu name={name} email={email} image={image} />
+        <AccountMenu name={name} email={email} image={image} summary={profile} />
       </div>
     </header>
   );

@@ -351,6 +351,17 @@ export async function deleteCompetition(userId: string, id: string): Promise<voi
 }
 
 /** 記録すべて（全種目）。記録の一覧用。古い順 */
+/** 跳んだ本数と、試技を入れた日の数（ユーザーメニューに出す）。全部を読まずに数だけ数える */
+export async function getActivityCounts(
+  userId: string,
+): Promise<{ jumps: number; daysLogged: number }> {
+  const { rows } = await db().query<{ jumps: string; daysLogged: string }>(
+    `select count(*) as jumps, count(distinct day) as "daysLogged" from attempt where "userId" = $1`,
+    [userId],
+  );
+  return { jumps: Number(rows[0]?.jumps ?? 0), daysLogged: Number(rows[0]?.daysLogged ?? 0) };
+}
+
 export async function listAllAttempts(userId: string): Promise<Attempt[]> {
   const { rows } = await db().query<AttemptRow>(
     `select ${attemptColumns} from attempt where "userId" = $1 order by day, "createdAt"`,

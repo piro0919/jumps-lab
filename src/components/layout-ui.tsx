@@ -15,7 +15,7 @@ import type { ComponentProps, ReactNode } from 'react';
  * 太さ: semibold・bold・extrabold の3つ（medium は使わない）
  * 角: ボタン・札・丸いもの full、入力欄と行 xl、面の中の小さな面 2xl、カード 3xl
  * 余白: カードどうし 12px（gap-3）、カードの内側 20px（p-5）、カードの中の塊どうし 16px（gap-4）
- * 色: 青（primary）は「選んでいるもの」だけ。押すボタンとリンクは文字の色（黒）。
+ * 色: アプリの色は青（primary）1つ。押すボタン・選んでいるもの・次の大会に使う。黒で塗ったものは置かない。
  *     ほかに色が付くのは、種目の4色・「今日を記録」の黄緑（brand）・消すときの赤（destructive）だけ
  */
 
@@ -220,7 +220,7 @@ export function Watermark({ children }: { children: ReactNode }) {
  */
 const BADGE_TONE = {
   neutral: 'bg-muted text-muted-foreground',
-  accent: 'bg-foreground text-background',
+  accent: 'bg-secondary text-primary',
   danger: 'bg-destructive/10 text-destructive',
   inverse: 'bg-white/15 text-white',
   solid: 'text-white',

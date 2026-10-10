@@ -78,6 +78,8 @@
     "sectionDisplay": "表示",
     "sectionAccount": "アカウント",
     "googleAccount": "Google アカウント",
+    "jumps": "本数",
+    "daysLogged": "記録した日",
     "welcome": "プロフィールを設定",
     "required": "必須",
     "name": "名前",

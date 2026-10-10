@@ -43,7 +43,7 @@ function CompetitionItem({
       {/* 日付の札。これからの大会は黒、過去の大会は灰色 */}
       <div
         className={`flex w-14 shrink-0 flex-col items-center rounded-2xl py-2 ${
-          upcoming ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground'
+          upcoming ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
         }`}
       >
         <span className="text-xs font-bold">

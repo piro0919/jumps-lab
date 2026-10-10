@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { SiteHeader } from '@/components/site-header';
 import { TabBar } from '@/components/tab-bar';
-import { getProfile } from '@/lib/data';
+import { getActivityCounts, getProfile } from '@/lib/data';
 import { requireViewer } from '@/lib/viewer';
 
 /**
@@ -13,10 +13,16 @@ export default async function AppLayout({ children }: LayoutProps<'/'>) {
   const viewer = await requireViewer();
   const profile = await getProfile(viewer.userId);
   if (!profile) redirect('/welcome');
+  const activity = await getActivityCounts(viewer.userId);
 
   return (
     <>
-      <SiteHeader name={profile.name} email={viewer.email} image={viewer.image} />
+      <SiteHeader
+        name={profile.name}
+        email={viewer.email}
+        image={viewer.image}
+        profile={{ events: profile.events, ...activity }}
+      />
       <div className="mx-auto min-h-[calc(100dvh-4rem)] max-w-lg pb-[calc(68px+env(safe-area-inset-bottom))] lg:max-w-6xl lg:px-4 lg:pb-10">
         {children}
       </div>

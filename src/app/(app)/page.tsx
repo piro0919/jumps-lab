@@ -148,10 +148,10 @@ export default async function Home() {
           })}
         </div>
         <div className="flex flex-col gap-3">
-          {/* 次の大会は黒いカード。残りの日数を大きな数字で */}
+          {/* 次の大会はアプリの青のカード。残りの日数を大きな数字で（黒は怖いと言われた。本人、2026-10-11） */}
           <Link
             href="/competitions"
-            className="mx-4 flex items-center gap-4 rounded-3xl bg-foreground p-5 text-background"
+            className="mx-4 flex items-center gap-4 rounded-3xl bg-primary p-5 text-primary-foreground"
           >
             <div className="flex min-w-0 flex-1 flex-col gap-1">
               <span className="text-sm font-bold">{t('nextCompetition')}</span>
