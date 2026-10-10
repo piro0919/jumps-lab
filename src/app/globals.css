@@ -1,57 +1,108 @@
 @import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
 
 /*
- * 見た目の手本は筋トレ記録アプリの Strong。灰色の地に白い面、青い差し色、大きな太字の見出し。
- * 色はここにだけ書き、部品は名前で使う（暗いテーマで値が変わるため）
+ * 色は shadcn/ui の名前で持ち、値は手本の Strong に寄せる（灰色の地に白い面、青い差し色）。
+ * 部品は名前で使い、値を直に書かない（暗いテーマで値が変わるため）。
+ * 暗いテーマは端末の設定に従う（.dark のクラスではなく prefers-color-scheme）
  */
 @custom-variant dark (@media (prefers-color-scheme: dark));
 
 @theme inline {
-  --color-canvas: var(--canvas);
-  --color-surface: var(--surface);
-  --color-ink: var(--ink);
-  --color-sub: var(--sub);
-  --color-line: var(--line);
-  --color-field: var(--field);
-  --color-accent: var(--accent);
-  --color-accent-soft: var(--accent-soft);
-  --color-danger: var(--danger);
+  --font-heading: var(--font-sans);
+  --font-sans: var(--font-sans);
   --color-good: var(--good);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
 :root {
   color-scheme: light;
-  --canvas: #f2f2f7;
-  --surface: #ffffff;
-  --ink: #1c1c1e;
+  /* 画面の地と、その上の白い面 */
+  --background: #f2f2f7;
+  --foreground: #1c1c1e;
+  --card: #ffffff;
+  --card-foreground: #1c1c1e;
+  --popover: #ffffff;
+  --popover-foreground: #1c1c1e;
+  /* 押すと結果が起きるもの。白い字を載せて 4.5 を超える青 */
+  --primary: #1e6fd9;
+  --primary-foreground: #ffffff;
+  /* 控えめなボタン（追加・キャンセル）と、選ばれていることの表示 */
+  --secondary: #e6f0fc;
+  --secondary-foreground: #1e6fd9;
+  /* 入力欄の地 */
+  --muted: #f2f2f7;
   /* 白い面の上で 4.5 を超える灰色 */
-  --sub: #6b6b70;
-  --line: #e5e5ea;
-  --field: #f2f2f7;
-  /* 白い字を載せて 4.5 を超える青 */
-  --accent: #1e6fd9;
-  --accent-soft: #e6f0fc;
-  --danger: #d0312d;
+  --muted-foreground: #6b6b70;
+  /* 指を乗せたときの地 */
+  --accent: #ebebf0;
+  --accent-foreground: #1c1c1e;
+  --destructive: #d0312d;
   --good: #1f8a4c;
+  --border: #e5e5ea;
+  --input: #e5e5ea;
+  --ring: #1e6fd9;
+  --radius: 0.75rem;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;
-    --canvas: #000000;
-    --surface: #1c1c1e;
-    --ink: #f2f2f7;
-    --sub: #a1a1a8;
-    --line: #2c2c2e;
-    --field: #2c2c2e;
-    --accent: #4b93f0;
-    --accent-soft: #15243a;
-    --danger: #ff6b66;
+    --background: #000000;
+    --foreground: #f2f2f7;
+    --card: #1c1c1e;
+    --card-foreground: #f2f2f7;
+    --popover: #1c1c1e;
+    --popover-foreground: #f2f2f7;
+    --primary: #4b93f0;
+    --primary-foreground: #0b1a2e;
+    --secondary: #15243a;
+    --secondary-foreground: #4b93f0;
+    --muted: #2c2c2e;
+    --muted-foreground: #a1a1a8;
+    --accent: #2c2c2e;
+    --accent-foreground: #f2f2f7;
+    --destructive: #ff6b66;
     --good: #4cc27d;
+    --border: #2c2c2e;
+    --input: #3a3a3c;
+    --ring: #4b93f0;
   }
 }
 
-body {
-  background: var(--canvas);
-  color: var(--ink);
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
 }

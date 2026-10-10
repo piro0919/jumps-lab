@@ -1,7 +1,7 @@
 import { getLocale, getTranslations } from 'next-intl/server';
 import { ProfileForm } from '@/components/profile-form';
 import { SignOutButton } from '@/components/sign-out-button';
-import { PageTitle } from '@/components/ui';
+import { PageTitle } from '@/components/layout-ui';
 import { getProfile } from '@/lib/data';
 import { todayIn } from '@/lib/dates';
 import { currentGrade } from '@/lib/grade';

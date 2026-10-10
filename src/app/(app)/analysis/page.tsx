@@ -1,7 +1,7 @@
 import { getFormatter, getLocale, getTranslations } from 'next-intl/server';
 import { EventSwitcher } from '@/components/event-switcher';
 import { TrendChart } from '@/components/trend-chart';
-import { Card, CardTitle, PageTitle } from '@/components/ui';
+import { Card, CardTitle, PageTitle } from '@/components/layout-ui';
 import { analyze } from '@/lib/analysis';
 import { getProfile, listAttempts } from '@/lib/data';
 import { formatMark } from '@/lib/units';
@@ -26,12 +26,12 @@ export default async function Analysis() {
       <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[3fr_2fr] lg:items-start">
         <div className="flex flex-col gap-3">
           <div className="mx-4 grid grid-cols-2 gap-3">
-            <section className="rounded-2xl bg-surface p-4">
-              <h2 className="text-[13px] font-medium text-sub">{t('total')}</h2>
+            <section className="rounded-2xl bg-card p-4">
+              <h2 className="text-[13px] font-medium text-muted-foreground">{t('total')}</h2>
               <p className="text-[28px] font-bold tabular-nums">{result.total}</p>
             </section>
-            <section className="rounded-2xl bg-surface p-4">
-              <h2 className="text-[13px] font-medium text-sub">{t('average')}</h2>
+            <section className="rounded-2xl bg-card p-4">
+              <h2 className="text-[13px] font-medium text-muted-foreground">{t('average')}</h2>
               <p className="text-[28px] font-bold tabular-nums">
                 {result.averageM === null ? '—' : formatMark(result.averageM, profile.units)}
               </p>
@@ -43,16 +43,16 @@ export default async function Analysis() {
             {result.recent.length >= 2 ? (
               <TrendChart rows={result.recent} units={profile.units} locale={locale} />
             ) : (
-              <p className="text-sm text-sub">{t('needTwo')}</p>
+              <p className="text-sm text-muted-foreground">{t('needTwo')}</p>
             )}
           </Card>
         </div>
         <Card>
           <CardTitle>{t('monthlyBest')}</CardTitle>
           {result.monthlyBest.length === 0 ? (
-            <p className="text-sm text-sub">{t('noMarks')}</p>
+            <p className="text-sm text-muted-foreground">{t('noMarks')}</p>
           ) : (
-            <ul className="flex flex-col divide-y divide-line">
+            <ul className="flex flex-col divide-y divide-border">
               {result.monthlyBest.map(({ month, bestM }) => (
                 <li key={month} className="flex items-baseline justify-between py-2.5">
                   <span className="text-sm">

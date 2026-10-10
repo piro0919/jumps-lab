@@ -5,7 +5,7 @@ import { ActionForm } from '@/components/action-form';
 import { useActionState, useState } from 'react';
 import { saveTargetAction } from '@/app/actions/targets';
 import { MarkInput } from '@/components/measure-inputs';
-import { PrimaryButton, SubtleButton } from '@/components/ui';
+import { PrimaryButton, SubtleButton } from '@/components/layout-ui';
 import { formatMark, type Units } from '@/lib/units';
 
 /**
@@ -39,7 +39,7 @@ export function MarkEditor({
   if (editing) {
     return (
       <ActionForm action={action} className="flex flex-col gap-2">
-        <span className="text-[13px] font-medium text-sub">{label}</span>
+        <span className="text-[13px] font-medium text-muted-foreground">{label}</span>
         <input type="hidden" name="field" value={field} />
         <MarkInput name="markM" units={units} defaultMeters={manual} autoFocus />
         <div className="flex justify-end gap-2">
@@ -62,10 +62,10 @@ export function MarkEditor({
       onClick={() => setEditing(true)}
       className="flex w-full items-baseline justify-between gap-3 text-left"
     >
-      <span className="text-[13px] font-medium text-sub">{label}</span>
+      <span className="text-[13px] font-medium text-muted-foreground">{label}</span>
       <span
         className={`font-bold tabular-nums ${large ? 'text-[34px] leading-none' : 'text-xl'} ${
-          shown === null ? 'text-line' : ''
+          shown === null ? 'text-muted-foreground/40' : ''
         }`}
       >
         {shown === null ? '—' : formatMark(shown, units)}

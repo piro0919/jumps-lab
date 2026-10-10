@@ -46,7 +46,7 @@ export function TrendChart({
       {point && (
         <div className="flex items-baseline justify-between">
           <span className="text-2xl font-bold tabular-nums">{formatMark(point.markM, units)}</span>
-          <span className="text-sm text-sub tabular-nums">{dayLabel(point.day)}</span>
+          <span className="text-sm text-muted-foreground tabular-nums">{dayLabel(point.day)}</span>
         </div>
       )}
       <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="w-full" role="img">
@@ -57,7 +57,7 @@ export function TrendChart({
               x2={WIDTH - PAD.right}
               y1={y(m)}
               y2={y(m)}
-              className="stroke-line"
+              className="stroke-border"
               strokeWidth={1}
             />
           </g>
@@ -65,7 +65,7 @@ export function TrendChart({
         <path
           d={path}
           fill="none"
-          className="stroke-accent"
+          className="stroke-primary"
           strokeWidth={2}
           strokeLinejoin="round"
         />
@@ -77,19 +77,19 @@ export function TrendChart({
               cx={x(i)}
               cy={y(r.markM)}
               r={i === active ? 5 : 4}
-              className={i === active ? 'fill-accent stroke-surface' : 'fill-surface stroke-accent'}
+              className={i === active ? 'fill-primary stroke-card' : 'fill-card stroke-primary'}
               strokeWidth={2}
             />
           </g>
         ))}
-        <text x={PAD.left} y={HEIGHT - 4} className="fill-sub text-[10px]">
+        <text x={PAD.left} y={HEIGHT - 4} className="fill-muted-foreground text-[10px]">
           {dayLabel(rows[0]!.day)}
         </text>
         <text
           x={WIDTH - PAD.right}
           y={HEIGHT - 4}
           textAnchor="end"
-          className="fill-sub text-[10px]"
+          className="fill-muted-foreground text-[10px]"
         >
           {dayLabel(rows.at(-1)!.day)}
         </text>

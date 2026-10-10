@@ -14,15 +14,15 @@ export default async function SignIn() {
       <div className="flex w-full flex-col gap-4">
         <GoogleButton />
         {/* 同意は押すボタンの下に一文で（押す動作の名前に合わせる。spatto と同じ） */}
-        <p className="text-center text-xs leading-relaxed text-sub">
+        <p className="text-center text-xs leading-relaxed text-muted-foreground">
           {tSignIn.rich('consent', {
             terms: (chunks) => (
-              <Link href={`${prefix}/terms`} className="text-accent underline">
+              <Link href={`${prefix}/terms`} className="text-primary underline">
                 {chunks}
               </Link>
             ),
             privacy: (chunks) => (
-              <Link href={`${prefix}/privacy`} className="text-accent underline">
+              <Link href={`${prefix}/privacy`} className="text-primary underline">
                 {chunks}
               </Link>
             ),

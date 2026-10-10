@@ -2,10 +2,10 @@
 
 import { Plus, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { ActionForm } from '@/components/action-form';
-import { useActionState, useRef, useState, useTransition } from 'react';
+import { useActionState, useState, useTransition } from 'react';
 import { addAttemptAction, deleteAttemptAction } from '@/app/actions/today';
-import { MarkInput } from '@/components/measure-inputs';
+import { ActionForm } from '@/components/action-form';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import {
   Card,
   CardTitle,
@@ -14,13 +14,15 @@ import {
   Input,
   PrimaryButton,
   SubtleButton,
-} from '@/components/ui';
+} from '@/components/layout-ui';
+import { MarkInput } from '@/components/measure-inputs';
+import { Drawer, DrawerContent, DrawerTitle } from '@/components/ui/drawer';
 import type { Attempt } from '@/lib/data';
 import { hasWind, type JumpEvent } from '@/lib/events';
 import { formatMark, type Units } from '@/lib/units';
 
-/** 下から出る入力の窓（Strong の記録の窓と同じ出方） */
-function AddSheet({
+/** 記録を1本足す入力。下から出る窓（Drawer）の中に置く（Strong の記録の窓と同じ出方） */
+function AddForm({
   day,
   event,
   units,
@@ -42,53 +44,49 @@ function AddSheet({
   }, null);
 
   return (
-    <div className="fixed inset-0 z-20 flex items-end justify-center bg-black/40" onClick={onClose}>
-      <ActionForm
-        action={action}
-        onClick={(e) => e.stopPropagation()}
-        className="flex w-full max-w-lg flex-col gap-4 rounded-t-3xl bg-surface p-5 pb-[calc(20px+env(safe-area-inset-bottom))]"
-      >
-        <div className="mx-auto h-1 w-10 rounded-full bg-line" />
-        <h2 className="text-lg font-bold">{t('addAttempt')}</h2>
-        <input type="hidden" name="day" value={day} />
-        <input type="hidden" name="kind" value={kind} />
-        <div className="grid grid-cols-2 gap-1 rounded-xl bg-field p-1">
-          {(['practice', 'competition'] as const).map((value) => (
-            <button
-              key={value}
-              type="button"
-              aria-pressed={kind === value}
-              onClick={() => setKind(value)}
-              className={`h-9 rounded-lg text-sm font-semibold ${
-                kind === value ? 'bg-surface text-ink shadow-sm' : 'text-sub'
-              }`}
-            >
-              {t(value)}
-            </button>
-          ))}
-        </div>
-        <Field label={t('mark')} required={tProfile('required')}>
-          <MarkInput name="markM" units={units} autoFocus />
+    <ActionForm
+      action={action}
+      className="flex flex-col gap-4 overflow-y-auto p-5 pb-[calc(20px+env(safe-area-inset-bottom))]"
+    >
+      <DrawerTitle className="text-lg font-bold">{t('addAttempt')}</DrawerTitle>
+      <input type="hidden" name="day" value={day} />
+      <input type="hidden" name="kind" value={kind} />
+      <div className="grid grid-cols-2 gap-1 rounded-xl bg-muted p-1">
+        {(['practice', 'competition'] as const).map((value) => (
+          <button
+            key={value}
+            type="button"
+            aria-pressed={kind === value}
+            onClick={() => setKind(value)}
+            className={`h-9 rounded-lg text-sm font-semibold ${
+              kind === value ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'
+            }`}
+          >
+            {t(value)}
+          </button>
+        ))}
+      </div>
+      <Field label={t('mark')} required={tProfile('required')}>
+        <MarkInput name="markM" units={units} autoFocus />
+      </Field>
+      {hasWind(event) && (
+        <Field label={t('wind')}>
+          <Input name="windMs" type="number" inputMode="decimal" step={0.1} min={-20} max={20} />
         </Field>
-        {hasWind(event) && (
-          <Field label={t('wind')}>
-            <Input name="windMs" type="number" inputMode="decimal" step={0.1} min={-20} max={20} />
-          </Field>
-        )}
-        <Field label={t('attemptNote')}>
-          <Input name="note" maxLength={500} />
-        </Field>
-        <ErrorText>{state?.ok === false ? tErrors(state.error as 'generic') : null}</ErrorText>
-        <div className="grid grid-cols-2 gap-3">
-          <SubtleButton type="button" onClick={onClose} className="h-11 rounded-xl">
-            {t('cancel')}
-          </SubtleButton>
-          <PrimaryButton type="submit" disabled={pending}>
-            {t('add')}
-          </PrimaryButton>
-        </div>
-      </ActionForm>
-    </div>
+      )}
+      <Field label={t('attemptNote')}>
+        <Input name="note" maxLength={500} />
+      </Field>
+      <ErrorText>{state?.ok === false ? tErrors(state.error as 'generic') : null}</ErrorText>
+      <div className="grid grid-cols-2 gap-3">
+        <SubtleButton type="button" onClick={onClose} className="h-11 rounded-xl">
+          {t('cancel')}
+        </SubtleButton>
+        <PrimaryButton type="submit" disabled={pending}>
+          {t('add')}
+        </PrimaryButton>
+      </div>
+    </ActionForm>
   );
 }
 
@@ -109,23 +107,19 @@ export function AttemptsCard({
 }) {
   const t = useTranslations('today');
   const [adding, setAdding] = useState(false);
+  // 消す前に確かめている記録
+  const [removing, setRemoving] = useState<string | null>(null);
   const [, startTransition] = useTransition();
-  const addButton = useRef<HTMLButtonElement>(null);
   const best = attempts.reduce<number | null>(
     (top, attempt) => (top === null || attempt.markM > top ? attempt.markM : top),
     null,
   );
 
-  const remove = (id: string) => {
-    if (!window.confirm(t('deleteConfirm'))) return;
-    startTransition(() => deleteAttemptAction(id));
-  };
-
   return (
     <Card>
       <CardTitle
         action={
-          <SubtleButton ref={addButton} type="button" onClick={() => setAdding(true)}>
+          <SubtleButton type="button" onClick={() => setAdding(true)}>
             <Plus aria-hidden className="size-4" />
             {t('add')}
           </SubtleButton>
@@ -134,24 +128,24 @@ export function AttemptsCard({
         {t('attempts')}
       </CardTitle>
       {attempts.length === 0 ? (
-        <p className="text-sm text-sub">{t('noAttempts')}</p>
+        <p className="text-sm text-muted-foreground">{t('noAttempts')}</p>
       ) : (
-        <ol className="flex flex-col divide-y divide-line">
+        <ol className="flex flex-col divide-y divide-border">
           {attempts.map((attempt, index) => (
             <li key={attempt.id} className="flex items-center gap-3 py-2.5">
-              <span className="w-5 text-sm text-sub tabular-nums">{index + 1}</span>
+              <span className="w-5 text-sm text-muted-foreground tabular-nums">{index + 1}</span>
               <span className="flex min-w-0 flex-1 flex-col">
                 <span className="flex items-baseline gap-2">
                   <span className="text-lg font-bold tabular-nums">
                     {formatMark(attempt.markM, units)}
                   </span>
                   {attempt.markM === best && (
-                    <span className="rounded-full bg-accent-soft px-2 text-xs font-semibold text-accent">
+                    <span className="rounded-full bg-secondary px-2 text-xs font-semibold text-primary">
                       {t('best')}
                     </span>
                   )}
                 </span>
-                <span className="truncate text-xs text-sub">
+                <span className="truncate text-xs text-muted-foreground">
                   {[
                     t(attempt.kind),
                     attempt.windMs === null
@@ -166,8 +160,8 @@ export function AttemptsCard({
               <button
                 type="button"
                 aria-label={t('delete')}
-                onClick={() => remove(attempt.id)}
-                className="flex size-9 items-center justify-center rounded-full text-sub active:bg-field"
+                onClick={() => setRemoving(attempt.id)}
+                className="flex size-9 items-center justify-center rounded-full text-muted-foreground active:bg-accent"
               >
                 <Trash2 aria-hidden className="size-4" />
               </button>
@@ -175,17 +169,23 @@ export function AttemptsCard({
           ))}
         </ol>
       )}
-      {adding && (
-        <AddSheet
-          day={day}
-          event={event}
-          units={units}
-          onClose={() => {
-            setAdding(false);
-            addButton.current?.focus();
-          }}
-        />
-      )}
+
+      <Drawer open={adding} onOpenChange={setAdding}>
+        <DrawerContent className="mx-auto max-w-lg">
+          <AddForm day={day} event={event} units={units} onClose={() => setAdding(false)} />
+        </DrawerContent>
+      </Drawer>
+      <ConfirmDialog
+        open={removing !== null}
+        title={t('deleteConfirm')}
+        onOpenChange={(open) => {
+          if (!open) setRemoving(null);
+        }}
+        onConfirm={() => {
+          const id = removing;
+          if (id) startTransition(() => deleteAttemptAction(id));
+        }}
+      />
     </Card>
   );
 }

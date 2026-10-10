@@ -5,7 +5,15 @@ import { ActionForm } from '@/components/action-form';
 import { useActionState, useEffect, useRef, useState } from 'react';
 import { saveProfileAction } from '@/app/actions/profile';
 import { HeightInput, MarkInput, WeightInput } from '@/components/measure-inputs';
-import { Card, ErrorText, Field, FieldLabel, Input, PrimaryButton, Select } from '@/components/ui';
+import {
+  Card,
+  ErrorText,
+  Field,
+  FieldLabel,
+  Input,
+  PrimaryButton,
+  Select,
+} from '@/components/layout-ui';
 import type { Profile } from '@/lib/data';
 import { EVENTS } from '@/lib/events';
 import { todayIn } from '@/lib/dates';
@@ -96,7 +104,7 @@ export function ProfileForm({
                   aria-pressed={on}
                   onClick={() => toggle(event)}
                   className={`h-9 rounded-full px-3.5 text-sm font-semibold transition active:scale-[0.98] ${
-                    on ? 'bg-accent-soft text-accent' : 'bg-field text-sub'
+                    on ? 'bg-secondary text-primary' : 'bg-muted text-muted-foreground'
                   }`}
                 >
                   {tEvents(event)}

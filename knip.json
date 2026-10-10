@@ -2,9 +2,12 @@
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "entry": ["scripts/*.ts"],
   "project": ["src/**/*.{ts,tsx}", "scripts/**/*.ts", "test/**/*.ts"],
+  "ignore": ["src/components/ui/**"],
   "ignoreDependencies": [
     "@commitlint/cli",
     "@secretlint/secretlint-rule-preset-recommend",
-    "tailwindcss"
+    "tailwindcss",
+    "shadcn",
+    "tw-animate-css"
   ]
 }

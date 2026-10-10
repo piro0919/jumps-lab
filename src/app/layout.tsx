@@ -2,6 +2,10 @@ import type { Metadata, Viewport } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getTranslations } from 'next-intl/server';
 import './globals.css';
+import { Geist } from 'next/font/google';
+import { cn } from '@/lib/utils';
+
+const geist = Geist({ subsets: ['latin'], variable: '--font-sans' });
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('metadata');
@@ -21,7 +25,7 @@ export default async function RootLayout({ children }: LayoutProps<'/'>) {
   const locale = await getLocale();
 
   return (
-    <html lang={locale} className="h-full antialiased">
+    <html lang={locale} className={cn('h-full antialiased', 'font-sans', geist.variable)}>
       <body className="min-h-full min-w-[375px] font-sans">
         <NextIntlClientProvider>{children}</NextIntlClientProvider>
       </body>

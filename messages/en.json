@@ -124,6 +124,7 @@
     "addAttempt": "Add mark",
     "delete": "Delete",
     "cancel": "Cancel",
+    "ok": "OK",
     "deleteConfirm": "Delete this mark?",
     "best": "Best"
   },

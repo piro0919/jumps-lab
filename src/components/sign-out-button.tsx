@@ -20,7 +20,7 @@ export function SignOutButton() {
         router.replace('/sign-in');
         router.refresh();
       }}
-      className="mx-4 h-11 rounded-xl bg-surface text-[15px] font-semibold text-danger disabled:opacity-40"
+      className="mx-4 h-11 rounded-xl bg-card text-[15px] font-semibold text-destructive disabled:opacity-40"
     >
       {t('signOut')}
     </button>

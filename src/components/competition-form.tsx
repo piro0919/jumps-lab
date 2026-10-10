@@ -4,7 +4,14 @@ import { useTranslations } from 'next-intl';
 import { useActionState } from 'react';
 import { saveCompetitionAction } from '@/app/actions/competitions';
 import { ActionForm } from '@/components/action-form';
-import { ErrorText, Field, Input, PrimaryButton, SubtleButton, TextArea } from '@/components/ui';
+import {
+  ErrorText,
+  Field,
+  Input,
+  PrimaryButton,
+  SubtleButton,
+  TextArea,
+} from '@/components/layout-ui';
 import type { Competition } from '@/lib/data';
 
 /** 大会の入力。追加と編集で同じものを使う */

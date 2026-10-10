@@ -1,7 +1,7 @@
 import { getLocale, getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import { ProfileForm } from '@/components/profile-form';
-import { PageTitle } from '@/components/ui';
+import { PageTitle } from '@/components/layout-ui';
 import { getProfile } from '@/lib/data';
 import { requireViewer } from '@/lib/viewer';
 

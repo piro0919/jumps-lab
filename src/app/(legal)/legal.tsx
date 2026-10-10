@@ -39,21 +39,21 @@ export function Legal({
         <Link href="/" className="font-bold">
           Jumps Lab
         </Link>
-        <Link href={locale === 'ja' ? `/en/${doc}` : `/${doc}`} className="text-accent">
+        <Link href={locale === 'ja' ? `/en/${doc}` : `/${doc}`} className="text-primary">
           {copy.other}
         </Link>
       </div>
       <h1 className="mt-8 text-[28px] leading-snug font-bold tracking-tight">{title}</h1>
-      <p className="mt-2 text-[13px] text-sub">
+      <p className="mt-2 text-[13px] text-muted-foreground">
         {copy.updatedLabel}: {updated}
       </p>
       {copy.note && (
-        <p className="mt-6 border-l-2 border-line pl-4 text-sm leading-relaxed text-sub">
+        <p className="mt-6 border-l-2 border-border pl-4 text-sm leading-relaxed text-muted-foreground">
           {copy.note}
         </p>
       )}
       {/* 文章だけのページなので、節の切れ目に線を引く */}
-      <div className="mt-8 text-[15px] leading-relaxed [&_dd]:mb-3 [&_dt]:font-semibold [&_h2]:mt-8 [&_h2]:mb-3 [&_h2]:border-t [&_h2]:border-line [&_h2]:pt-6 [&_h2]:text-lg [&_h2]:font-bold [&_li]:mb-1.5 [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:mb-3 [&_ul]:list-disc [&_ul]:pl-6">
+      <div className="mt-8 text-[15px] leading-relaxed [&_dd]:mb-3 [&_dt]:font-semibold [&_h2]:mt-8 [&_h2]:mb-3 [&_h2]:border-t [&_h2]:border-border [&_h2]:pt-6 [&_h2]:text-lg [&_h2]:font-bold [&_li]:mb-1.5 [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:mb-3 [&_ul]:list-disc [&_ul]:pl-6">
         {children}
       </div>
     </main>

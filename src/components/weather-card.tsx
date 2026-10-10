@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
-import { Card, CardTitle, SubtleButton } from '@/components/ui';
+import { Card, CardTitle, SubtleButton } from '@/components/layout-ui';
 
 type Weather = { temperature: number; code: number; windMs: number };
 
@@ -80,12 +80,12 @@ export function WeatherCard() {
           <span className="text-xl font-bold">
             {tWeather(weatherKey(state.weather.code))} {Math.round(state.weather.temperature)}°
           </span>
-          <span className="text-sm text-sub tabular-nums">
+          <span className="text-sm text-muted-foreground tabular-nums">
             {t('wind', { speed: state.weather.windMs.toFixed(1) })}
           </span>
         </div>
       ) : state.kind === 'denied' ? (
-        <p className="text-sm text-sub">{t('locationDenied')}</p>
+        <p className="text-sm text-muted-foreground">{t('locationDenied')}</p>
       ) : (
         <SubtleButton type="button" onClick={load} disabled={state.kind === 'loading'}>
           {t('useLocation')}

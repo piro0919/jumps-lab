@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { Input } from '@/components/ui';
+import { Input } from '@/components/layout-ui';
 import {
   cmToFeetInches,
   feetInchesToCm,
@@ -19,7 +19,7 @@ import {
  */
 
 function Unit({ children }: { children: string }) {
-  return <span className="shrink-0 text-sm text-sub">{children}</span>;
+  return <span className="shrink-0 text-sm text-muted-foreground">{children}</span>;
 }
 
 const parse = (value: string) => (value.trim() === '' ? null : Number(value));

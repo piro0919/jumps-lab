@@ -4,7 +4,15 @@ import { useTranslations } from 'next-intl';
 import { ActionForm } from '@/components/action-form';
 import { useActionState, useState } from 'react';
 import { saveDayLogAction } from '@/app/actions/today';
-import { Card, CardTitle, ErrorText, Field, Input, PrimaryButton, TextArea } from '@/components/ui';
+import {
+  Card,
+  CardTitle,
+  ErrorText,
+  Field,
+  Input,
+  PrimaryButton,
+  TextArea,
+} from '@/components/layout-ui';
 import type { DayLog } from '@/lib/data';
 
 function Slider({
@@ -27,9 +35,9 @@ function Slider({
   const [value, setValue] = useState(initial);
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="flex items-baseline justify-between text-[13px] font-medium text-sub">
+      <span className="flex items-baseline justify-between text-[13px] font-medium text-muted-foreground">
         {label}
-        <span className="text-[15px] font-bold text-ink tabular-nums">
+        <span className="text-[15px] font-bold text-foreground tabular-nums">
           {value}
           {suffix}
         </span>
@@ -42,7 +50,7 @@ function Slider({
         step={step}
         value={value}
         onChange={(e) => setValue(Number(e.target.value))}
-        className="h-6 w-full accent-accent"
+        className="h-6 w-full accent-primary"
       />
     </label>
   );

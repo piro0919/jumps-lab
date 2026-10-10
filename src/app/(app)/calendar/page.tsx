@@ -2,7 +2,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import { DayPanel } from '@/components/day-panel';
-import { Card, PageTitle } from '@/components/ui';
+import { Card, PageTitle } from '@/components/layout-ui';
 import { getProfile, listAttemptsBetween, listCompetitionsBetween } from '@/lib/data';
 import { todayIn } from '@/lib/dates';
 import { requireViewer } from '@/lib/viewer';
@@ -68,7 +68,7 @@ export default async function Calendar({ searchParams }: PageProps<'/calendar'>)
             <Link
               href={`/calendar?day=${shiftMonth(month, -1)}-01`}
               aria-label={t('previous')}
-              className="flex size-9 items-center justify-center rounded-full bg-field"
+              className="flex size-9 items-center justify-center rounded-full bg-muted"
             >
               <ChevronLeft aria-hidden className="size-5" />
             </Link>
@@ -78,12 +78,12 @@ export default async function Calendar({ searchParams }: PageProps<'/calendar'>)
             <Link
               href={`/calendar?day=${shiftMonth(month, 1)}-01`}
               aria-label={t('next')}
-              className="flex size-9 items-center justify-center rounded-full bg-field"
+              className="flex size-9 items-center justify-center rounded-full bg-muted"
             >
               <ChevronRight aria-hidden className="size-5" />
             </Link>
           </div>
-          <div className="grid grid-cols-7 text-center text-xs font-medium text-sub">
+          <div className="grid grid-cols-7 text-center text-xs font-medium text-muted-foreground">
             {weekdays.map((weekday, i) => (
               <span key={i} className="py-1">
                 {weekday}
@@ -101,9 +101,9 @@ export default async function Calendar({ searchParams }: PageProps<'/calendar'>)
                   aria-current={cell === day ? 'date' : undefined}
                   className={`flex h-12 flex-col items-center justify-center gap-1 rounded-xl text-[15px] tabular-nums ${
                     cell === day
-                      ? 'bg-accent font-bold text-white'
+                      ? 'bg-primary font-bold text-white'
                       : cell === today
-                        ? 'font-bold text-accent'
+                        ? 'font-bold text-primary'
                         : ''
                   }`}
                 >
@@ -111,12 +111,12 @@ export default async function Calendar({ searchParams }: PageProps<'/calendar'>)
                   <span className="flex h-1.5 gap-0.5">
                     {withCompetitions.has(cell) && (
                       <span
-                        className={`size-1.5 rounded-full ${cell === day ? 'bg-white' : 'bg-danger'}`}
+                        className={`size-1.5 rounded-full ${cell === day ? 'bg-white' : 'bg-destructive'}`}
                       />
                     )}
                     {withAttempts.has(cell) && (
                       <span
-                        className={`size-1.5 rounded-full ${cell === day ? 'bg-white' : 'bg-accent'}`}
+                        className={`size-1.5 rounded-full ${cell === day ? 'bg-white' : 'bg-primary'}`}
                       />
                     )}
                   </span>

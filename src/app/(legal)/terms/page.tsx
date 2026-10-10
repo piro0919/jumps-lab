@@ -66,7 +66,7 @@ export default function Terms() {
 
       <p>
         預かる情報の扱いは
-        <Link href="/privacy" className="text-accent">
+        <Link href="/privacy" className="text-primary">
           プライバシーポリシー
         </Link>
         にあります。

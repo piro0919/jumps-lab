@@ -2,7 +2,7 @@ import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { EventSwitcher } from '@/components/event-switcher';
 import { MarkEditor } from '@/components/mark-editor';
-import { Card, CardTitle, PageTitle } from '@/components/ui';
+import { Card, CardTitle, PageTitle } from '@/components/layout-ui';
 import { WeatherCard } from '@/components/weather-card';
 import { computeBests } from '@/lib/bests';
 import { getProfile, getTarget, listAttempts, nextCompetition } from '@/lib/data';
@@ -55,7 +55,9 @@ export default async function Home() {
               large
             />
             {gap !== null && (
-              <p className={`text-sm font-semibold ${gap <= 0 ? 'text-good' : 'text-sub'}`}>
+              <p
+                className={`text-sm font-semibold ${gap <= 0 ? 'text-good' : 'text-muted-foreground'}`}
+              >
                 {gap <= 0
                   ? t('goalReached')
                   : t('toGoal', { distance: formatMark(gap, profile.units) })}
@@ -63,7 +65,7 @@ export default async function Home() {
             )}
           </Card>
 
-          <Card className="flex flex-col divide-y divide-line [&>*]:py-3 [&>*:first-child]:pt-0 [&>*:last-child]:pb-0">
+          <Card className="flex flex-col divide-y divide-border [&>*]:py-3 [&>*:first-child]:pt-0 [&>*:last-child]:pb-0">
             <MarkEditor
               field="manualPbM"
               label={t('pb')}
@@ -94,12 +96,12 @@ export default async function Home() {
               {competition ? (
                 <div className="flex items-baseline justify-between gap-3">
                   <span className="min-w-0 truncate text-lg font-bold">{competition.name}</span>
-                  <span className="shrink-0 text-lg font-bold text-accent tabular-nums">
+                  <span className="shrink-0 text-lg font-bold text-primary tabular-nums">
                     {t('daysLeft', { days: daysBetween(today, competition.day) })}
                   </span>
                 </div>
               ) : (
-                <p className="text-sm text-sub">{t('noCompetition')}</p>
+                <p className="text-sm text-muted-foreground">{t('noCompetition')}</p>
               )}
             </Card>
           </Link>

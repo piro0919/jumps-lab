@@ -2,7 +2,7 @@ import { getFormatter, getTranslations } from 'next-intl/server';
 import { AttemptsCard } from '@/components/attempts-card';
 import { DayLogForm } from '@/components/day-log-form';
 import { EventSwitcher } from '@/components/event-switcher';
-import { PageTitle } from '@/components/ui';
+import { PageTitle } from '@/components/layout-ui';
 import { getDayLog, getProfile, listAttemptsBetween } from '@/lib/data';
 import { todayIn } from '@/lib/dates';
 import { requireViewer } from '@/lib/viewer';
