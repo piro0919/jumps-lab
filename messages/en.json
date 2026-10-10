@@ -119,7 +119,7 @@
     "useLocation": "Show weather here",
     "locationDenied": "Location is off",
     "wind": "Wind {speed} m/s",
-    "targetsTitle": "Goal and bests",
+    "clear": "Clear",
     "jumps": "Jumps",
     "daysLogged": "Days logged"
   },
@@ -136,6 +136,9 @@
   },
   "today": {
     "condition": "Condition",
+    "editCondition": "Edit condition",
+    "noCondition": "No condition",
+    "edit": "Edit",
     "physical": "Body",
     "fatigue": "Fatigue",
     "sleep": "Sleep",
@@ -155,7 +158,7 @@
     "delete": "Delete",
     "cancel": "Cancel",
     "ok": "OK",
-    "deleteConfirm": "Delete this mark?",
+    "deleteConfirm": "Delete this attempt?",
     "best": "Best",
     "windAided": "Wind-aided"
   },

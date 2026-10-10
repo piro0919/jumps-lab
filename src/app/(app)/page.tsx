@@ -11,28 +11,30 @@ import {
   Stat,
   Watermark,
 } from '@/components/layout-ui';
-import { MarkLink } from '@/components/mark-link';
+import { MarkEditor } from '@/components/mark-editor';
 import { WeatherCard } from '@/components/weather-card';
 import { computeBests } from '@/lib/bests';
 import { getProfile, getTargets, listAllAttempts, nextCompetition } from '@/lib/data';
-import { daysBetween, todayIn } from '@/lib/dates';
+import { daysBetween, seasonOf, todayIn } from '@/lib/dates';
 import { EVENT_BG, EVENT_MARK, type JumpEvent } from '@/lib/events';
 import { formatMark, type Units } from '@/lib/units';
 import { requireViewer } from '@/lib/viewer';
 
 /**
  * 1種目のカード。種目の色で塗り、PB を画面いっぱいの数字で出す（手本の Nike Run Club の色付きのカード）。
- * その下に今季ベスト・練習ベスト・今季の目標を横に3つ。どの数字も押すと、その種目の目標とベストを直す画面へ移る
+ * その下に SB・練習ベスト・今季の目標を横に3つ。どの数字も押すとその場で手で直せる
  */
 async function EventHero({
   event,
   goalM,
   bests,
+  manual,
   units,
 }: {
   event: JumpEvent;
   goalM: number | null;
   bests: { pbM: number | null; sbM: number | null; practiceBestM: number | null };
+  manual: { pbM: number | null; sbM: number | null; practiceBestM: number | null };
   units: Units;
 }) {
   const t = await getTranslations('home');
@@ -47,37 +49,41 @@ async function EventHero({
       <Watermark>{EVENT_MARK[event]}</Watermark>
       <div className="relative flex flex-col gap-4">
         <SectionTitle inverse>{tEvents(event)}</SectionTitle>
-        <MarkLink
+        <MarkEditor
           event={event}
           field="manualPbM"
           label={t('pb')}
           shown={bests.pbM}
+          manual={manual.pbM}
           units={units}
           size="giant"
           inverse
         />
         <div className="grid grid-cols-3 gap-4">
-          <MarkLink
+          <MarkEditor
             event={event}
             field="manualSbM"
             label={t('sb')}
             shown={bests.sbM}
+            manual={manual.sbM}
             units={units}
             inverse
           />
-          <MarkLink
+          <MarkEditor
             event={event}
             field="manualPracticeBestM"
             label={t('practiceBest')}
             shown={bests.practiceBestM}
+            manual={manual.practiceBestM}
             units={units}
             inverse
           />
-          <MarkLink
+          <MarkEditor
             event={event}
             field="seasonGoalM"
             label={t('goal')}
             shown={goalM}
+            manual={goalM}
             units={units}
             inverse
           />
@@ -192,6 +198,14 @@ export default async function Home() {
                   today,
                   profile.seasonStartMonth,
                 )}
+                manual={{
+                  pbM: target.manualPbM,
+                  sbM:
+                    target.manualSbSeason === seasonOf(today, profile.seasonStartMonth)
+                      ? target.manualSbM
+                      : null,
+                  practiceBestM: target.manualPracticeBestM,
+                }}
                 units={profile.units}
               />
             );

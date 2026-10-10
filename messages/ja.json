@@ -119,7 +119,7 @@
     "useLocation": "現在地の天気を表示",
     "locationDenied": "位置情報が使えません",
     "wind": "風 {speed} m/s",
-    "targetsTitle": "目標とベスト",
+    "clear": "消去",
     "jumps": "本数",
     "daysLogged": "記録した日"
   },
@@ -136,6 +136,9 @@
   },
   "today": {
     "condition": "コンディション",
+    "editCondition": "コンディションを編集",
+    "noCondition": "コンディションはありません",
+    "edit": "編集",
     "physical": "体調",
     "fatigue": "疲労度",
     "sleep": "睡眠",
@@ -155,7 +158,7 @@
     "delete": "削除",
     "cancel": "キャンセル",
     "ok": "OK",
-    "deleteConfirm": "この記録を削除しますか？",
+    "deleteConfirm": "この試技を削除しますか？",
     "best": "ベスト",
     "windAided": "追い風参考"
   },

@@ -1,16 +1,6 @@
 /** 種目。DB の check と同じ並び */
 export const EVENTS = ['high_jump', 'long_jump', 'triple_jump', 'pole_vault'] as const;
 
-/** アドレスに出す種目の名前（high_jump → high-jump）。目標とベストを直す画面 /targets/[event] で使う */
-export function eventSlug(event: (typeof EVENTS)[number]): string {
-  return event.replace('_', '-');
-}
-
-/** アドレスの種目の名前から種目へ。知らない名前は null */
-export function eventFromSlug(slug: string): (typeof EVENTS)[number] | null {
-  return EVENTS.find((event) => eventSlug(event) === slug) ?? null;
-}
-
 export type JumpEvent = (typeof EVENTS)[number];
 
 export function isJumpEvent(value: unknown): value is JumpEvent {

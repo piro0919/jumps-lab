@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import { AttemptsCard } from '@/components/attempts-card';
-import { DayLogForm } from '@/components/day-log-form';
+import { ConditionCard } from '@/components/condition-card';
 import { BackLink, PageTitle } from '@/components/layout-ui';
 import { getDayLog, getProfile, listAttemptsBetween } from '@/lib/data';
 import { resolveLogDay, todayIn } from '@/lib/dates';
@@ -9,7 +9,8 @@ import { requireViewer } from '@/lib/viewer';
 
 /**
  * 1日分の試技と体調。/log/today は本人の時間帯での今日を開く。
- * 先の日は記録できないので今日へ送る（日付の形でないものも同じ）。試技を足すのは /log/[day]/new
+ * 先の日は記録できないので今日へ送る（日付の形でないものも同じ）。この画面は見るだけで、
+ * 試技を足すのは /log/[day]/new、コンディションを直すのは /log/[day]/condition
  */
 export default async function LogDay({ params }: PageProps<'/log/[day]'>) {
   const viewer = await requireViewer();
@@ -42,7 +43,7 @@ export default async function LogDay({ params }: PageProps<'/log/[day]'>) {
       </PageTitle>
       <div className="flex flex-col gap-3 lg:grid lg:grid-cols-2 lg:items-start">
         <AttemptsCard day={day} units={profile.units} attempts={attempts} events={profile.events} />
-        <DayLogForm day={day} log={log} />
+        <ConditionCard log={log} editHref={`/log/${day}/condition`} />
       </div>
     </main>
   );
