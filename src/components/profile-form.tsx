@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { ActionForm } from '@/components/action-form';
 import { useActionState, useEffect, useRef, useState } from 'react';
 import { saveProfileAction } from '@/app/actions/profile';
 import { HeightInput, MarkInput, WeightInput } from '@/components/measure-inputs';
@@ -53,7 +54,7 @@ export function ProfileForm({
     );
 
   return (
-    <form action={action} className="flex flex-col gap-4 pb-8">
+    <ActionForm action={action} className="flex flex-col gap-4 pb-8">
       <input type="hidden" name="from" value={from} />
       <input
         ref={timeZoneRef}
@@ -159,6 +160,6 @@ export function ProfileForm({
           {from === 'welcome' ? t('start') : t('save')}
         </PrimaryButton>
       </div>
-    </form>
+    </ActionForm>
   );
 }

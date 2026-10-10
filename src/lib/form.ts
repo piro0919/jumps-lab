@@ -5,15 +5,16 @@ import { z } from 'zod';
  * Server Action は画面と同じ柵をここでもう一度かける（ブラウザを通らない要求もあるため）
  */
 
+// 送られてこなかった欄（画面に出していない欄）も空として扱う
 const emptyToNull = (value: unknown) =>
-  typeof value === 'string' && value.trim() === '' ? null : value;
+  value === undefined || (typeof value === 'string' && value.trim() === '') ? null : value;
 
 export const optionalNumber = (min: number, max: number) =>
   z.preprocess(emptyToNull, z.coerce.number().min(min).max(max).nullable());
 
 export const optionalText = (max: number) =>
   z.preprocess(
-    (value) => (typeof value === 'string' ? emptyToNull(value.trim()) : value),
+    (value) => emptyToNull(typeof value === 'string' ? value.trim() : value),
     z.string().max(max).nullable(),
   );
 
