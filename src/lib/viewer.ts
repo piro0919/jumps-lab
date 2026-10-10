@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { cache } from 'react';
 import { getAuth } from '@/lib/auth';
 
-export type Viewer = { userId: string; name: string; image: string | null };
+export type Viewer = { userId: string; name: string; email: string; image: string | null };
 
 /**
  * いまログインしている人。いなければログインの画面へ送る。
@@ -18,6 +18,7 @@ export const requireViewer = cache(async (): Promise<Viewer> => {
   return {
     userId: session.user.id,
     name: session.user.name,
+    email: session.user.email,
     image: session.user.image ?? null,
   };
 });

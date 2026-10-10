@@ -5,11 +5,10 @@
 /*
  * 色は shadcn/ui の名前で持ち、値は手本の Strong に寄せる（灰色の地に白い面、青い差し色）。
  * 部品は名前で使い、値を直に書かない（暗いテーマで値が変わるため）。
- * いまは明るいテーマに固定している（本人、2026-10-11「いったんライトで固定」）。
- * 暗いテーマの値は .dark に残してあり、どこにも付けていないので効かない。
- * 戻すときは、下の custom-variant と .dark を prefers-color-scheme のメディアクエリに戻す
+ * 配色は端末に合わせる・明るい・暗いから、自分のアイコンのメニューで選ぶ（本人、2026-10-11）。
+ * 選んだ配色は next-themes が html の data-theme に書く。dark: も端末の設定ではなく data-theme で効かせる（鯉魂と同じ）
  */
-@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
 
 @theme inline {
   /* 書体は端末のもの。shadcn が入れた Geist は英字だけなので外した（鯉魂と同じ） */
@@ -26,6 +25,11 @@
   --color-long-jump: #c2410c;
   --color-triple-jump: #2f7d32;
   --color-pole-vault: #6d28d9;
+  /* 種目の色の字。明るいテーマは地の色と同じで、暗いテーマでは明るくして暗い面の上で 4.5 を超えさせる */
+  --color-high-jump-ink: var(--high-jump-ink);
+  --color-long-jump-ink: var(--long-jump-ink);
+  --color-triple-jump-ink: var(--triple-jump-ink);
+  --color-pole-vault-ink: var(--pole-vault-ink);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -62,12 +66,15 @@
   --card-foreground: #1c1c1e;
   --popover: #ffffff;
   --popover-foreground: #1c1c1e;
-  /* 押すと結果が起きるもの。白い字を載せて 4.5 を超える青 */
-  --primary: #1e6fd9;
+  /*
+   * 選んでいるもの・戻るリンクの青。白い字を載せても、薄い青や灰色の地の上の字にしても 4.5 を超える濃さ
+   * （#1e6fd9 だと薄い青の地で 4.21・灰色の地で 4.35 に落ちた。2026-10-11 に測って濃くした）
+   */
+  --primary: #1a64c8;
   --primary-foreground: #ffffff;
   /* 控えめなボタン（追加・キャンセル）と、選ばれていることの表示 */
   --secondary: #e6f0fc;
-  --secondary-foreground: #1e6fd9;
+  --secondary-foreground: #1a64c8;
   /* 入力欄の地 */
   --muted: #f2f2f7;
   /* 白い面の上で 4.5 を超える灰色 */
@@ -83,13 +90,17 @@
    */
   --brand: #d4ff3a;
   --brand-foreground: #111111;
+  --high-jump-ink: #1e6fd9;
+  --long-jump-ink: #c2410c;
+  --triple-jump-ink: #2f7d32;
+  --pole-vault-ink: #6d28d9;
   --border: #e5e5ea;
   --input: #e5e5ea;
-  --ring: #1e6fd9;
+  --ring: #1a64c8;
   --radius: 0.75rem;
 }
 
-.dark {
+[data-theme='dark'] {
   color-scheme: dark;
   --background: #000000;
   --foreground: #f2f2f7;
@@ -109,6 +120,10 @@
   --good: #4cc27d;
   --brand: #d4ff3a;
   --brand-foreground: #111111;
+  --high-jump-ink: #60a5fa;
+  --long-jump-ink: #fb923c;
+  --triple-jump-ink: #4ade80;
+  --pole-vault-ink: #a78bfa;
   --border: #2c2c2e;
   --input: #3a3a3c;
   --ring: #4b93f0;

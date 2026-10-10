@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { Barlow_Condensed } from 'next/font/google';
+import { ThemeProvider } from '@/components/theme-provider';
 import './globals.css';
 
 // 記録の数字と英字の見出しの字（手本の Nike Run Club の、細長く太い斜体の数字）。
@@ -31,9 +32,16 @@ export default async function RootLayout({ children }: LayoutProps<'/'>) {
   const locale = await getLocale();
 
   return (
-    <html lang={locale} className={`${display.variable} h-full antialiased`}>
+    // 配色は next-themes が描く前に data-theme を書き込むので、そのずれの警告は出さない
+    <html
+      lang={locale}
+      className={`${display.variable} h-full antialiased`}
+      suppressHydrationWarning
+    >
       <body className="min-h-full min-w-[375px] font-sans">
-        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        <ThemeProvider>
+          <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

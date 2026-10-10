@@ -5,7 +5,15 @@ import { ActionForm } from '@/components/action-form';
 import { useActionState, useEffect, useRef, useState } from 'react';
 import { saveProfileAction } from '@/app/actions/profile';
 import { HeightInput, MarkInput, WeightInput } from '@/components/measure-inputs';
-import { Card, ErrorText, Field, FieldLabel, Input, Select } from '@/components/layout-ui';
+import {
+  Card,
+  CardTitle,
+  ErrorText,
+  Field,
+  FieldLabel,
+  Input,
+  Select,
+} from '@/components/layout-ui';
 import { Button } from '@/components/ui/button';
 import type { Profile } from '@/lib/data';
 import { EVENTS } from '@/lib/events';
@@ -18,7 +26,8 @@ const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
 
 /**
  * プロフィールの入力。初回（from=welcome）と設定画面で同じものを使う。
- * 単位を先に選ばせ、切り替えたら長さと重さの欄を空からやり直す（換算の途中の値を混ぜない）
+ * 本人のこと（名前・生年月日・学年・性別・身長・体重）と、記録のつけ方（種目・単位・シーズンの始まり）の2つに分ける。
+ * 単位を切り替えたら、長さと重さの欄を保存済みの値からやり直す（換算の途中の値を混ぜない）
  */
 export function ProfileForm({
   from,
@@ -69,7 +78,7 @@ export function ProfileForm({
     );
 
   return (
-    <ActionForm action={action} className="flex flex-col gap-4 pb-8">
+    <ActionForm action={action} className="flex flex-col gap-3 pb-4">
       <input type="hidden" name="from" value={from} />
       <input
         ref={timeZoneRef}
@@ -81,90 +90,112 @@ export function ProfileForm({
         <input key={event} type="hidden" name="events" value={event} />
       ))}
 
-      <Card className="flex flex-col gap-4">
-        <Field label={t('name')} required={t('required')}>
-          <Input name="name" defaultValue={defaultName} required maxLength={100} />
-        </Field>
-        <div className="flex flex-col gap-1.5">
-          <FieldLabel label={t('events')} required={t('required')} />
-          <div className="flex flex-wrap gap-2">
-            {EVENTS.map((event) => {
-              const on = events.includes(event);
-              return (
-                <button
-                  key={event}
-                  type="button"
-                  aria-pressed={on}
-                  onClick={() => toggle(event)}
-                  className={`h-9 rounded-full px-3.5 text-sm font-semibold transition active:scale-[0.98] ${
-                    on ? 'bg-secondary text-primary' : 'bg-muted text-muted-foreground'
-                  }`}
-                >
-                  {tEvents(event)}
-                </button>
-              );
-            })}
+      <Card>
+        <CardTitle>{t('sectionProfile')}</CardTitle>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="col-span-2">
+            <Field label={t('name')} required={t('required')}>
+              <Input name="name" defaultValue={defaultName} required maxLength={100} />
+            </Field>
+          </div>
+          <Field label={t('birthdate')}>
+            <Input
+              name="birthdate"
+              type="date"
+              min="1900-01-01"
+              defaultValue={initial?.birthdate ?? ''}
+              onChange={(e) => fillGrade(e.target.value)}
+            />
+          </Field>
+          <Field label={t('grade')}>
+            <Select name="grade" value={grade} onChange={(e) => setGrade(e.target.value)}>
+              <option value="">{t('notSet')}</option>
+              {GRADES.map((value) => (
+                <option key={value} value={value}>
+                  {tGrades(value)}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field label={t('gender')}>
+            <Select name="gender" defaultValue={initial?.gender ?? ''}>
+              <option value="">{t('notSet')}</option>
+              <option value="male">{tGenders('male')}</option>
+              <option value="female">{tGenders('female')}</option>
+              <option value="other">{tGenders('other')}</option>
+            </Select>
+          </Field>
+          <div className="col-span-2">
+            <Field label={t('height')}>
+              <HeightInput
+                key={units}
+                name="heightCm"
+                units={units}
+                defaultCm={initial?.heightCm}
+              />
+            </Field>
+          </div>
+          <div className="col-span-2">
+            <Field label={t('weight')}>
+              <WeightInput
+                key={units}
+                name="weightKg"
+                units={units}
+                defaultKg={initial?.weightKg}
+              />
+            </Field>
           </div>
         </div>
-        <Field label={t('units')}>
-          <Select name="units" value={units} onChange={(e) => setUnits(e.target.value as Units)}>
-            <option value="metric">{tUnits('metric')}</option>
-            <option value="imperial">{tUnits('imperial')}</option>
-          </Select>
-        </Field>
-        {from === 'welcome' && (
-          <Field label={t('goal')}>
-            <MarkInput key={units} name="goalM" units={units} />
-          </Field>
-        )}
       </Card>
 
-      <Card className="grid grid-cols-2 gap-4">
-        <Field label={t('birthdate')}>
-          <Input
-            name="birthdate"
-            type="date"
-            min="1900-01-01"
-            defaultValue={initial?.birthdate ?? ''}
-            onChange={(e) => fillGrade(e.target.value)}
-          />
-        </Field>
-        <Field label={t('grade')}>
-          <Select name="grade" value={grade} onChange={(e) => setGrade(e.target.value)}>
-            <option value="">{t('notSet')}</option>
-            {GRADES.map((value) => (
-              <option key={value} value={value}>
-                {tGrades(value)}
-              </option>
-            ))}
-          </Select>
-        </Field>
-        <Field label={t('gender')}>
-          <Select name="gender" defaultValue={initial?.gender ?? ''}>
-            <option value="">{t('notSet')}</option>
-            <option value="male">{tGenders('male')}</option>
-            <option value="female">{tGenders('female')}</option>
-            <option value="other">{tGenders('other')}</option>
-          </Select>
-        </Field>
-        <Field label={t('seasonStart')}>
-          <Select name="seasonStartMonth" defaultValue={initial?.seasonStartMonth ?? 1}>
-            {MONTHS.map((month) => (
-              <option key={month} value={month}>
-                {monthName(month)}
-              </option>
-            ))}
-          </Select>
-        </Field>
-        <div className="col-span-2">
-          <Field label={t('height')}>
-            <HeightInput key={units} name="heightCm" units={units} defaultCm={initial?.heightCm} />
+      <Card>
+        <CardTitle>{t('sectionRecords')}</CardTitle>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="col-span-2">
+            <div className="flex flex-col gap-1.5">
+              <FieldLabel label={t('events')} required={t('required')} />
+              <div className="flex flex-wrap gap-2">
+                {EVENTS.map((event) => {
+                  const on = events.includes(event);
+                  return (
+                    <button
+                      key={event}
+                      type="button"
+                      aria-pressed={on}
+                      onClick={() => toggle(event)}
+                      className={`h-9 rounded-full px-3.5 text-sm font-semibold transition active:scale-[0.98] ${
+                        on ? 'bg-secondary text-primary' : 'bg-muted text-muted-foreground'
+                      }`}
+                    >
+                      {tEvents(event)}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+          <Field label={t('units')}>
+            <Select name="units" value={units} onChange={(e) => setUnits(e.target.value as Units)}>
+              <option value="metric">{tUnits('metric')}</option>
+              <option value="imperial">{tUnits('imperial')}</option>
+            </Select>
           </Field>
-        </div>
-        <div className="col-span-2">
-          <Field label={t('weight')}>
-            <WeightInput key={units} name="weightKg" units={units} defaultKg={initial?.weightKg} />
+          <Field label={t('seasonStart')}>
+            <Select name="seasonStartMonth" defaultValue={initial?.seasonStartMonth ?? 1}>
+              {MONTHS.map((month) => (
+                <option key={month} value={month}>
+                  {monthName(month)}
+                </option>
+              ))}
+            </Select>
           </Field>
+          {from === 'welcome' && (
+            <div className="col-span-2">
+              <Field label={t('goal')}>
+                <MarkInput key={units} name="goalM" units={units} />
+              </Field>
+            </div>
+          )}
         </div>
       </Card>
 

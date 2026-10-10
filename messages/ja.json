@@ -48,7 +48,11 @@
     "log": "記録",
     "competitions": "大会",
     "analysis": "分析",
-    "settings": "設定"
+    "settings": "設定",
+    "theme": "テーマ",
+    "themeSystem": "端末に合わせる",
+    "themeLight": "ライト",
+    "themeDark": "ダーク"
   },
   "log": {
     "today": "今日",
@@ -70,6 +74,11 @@
     "windAidedLabel": "{event}（追い風参考）"
   },
   "profile": {
+    "sectionProfile": "プロフィール",
+    "sectionRecords": "記録",
+    "sectionDisplay": "表示",
+    "sectionAccount": "アカウント",
+    "googleAccount": "Google アカウント",
     "welcome": "ようこそ",
     "required": "必須",
     "name": "名前",

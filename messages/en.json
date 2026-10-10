@@ -48,7 +48,11 @@
     "log": "Log",
     "competitions": "Competitions",
     "analysis": "Analysis",
-    "settings": "Settings"
+    "settings": "Settings",
+    "theme": "Theme",
+    "themeSystem": "Match device",
+    "themeLight": "Light",
+    "themeDark": "Dark"
   },
   "log": {
     "today": "Today",
@@ -70,6 +74,11 @@
     "windAidedLabel": "{event} (wind-aided)"
   },
   "profile": {
+    "sectionProfile": "Profile",
+    "sectionRecords": "Records",
+    "sectionDisplay": "Display",
+    "sectionAccount": "Account",
+    "googleAccount": "Google account",
     "welcome": "Welcome",
     "required": "Required",
     "name": "Name",

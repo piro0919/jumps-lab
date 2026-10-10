@@ -11,7 +11,15 @@ import { buttonVariants } from '@/components/ui/button';
  * 右端に今日の記録を足すボタン（スマホは下のタブの真ん中にあるので出さない）と、自分のアイコン（設定とログアウト）。
  * 地の色と下の線は付けない（本人、2026-10-11）
  */
-export async function SiteHeader({ name, image }: { name: string; image: string | null }) {
+export async function SiteHeader({
+  name,
+  email,
+  image,
+}: {
+  name: string;
+  email: string;
+  image: string | null;
+}) {
   const tMeta = await getTranslations('metadata');
   const tLog = await getTranslations('log');
 
@@ -31,7 +39,7 @@ export async function SiteHeader({ name, image }: { name: string; image: string 
           <Plus aria-hidden className="size-4" strokeWidth={3} />
           {tLog('recordToday')}
         </Link>
-        <AccountMenu name={name} image={image} />
+        <AccountMenu name={name} email={email} image={image} />
       </div>
     </header>
   );
