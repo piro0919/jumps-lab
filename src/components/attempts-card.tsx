@@ -1,6 +1,6 @@
 'use client';
 
-import { Plus, Trash2 } from 'lucide-react';
+import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useState, useTransition } from 'react';
@@ -102,6 +102,14 @@ export function AttemptsCard({
                             .join(' · ')}
                         </span>
                       </span>
+                      {/* 行の操作はアイコンだけのボタン（大会の一覧と同じ）。直すのは別の画面 */}
+                      <Link
+                        href={`/attempts/${attempt.id}/edit`}
+                        aria-label={t('editAttempt')}
+                        className={buttonVariants({ variant: 'ghost', size: 'icon' })}
+                      >
+                        <Pencil aria-hidden />
+                      </Link>
                       <Button
                         variant="ghost"
                         size="icon"

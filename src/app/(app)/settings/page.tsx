@@ -3,6 +3,9 @@ import { ProfileSettingsForm, RecordSettingsForm } from '@/components/profile-fo
 import { Card, CardTitle, LABEL, PageTitle, FORM_PAGE } from '@/components/layout-ui';
 import { SignOutButton } from '@/components/sign-out-button';
 import { ThemeSetting } from '@/components/theme-setting';
+import { LanguageSetting } from '@/components/language-setting';
+import { isLocale, LOCALE_COOKIE } from '@/i18n/locales';
+import { cookies } from 'next/headers';
 import { getProfile } from '@/lib/data';
 import { todayIn } from '@/lib/dates';
 import { currentGrade } from '@/lib/grade';
@@ -18,6 +21,7 @@ export default async function Settings() {
   const profile = (await getProfile(viewer.userId))!;
   const t = await getTranslations('nav');
   const tProfile = await getTranslations('profile');
+  const chosenLocale = (await cookies()).get(LOCALE_COOKIE)?.value;
 
   return (
     <main className={FORM_PAGE}>
@@ -38,6 +42,10 @@ export default async function Settings() {
         <div className="flex flex-col gap-1.5">
           <span className={LABEL}>{t('theme')}</span>
           <ThemeSetting />
+        </div>
+        <div className="mt-4 flex flex-col gap-1.5">
+          <span className={LABEL}>{t('language')}</span>
+          <LanguageSetting current={isLocale(chosenLocale) ? chosenLocale : 'auto'} />
         </div>
       </Card>
       <Card>

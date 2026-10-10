@@ -2,7 +2,14 @@
 
 import { refresh } from 'next/cache';
 import { z } from 'zod';
-import { addAttempt, deleteAttempt, getProfile, saveDayLog } from '@/lib/data';
+import {
+  addAttempt,
+  deleteAttempt,
+  getAttempt,
+  getProfile,
+  saveDayLog,
+  updateAttempt,
+} from '@/lib/data';
 import { isDay, todayIn } from '@/lib/dates';
 import { EVENTS, hasWind } from '@/lib/events';
 import { type ActionResult, optionalNumber, optionalText } from '@/lib/form';
@@ -47,6 +54,8 @@ export async function saveDayLogAction(
 }
 
 const attemptSchema = z.object({
+  // あれば書き換え、無ければ足す
+  id: z.preprocess((v) => (v === '' || v === undefined ? null : v), z.uuid().nullable()),
   day,
   event: z.enum(EVENTS),
   kind: z.enum(['practice', 'competition']),
@@ -55,8 +64,8 @@ const attemptSchema = z.object({
   note: optionalText(500),
 });
 
-/** 記録を1本足す。種目は足す窓で選んだもの（本人の選んだ種目だけ）。風は走幅跳と三段跳だけ残す */
-export async function addAttemptAction(
+/** 試技を1本足すか書き換える。種目は本人の選んだ種目だけ（書き換えは元の種目のままでもよい）。風は走幅跳と三段跳だけ残す */
+export async function saveAttemptAction(
   _previous: ActionResult,
   formData: FormData,
 ): Promise<ActionResult> {
@@ -70,16 +79,19 @@ export async function addAttemptAction(
     return { ok: false, error: parsed.error.issues[0]?.message === 'mark' ? 'mark' : 'generic' };
   }
   const profile = await getProfile(viewer.userId);
-  const event = parsed.data.event;
-  if (!profile || !profile.events.includes(event) || !openDay(parsed.data.day, profile.timeZone)) {
+  const { id, ...input } = parsed.data;
+  const event = input.event;
+  // 書き換えるときは、種目から外した種目の試技でも、その種目のままなら直せる
+  const existing = id ? await getAttempt(viewer.userId, id) : null;
+  if (id && !existing) return { ok: false, error: 'generic' };
+  const allowed = profile?.events.includes(event) || existing?.event === event;
+  if (!profile || !allowed || !openDay(input.day, profile.timeZone)) {
     return { ok: false, error: 'generic' };
   }
+  const values = { ...input, event, windMs: hasWind(event) ? input.windMs : null };
   try {
-    await addAttempt(viewer.userId, {
-      ...parsed.data,
-      event,
-      windMs: hasWind(event) ? parsed.data.windMs : null,
-    });
+    if (id) await updateAttempt(viewer.userId, id, values);
+    else await addAttempt(viewer.userId, values);
   } catch (error) {
     console.error(error);
     return { ok: false, error: 'generic' };

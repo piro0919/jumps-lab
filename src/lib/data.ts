@@ -258,6 +258,28 @@ export async function addAttempt(userId: string, input: Omit<Attempt, 'id'>): Pr
   );
 }
 
+/** 本人の試技を1本。無いか他人の試技なら null */
+export async function getAttempt(userId: string, id: string): Promise<Attempt | null> {
+  const { rows } = await db().query<AttemptRow>(
+    `select ${attemptColumns} from attempt where "userId" = $1 and id = $2`,
+    [userId, id],
+  );
+  return rows[0] ? toAttempt(rows[0]) : null;
+}
+
+/** 試技を1本書き換える（日は変えない）。本人の試技だけ */
+export async function updateAttempt(
+  userId: string,
+  id: string,
+  input: Omit<Attempt, 'id' | 'day'>,
+): Promise<void> {
+  await db().query(
+    `update attempt set event = $3, kind = $4, "markM" = $5, "windMs" = $6, note = $7
+      where "userId" = $1 and id = $2`,
+    [userId, id, input.event, input.kind, input.markM, input.windMs, input.note],
+  );
+}
+
 export async function deleteAttempt(userId: string, id: string): Promise<void> {
   await db().query(`delete from attempt where "userId" = $1 and id = $2`, [userId, id]);
 }

@@ -3,12 +3,13 @@
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useActionState, useState } from 'react';
-import { addAttemptAction } from '@/app/actions/today';
+import { saveAttemptAction } from '@/app/actions/today';
 import { ActionForm } from '@/components/action-form';
 import { ErrorText, Field, FieldLabel, segmentClass, TextArea } from '@/components/layout-ui';
 import { MarkInput, WindInput } from '@/components/measure-inputs';
 import { FormActions } from '@/components/form-actions';
 import { cn } from 'cn';
+import type { Attempt } from '@/lib/data';
 import { hasWind, type JumpEvent } from '@/lib/events';
 import type { Units } from '@/lib/units';
 
@@ -45,8 +46,8 @@ function Segmented<T extends string>({
 }
 
 /**
- * 試技を1本足す入力（/log/[day]/new の画面）。種目はここで選ぶ。はじめはその日に最後に足した種目。
- * 足したら、その日の画面へ戻る。入力は窓ではなく画面で行う（本人、2026-10-11「統一性がなくてわかりづらい」）
+ * 試技を1本足す・直す入力（/log/[day]/new と /attempts/[id]/edit の画面）。種目はここで選ぶ。
+ * 足すときのはじめの種目は、その日に最後に足した種目。保存したら、その日の画面へ戻る。入力は窓ではなく画面で行う（本人、2026-10-11「統一性がなくてわかりづらい」）
  */
 export function AttemptForm({
   day,
@@ -54,6 +55,7 @@ export function AttemptForm({
   initialEvent,
   units,
   backHref,
+  initial,
 }: {
   day: string;
   events: JumpEvent[];
@@ -61,6 +63,8 @@ export function AttemptForm({
   units: Units;
   /** 戻る先（その日の画面） */
   backHref: string;
+  /** 直すときの元の試技。無ければ足す */
+  initial?: Attempt;
 }) {
   const t = useTranslations('today');
   const tEvents = useTranslations('events');
@@ -68,15 +72,16 @@ export function AttemptForm({
   const tProfile = useTranslations('profile');
   const router = useRouter();
   const [event, setEvent] = useState<JumpEvent>(initialEvent);
-  const [kind, setKind] = useState<'practice' | 'competition'>('practice');
+  const [kind, setKind] = useState<'practice' | 'competition'>(initial?.kind ?? 'practice');
   const [state, action, pending] = useActionState(async (previous: unknown, formData: FormData) => {
-    const result = await addAttemptAction(null, formData);
+    const result = await saveAttemptAction(null, formData);
     if (result?.ok) router.push(backHref);
     return result;
   }, null);
 
   return (
     <ActionForm action={action} className="flex flex-col gap-4">
+      <input type="hidden" name="id" value={initial?.id ?? ''} />
       <input type="hidden" name="day" value={day} />
       <input type="hidden" name="event" value={event} />
       <input type="hidden" name="kind" value={kind} />
@@ -97,15 +102,15 @@ export function AttemptForm({
         />
       </div>
       <Field label={t('mark')} required={tProfile('required')}>
-        <MarkInput name="markM" units={units} autoFocus />
+        <MarkInput name="markM" units={units} defaultMeters={initial?.markM ?? null} autoFocus />
       </Field>
       {hasWind(event) && (
         <Field label={t('wind')}>
-          <WindInput name="windMs" />
+          <WindInput name="windMs" defaultValue={initial?.windMs ?? null} />
         </Field>
       )}
       <Field label={t('attemptNote')}>
-        <TextArea name="note" maxLength={500} />
+        <TextArea name="note" maxLength={500} defaultValue={initial?.note ?? ''} />
       </Field>
       <FormActions
         label={t('save')}

@@ -5,6 +5,13 @@ export type Locale = (typeof LOCALES)[number];
 
 const DEFAULT_LOCALE: Locale = 'en';
 
+/** 本人が設定で選んだ言語を入れておく Cookie の名前。無ければブラウザの言語で決める */
+export const LOCALE_COOKIE = 'locale';
+
+export function isLocale(value: unknown): value is Locale {
+  return LOCALES.some((l) => l === value);
+}
+
 /**
  * ブラウザの Accept-Language から、持っている言語を選ぶ（spatto の lib/locale.ts と同じ読み方）。
  *

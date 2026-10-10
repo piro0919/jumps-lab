@@ -1,13 +1,17 @@
-import { headers } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { getRequestConfig } from 'next-intl/server';
-import { localeFromAcceptLanguage } from './locales';
+import { isLocale, LOCALE_COOKIE, localeFromAcceptLanguage } from './locales';
 
 /**
  * 画面の言語と、その言語の文言。言語を URL に含めない（ログインの中のアプリなので、spatto と同じ）。
- * いまはブラウザの Accept-Language だけで決める。本人が設定で選べるようにしたら、その値を先に見る
+ * 本人が設定の画面で選んだ言語（Cookie）を先に見て、無ければブラウザの Accept-Language で決める。
+ * 選んだ言語はこのブラウザに残す（テーマと同じく端末ごと。ログイン前の画面でも DB を起こさずに効く）
  */
 export default getRequestConfig(async () => {
-  const locale = localeFromAcceptLanguage((await headers()).get('accept-language'));
+  const chosen = (await cookies()).get(LOCALE_COOKIE)?.value;
+  const locale = isLocale(chosen)
+    ? chosen
+    : localeFromAcceptLanguage((await headers()).get('accept-language'));
 
   return {
     locale,
