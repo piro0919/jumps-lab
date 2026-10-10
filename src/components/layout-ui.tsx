@@ -1,6 +1,7 @@
 import { cn } from 'cn';
 import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
+import { buttonVariants } from '@/components/ui/button';
 import { Input as ShadcnInput } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import TextareaAutosize, { type TextareaAutosizeProps } from 'react-textarea-autosize';
@@ -81,23 +82,39 @@ export function Wordmark({
   );
 }
 
-/** ページの題の上に置く、ひとつ前の画面へ戻るリンク（入力の画面と日の画面） */
-export function BackLink({ href, children }: { href: string; children: ReactNode }) {
-  return (
-    <Link
-      href={href}
-      className="-mb-4 flex w-fit items-center gap-0.5 px-3 pt-4 text-sm font-bold text-foreground"
-    >
-      <ChevronLeft aria-hidden className="size-4" />
-      {children}
-    </Link>
-  );
-}
-
-export function PageTitle({ children, action }: { children: ReactNode; action?: ReactNode }) {
+/**
+ * ページの題。back があれば、題の左に戻るボタン（「<」）を置く（Google のアプリと同じ形）。
+ * 戻り先の名前は画面には出さず、ボタンの名前として読み上げに渡す。
+ * はじめは題の上の行に「< 今日」と小さく出していて、好きじゃないと言われた（本人、2026-10-11）
+ */
+export function PageTitle({
+  children,
+  action,
+  back,
+}: {
+  children: ReactNode;
+  action?: ReactNode;
+  /** label は戻るボタンの読み上げの名前（「記録に戻る」の文。呼ぶ側が nav.backTo で組む） */
+  back?: { href: string; label: string };
+}) {
   return (
     <div className="flex items-end justify-between gap-3 px-4 pt-6 pb-3">
-      <h1 className="text-[32px] leading-tight font-extrabold tracking-tight">{children}</h1>
+      <div className="flex min-w-0 items-center gap-1">
+        {back && (
+          <Link
+            href={back.href}
+            aria-label={back.label}
+            className={buttonVariants({
+              variant: 'ghost',
+              size: 'icon',
+              className: '-ml-2 shrink-0',
+            })}
+          >
+            <ChevronLeft aria-hidden className="size-6" />
+          </Link>
+        )}
+        <h1 className="text-[32px] leading-tight font-extrabold tracking-tight">{children}</h1>
+      </div>
       {action}
     </div>
   );

@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import { AttemptForm } from '@/components/attempt-form';
-import { BackLink, Card, PageTitle, FORM_PAGE } from '@/components/layout-ui';
+import { Card, PageTitle, FORM_PAGE } from '@/components/layout-ui';
 import { getProfile, listAttemptsBetween } from '@/lib/data';
 import { resolveLogDay, todayIn } from '@/lib/dates';
 import { requireViewer } from '@/lib/viewer';
@@ -23,6 +23,7 @@ export default async function NewAttempt({ params }: PageProps<'/log/[day]/new'>
   const initialEvent =
     lastEvent && profile.events.includes(lastEvent) ? lastEvent : profile.events[0]!;
   const t = await getTranslations('today');
+  const tNav = await getTranslations('nav');
   const tLog = await getTranslations('log');
   // 戻る先はアドレスの形のまま（今日なら /log/today）
   const backHref = `/log/${requested === 'today' ? 'today' : day}`;
@@ -39,8 +40,9 @@ export default async function NewAttempt({ params }: PageProps<'/log/[day]/new'>
 
   return (
     <main className={FORM_PAGE}>
-      <BackLink href={backHref}>{dayLabel}</BackLink>
-      <PageTitle>{t('addAttempt')}</PageTitle>
+      <PageTitle back={{ href: backHref, label: tNav('backTo', { page: dayLabel }) }}>
+        {t('addAttempt')}
+      </PageTitle>
       <Card>
         <AttemptForm
           day={day}

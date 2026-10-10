@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { z } from 'zod';
 import { CompetitionForm } from '@/components/competition-form';
-import { BackLink, Card, PageTitle, FORM_PAGE } from '@/components/layout-ui';
+import { Card, PageTitle, FORM_PAGE } from '@/components/layout-ui';
 import { getCompetition } from '@/lib/data';
 import { requireViewer } from '@/lib/viewer';
 
@@ -19,8 +19,11 @@ export default async function EditCompetition({ params }: PageProps<'/competitio
 
   return (
     <main className={FORM_PAGE}>
-      <BackLink href="/competitions">{tNav('competitions')}</BackLink>
-      <PageTitle>{t('editCompetition')}</PageTitle>
+      <PageTitle
+        back={{ href: '/competitions', label: tNav('backTo', { page: tNav('competitions') }) }}
+      >
+        {t('editCompetition')}
+      </PageTitle>
       <Card>
         <CompetitionForm initial={competition} defaultDay={competition.day} />
       </Card>

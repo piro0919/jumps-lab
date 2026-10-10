@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import { DayLogForm } from '@/components/day-log-form';
-import { BackLink, Card, PageTitle, FORM_PAGE } from '@/components/layout-ui';
+import { Card, PageTitle, FORM_PAGE } from '@/components/layout-ui';
 import { getDayLog, getProfile } from '@/lib/data';
 import { resolveLogDay, todayIn } from '@/lib/dates';
 import { requireViewer } from '@/lib/viewer';
@@ -39,9 +39,10 @@ export default async function EditCondition({
 
   return (
     <main className={FORM_PAGE}>
-      <BackLink href={backHref}>{dayLabel}</BackLink>
       {/* まだ入れていない日は「入力」、入れてある日は「編集」（ホームのボタンの「入力する」と合わせる） */}
-      <PageTitle>{t(log ? 'editCondition' : 'newCondition')}</PageTitle>
+      <PageTitle back={{ href: backHref, label: tNav('backTo', { page: dayLabel }) }}>
+        {t(log ? 'editCondition' : 'newCondition')}
+      </PageTitle>
       <Card>
         <DayLogForm day={day} log={log} backHref={backHref} />
       </Card>

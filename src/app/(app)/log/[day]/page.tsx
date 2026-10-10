@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import { AttemptsCard } from '@/components/attempts-card';
 import { ConditionCard } from '@/components/condition-card';
-import { BackLink, PageTitle, HALVES } from '@/components/layout-ui';
+import { PageTitle, HALVES } from '@/components/layout-ui';
 import { getDayLog, getProfile, listAttemptsBetween } from '@/lib/data';
 import { resolveLogDay, todayIn } from '@/lib/dates';
 import { requireViewer } from '@/lib/viewer';
@@ -29,8 +29,7 @@ export default async function LogDay({ params }: PageProps<'/log/[day]'>) {
 
   return (
     <main className="flex flex-col gap-3">
-      <BackLink href="/log">{tNav('log')}</BackLink>
-      <PageTitle>
+      <PageTitle back={{ href: '/log', label: tNav('backTo', { page: tNav('log') }) }}>
         {day === today
           ? t('today')
           : format.dateTime(new Date(`${day}T00:00:00Z`), {

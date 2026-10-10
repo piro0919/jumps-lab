@@ -49,6 +49,7 @@
     "competitions": "Competitions",
     "analysis": "Analysis",
     "settings": "Settings",
+    "backTo": "Back to {page}",
     "theme": "Theme",
     "themeSystem": "System",
     "themeLight": "Light",

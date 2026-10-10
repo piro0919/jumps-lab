@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 import { CompetitionForm } from '@/components/competition-form';
-import { BackLink, Card, PageTitle, FORM_PAGE } from '@/components/layout-ui';
+import { Card, PageTitle, FORM_PAGE } from '@/components/layout-ui';
 import { getProfile } from '@/lib/data';
 import { todayIn } from '@/lib/dates';
 import { requireViewer } from '@/lib/viewer';
@@ -14,8 +14,11 @@ export default async function NewCompetition() {
 
   return (
     <main className={FORM_PAGE}>
-      <BackLink href="/competitions">{tNav('competitions')}</BackLink>
-      <PageTitle>{t('addCompetition')}</PageTitle>
+      <PageTitle
+        back={{ href: '/competitions', label: tNav('backTo', { page: tNav('competitions') }) }}
+      >
+        {t('addCompetition')}
+      </PageTitle>
       <Card>
         <CompetitionForm initial={null} defaultDay={todayIn(profile.timeZone)} />
       </Card>
