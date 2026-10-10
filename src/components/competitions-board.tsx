@@ -6,7 +6,8 @@ import { useState, useTransition } from 'react';
 import { deleteCompetitionAction } from '@/app/actions/competitions';
 import { CompetitionForm } from '@/components/competition-form';
 import { ConfirmDialog } from '@/components/confirm-dialog';
-import { Card, CardTitle, PageTitle, PrimaryButton, Stat } from '@/components/layout-ui';
+import { Card, CardTitle, PageTitle, Stat } from '@/components/layout-ui';
+import { Button } from '@/components/ui/button';
 import type { Competition } from '@/lib/data';
 import type { CompetitionResult } from '@/lib/competition-results';
 import { daysBetween } from '@/lib/dates';
@@ -108,22 +109,18 @@ function CompetitionItem({
           </div>
         )}
       </div>
-      <button
+      <Button
+        variant="ghost"
+        size="icon"
         type="button"
         aria-label={t('editCompetition')}
         onClick={onEdit}
-        className="flex size-9 items-center justify-center rounded-full text-muted-foreground hover:bg-accent"
       >
-        <Pencil aria-hidden className="size-4" />
-      </button>
-      <button
-        type="button"
-        aria-label={t('delete')}
-        onClick={onDelete}
-        className="flex size-9 items-center justify-center rounded-full text-muted-foreground hover:bg-accent"
-      >
-        <Trash2 aria-hidden className="size-4" />
-      </button>
+        <Pencil aria-hidden />
+      </Button>
+      <Button variant="ghost" size="icon" type="button" aria-label={t('delete')} onClick={onDelete}>
+        <Trash2 aria-hidden />
+      </Button>
     </div>
   );
 }
@@ -194,15 +191,15 @@ export function CompetitionsBoard({
     <>
       <PageTitle
         action={
-          <PrimaryButton
+          <Button
+            size="sm"
             type="button"
             disabled={editing === 'new'}
             onClick={() => setEditing('new')}
-            className="h-9 px-4 text-sm"
           >
             <Plus aria-hidden className="size-4" />
             {tCalendar('addCompetition')}
-          </PrimaryButton>
+          </Button>
         }
       >
         {title}

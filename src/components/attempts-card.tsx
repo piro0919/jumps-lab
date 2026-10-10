@@ -6,16 +6,8 @@ import { useActionState, useState, useTransition } from 'react';
 import { addAttemptAction, deleteAttemptAction } from '@/app/actions/today';
 import { ActionForm } from '@/components/action-form';
 import { ConfirmDialog } from '@/components/confirm-dialog';
-import {
-  Card,
-  CardTitle,
-  ErrorText,
-  Field,
-  Input,
-  PrimaryButton,
-  SubtleButton,
-  segmentClass,
-} from '@/components/layout-ui';
+import { Card, CardTitle, ErrorText, Field, Input, segmentClass } from '@/components/layout-ui';
+import { Button } from '@/components/ui/button';
 import { cn } from 'cn';
 import { MarkInput } from '@/components/measure-inputs';
 import { Drawer, DrawerContent, DrawerTitle } from '@/components/ui/drawer';
@@ -46,7 +38,7 @@ function Segmented<T extends string>({
           type="button"
           aria-pressed={value === option}
           onClick={() => onChange(option)}
-          className={cn(segmentClass(value === option), 'h-9 truncate px-1')}
+          className={cn(segmentClass(value === option), 'truncate px-1')}
         >
           {label(option)}
         </button>
@@ -115,12 +107,12 @@ function AddForm({
       </Field>
       <ErrorText>{state?.ok === false ? tErrors(state.error as 'generic') : null}</ErrorText>
       <div className="grid grid-cols-2 gap-3">
-        <SubtleButton type="button" onClick={onClose} className="h-11 rounded-xl">
+        <Button variant="secondary" type="button" onClick={onClose}>
           {t('cancel')}
-        </SubtleButton>
-        <PrimaryButton type="submit" disabled={pending}>
+        </Button>
+        <Button type="submit" disabled={pending}>
           {t('add')}
-        </PrimaryButton>
+        </Button>
       </div>
     </ActionForm>
   );
@@ -165,10 +157,10 @@ export function AttemptsCard({
     <Card>
       <CardTitle
         action={
-          <PrimaryButton type="button" onClick={() => setAdding(true)} className="h-9 px-4 text-sm">
+          <Button size="sm" type="button" onClick={() => setAdding(true)}>
             <Plus aria-hidden className="size-4" />
             {t('add')}
-          </PrimaryButton>
+          </Button>
         }
       >
         {t('attempts')}
@@ -223,14 +215,15 @@ export function AttemptsCard({
                             .join(' · ')}
                         </span>
                       </span>
-                      <button
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         type="button"
                         aria-label={t('delete')}
                         onClick={() => setRemoving(attempt.id)}
-                        className="flex size-9 items-center justify-center rounded-full text-muted-foreground active:bg-accent"
                       >
-                        <Trash2 aria-hidden className="size-4" />
-                      </button>
+                        <Trash2 aria-hidden />
+                      </Button>
                     </li>
                   ))}
                 </ol>

@@ -4,15 +4,8 @@ import { useTranslations } from 'next-intl';
 import { ActionForm } from '@/components/action-form';
 import { useActionState, useState } from 'react';
 import { saveDayLogAction } from '@/app/actions/today';
-import {
-  Card,
-  CardTitle,
-  ErrorText,
-  Field,
-  Input,
-  PrimaryButton,
-  TextArea,
-} from '@/components/layout-ui';
+import { Card, CardTitle, ErrorText, Field, Input, TextArea } from '@/components/layout-ui';
+import { Button } from '@/components/ui/button';
 import type { DayLog } from '@/lib/data';
 
 function Slider({
@@ -108,9 +101,9 @@ export function DayLogForm({ day, log }: { day: string; log: DayLog | null }) {
         <div className="flex items-center justify-end gap-3">
           <ErrorText>{state?.ok === false ? tErrors('generic') : null}</ErrorText>
           {state?.ok && !pending && <span className="text-sm text-good">{tProfile('saved')}</span>}
-          <PrimaryButton type="submit" disabled={pending}>
+          <Button type="submit" disabled={pending}>
             {t('save')}
-          </PrimaryButton>
+          </Button>
         </div>
       </Card>
     </ActionForm>

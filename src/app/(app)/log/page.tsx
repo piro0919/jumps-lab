@@ -1,6 +1,7 @@
 import { ChevronRight, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { getFormatter, getTranslations } from 'next-intl/server';
+import { buttonVariants } from '@/components/ui/button';
 import { Card, PageTitle, SEGMENTS, Stat, segmentClass } from '@/components/layout-ui';
 import { LogCalendar } from '@/components/log-calendar';
 import { getProfile, listAllAttempts, listDayLogs } from '@/lib/data';
@@ -39,10 +40,7 @@ export default async function Log({ searchParams }: PageProps<'/log'>) {
     <main className="flex flex-col gap-3">
       <PageTitle
         action={
-          <Link
-            href="/log/today"
-            className="inline-flex h-9 items-center gap-1 rounded-full bg-foreground px-4 text-sm font-bold text-background"
-          >
+          <Link href="/log/today" className={buttonVariants({ size: 'sm' })}>
             <Plus aria-hidden className="size-4" />
             {t('recordToday')}
           </Link>

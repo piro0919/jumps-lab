@@ -4,14 +4,8 @@ import { useTranslations } from 'next-intl';
 import { useActionState } from 'react';
 import { saveCompetitionAction } from '@/app/actions/competitions';
 import { ActionForm } from '@/components/action-form';
-import {
-  ErrorText,
-  Field,
-  Input,
-  PrimaryButton,
-  SubtleButton,
-  TextArea,
-} from '@/components/layout-ui';
+import { ErrorText, Field, Input, TextArea } from '@/components/layout-ui';
+import { Button } from '@/components/ui/button';
 import type { Competition } from '@/lib/data';
 
 /** 大会の入力。追加と編集で同じものを使う */
@@ -61,12 +55,12 @@ export function CompetitionForm({
       </Field>
       <ErrorText>{state?.ok === false ? tErrors(state.error as 'generic') : null}</ErrorText>
       <div className="flex justify-end gap-3">
-        <SubtleButton type="button" onClick={onDone} className="h-11 rounded-xl">
+        <Button variant="secondary" type="button" onClick={onDone}>
           {t('cancel')}
-        </SubtleButton>
-        <PrimaryButton type="submit" disabled={pending}>
+        </Button>
+        <Button type="submit" disabled={pending}>
           {t('save')}
-        </PrimaryButton>
+        </Button>
       </div>
     </ActionForm>
   );

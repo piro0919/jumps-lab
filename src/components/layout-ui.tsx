@@ -1,5 +1,4 @@
 import { cn } from 'cn';
-import { Button } from '@/components/ui/button';
 import { Input as ShadcnInput } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
@@ -154,33 +153,6 @@ export function TextArea({ className, ...props }: ComponentProps<'textarea'>) {
   );
 }
 
-/** 押すと結果が起きるボタン。黒い丸いボタン（手本の Nike Run Club の主なボタン） */
-export function PrimaryButton({ className, ...props }: ComponentProps<typeof Button>) {
-  return (
-    <Button
-      {...props}
-      className={cn(
-        'h-11 rounded-full bg-foreground px-6 text-[15px] font-bold text-background hover:bg-foreground/85 active:scale-[0.98]',
-        className,
-      )}
-    />
-  );
-}
-
-/** 控えめなボタン。追加・キャンセルなど。灰色の丸いボタン */
-export function SubtleButton({ className, ...props }: ComponentProps<typeof Button>) {
-  return (
-    <Button
-      variant="secondary"
-      {...props}
-      className={cn(
-        'h-9 rounded-full bg-muted px-4 font-bold text-foreground hover:bg-accent active:scale-[0.98]',
-        className,
-      )}
-    />
-  );
-}
-
 export function ErrorText({ children }: { children: ReactNode }) {
   return children ? <p className="text-sm text-destructive">{children}</p> : null;
 }
@@ -191,7 +163,7 @@ export function ErrorText({ children }: { children: ReactNode }) {
  */
 export function segmentClass(active: boolean) {
   return cn(
-    'flex h-8 items-center justify-center rounded-full px-3.5 text-sm font-semibold whitespace-nowrap transition-colors',
+    'flex h-9 items-center justify-center rounded-full px-4 text-sm font-bold whitespace-nowrap transition-colors',
     active ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground',
   );
 }

@@ -2,7 +2,8 @@
 
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
-import { Card, CardTitle, SubtleButton } from '@/components/layout-ui';
+import { Card, CardTitle } from '@/components/layout-ui';
+import { Button } from '@/components/ui/button';
 
 type Weather = { temperature: number; code: number; windMs: number };
 
@@ -87,9 +88,15 @@ export function WeatherCard() {
       ) : state.kind === 'denied' ? (
         <p className="text-sm text-muted-foreground">{t('locationDenied')}</p>
       ) : (
-        <SubtleButton type="button" onClick={load} disabled={state.kind === 'loading'}>
+        <Button
+          variant="secondary"
+          size="sm"
+          type="button"
+          onClick={load}
+          disabled={state.kind === 'loading'}
+        >
           {t('useLocation')}
-        </SubtleButton>
+        </Button>
       )}
     </Card>
   );

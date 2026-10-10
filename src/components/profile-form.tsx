@@ -5,15 +5,8 @@ import { ActionForm } from '@/components/action-form';
 import { useActionState, useEffect, useRef, useState } from 'react';
 import { saveProfileAction } from '@/app/actions/profile';
 import { HeightInput, MarkInput, WeightInput } from '@/components/measure-inputs';
-import {
-  Card,
-  ErrorText,
-  Field,
-  FieldLabel,
-  Input,
-  PrimaryButton,
-  Select,
-} from '@/components/layout-ui';
+import { Card, ErrorText, Field, FieldLabel, Input, Select } from '@/components/layout-ui';
+import { Button } from '@/components/ui/button';
 import type { Profile } from '@/lib/data';
 import { EVENTS } from '@/lib/events';
 import { todayIn } from '@/lib/dates';
@@ -177,9 +170,9 @@ export function ProfileForm({
 
       <div className="flex flex-col gap-2 px-4">
         <ErrorText>{state?.ok === false ? tErrors(state.error as 'generic') : null}</ErrorText>
-        <PrimaryButton type="submit" disabled={pending || events.length === 0} className="w-full">
+        <Button type="submit" disabled={pending || events.length === 0} className="w-full">
           {from === 'welcome' ? t('start') : t('save')}
-        </PrimaryButton>
+        </Button>
       </div>
     </ActionForm>
   );

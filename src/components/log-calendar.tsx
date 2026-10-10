@@ -2,6 +2,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import { Card } from '@/components/layout-ui';
+import { buttonVariants } from '@/components/ui/button';
 
 /** YYYY-MM の月を n か月ずらす */
 function shiftMonth(month: string, n: number): string {
@@ -53,7 +54,7 @@ export async function LogCalendar({
         <Link
           href={monthLink(shiftMonth(month, -1))}
           aria-label={t('previousMonth')}
-          className="flex size-9 items-center justify-center rounded-full bg-muted"
+          className={buttonVariants({ variant: 'secondary', size: 'icon' })}
         >
           <ChevronLeft aria-hidden className="size-5" />
         </Link>
@@ -63,7 +64,7 @@ export async function LogCalendar({
         <Link
           href={monthLink(shiftMonth(month, 1))}
           aria-label={t('nextMonth')}
-          className="flex size-9 items-center justify-center rounded-full bg-muted"
+          className={buttonVariants({ variant: 'secondary', size: 'icon' })}
         >
           <ChevronRight aria-hidden className="size-5" />
         </Link>

@@ -5,7 +5,8 @@ import { ActionForm } from '@/components/action-form';
 import { useActionState, useState } from 'react';
 import { saveTargetAction } from '@/app/actions/targets';
 import { MarkInput } from '@/components/measure-inputs';
-import { PrimaryButton, Stat, SubtleButton } from '@/components/layout-ui';
+import { Stat } from '@/components/layout-ui';
+import { Button } from '@/components/ui/button';
 import type { JumpEvent } from '@/lib/events';
 import { formatMarkParts, type Units } from '@/lib/units';
 
@@ -54,13 +55,21 @@ export function MarkEditor({
         <MarkInput name="markM" units={units} defaultMeters={manual} autoFocus />
         <div className="flex justify-end gap-2">
           {manual !== null && (
-            <SubtleButton type="submit" name="markM" value="" disabled={pending} formNoValidate>
+            <Button
+              variant="secondary"
+              size="sm"
+              type="submit"
+              name="markM"
+              value=""
+              disabled={pending}
+              formNoValidate
+            >
               {t('clear')}
-            </SubtleButton>
+            </Button>
           )}
-          <PrimaryButton type="submit" disabled={pending} className="h-9 px-4 text-sm">
+          <Button size="sm" type="submit" disabled={pending}>
             {tProfile('save')}
-          </PrimaryButton>
+          </Button>
         </div>
       </ActionForm>
     );

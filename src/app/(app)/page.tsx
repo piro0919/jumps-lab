@@ -1,6 +1,7 @@
 import { ChevronRight, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import { buttonVariants } from '@/components/ui/button';
 import { PageTitle } from '@/components/layout-ui';
 import { MarkEditor } from '@/components/mark-editor';
 import { WeatherCard } from '@/components/weather-card';
@@ -113,10 +114,7 @@ export default async function Home() {
     <main className="flex flex-col gap-3">
       <PageTitle
         action={
-          <Link
-            href="/log/today"
-            className="inline-flex h-9 items-center gap-1 rounded-full bg-foreground px-4 text-sm font-bold text-background"
-          >
+          <Link href="/log/today" className={buttonVariants({ size: 'sm' })}>
             <Plus aria-hidden className="size-4" />
             {tLog('recordToday')}
           </Link>
