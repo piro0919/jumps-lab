@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { ActionForm } from '@/components/action-form';
-import { useActionState, useState } from 'react';
+import { useActionState, useEffect, useState } from 'react';
 import { saveTargetAction } from '@/app/actions/targets';
 import { MarkInput } from '@/components/measure-inputs';
 import { LABEL, Stat } from '@/components/layout-ui';
@@ -12,6 +12,7 @@ import { formatMarkParts, type Units } from '@/lib/units';
 
 /**
  * 目標やベストの1行。押すとその場で入力欄に変わる（プロトタイプの「タップして入力」）。
+ * 保存せずに閉じるのはキャンセルか Esc（はじめは閉じる手段が無く、保存するまで戻れなかった。本人、2026-10-11）。
  * shown は記録から出した値と手で入れた値の高い方、manual は手で入れた値だけ
  */
 export function MarkEditor({
@@ -36,12 +37,23 @@ export function MarkEditor({
 }) {
   const t = useTranslations('home');
   const tProfile = useTranslations('profile');
+  const tToday = useTranslations('today');
   const [editing, setEditing] = useState(false);
   const [, action, pending] = useActionState(async (previous: unknown, formData: FormData) => {
     const result = await saveTargetAction(null, formData);
     if (result?.ok) setEditing(false);
     return result;
   }, null);
+
+  // 開いている間は、どこに居ても Esc で閉じる（入力欄に触れる前は、フォームの外が操作の対象になっている）
+  useEffect(() => {
+    if (!editing) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setEditing(false);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [editing]);
 
   if (editing) {
     return (
@@ -54,6 +66,15 @@ export function MarkEditor({
         <input type="hidden" name="field" value={field} />
         <MarkInput name="markM" units={units} defaultMeters={manual} autoFocus />
         <div className="flex justify-end gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            type="button"
+            className="mr-auto"
+            onClick={() => setEditing(false)}
+          >
+            {tToday('cancel')}
+          </Button>
           {manual !== null && (
             <Button
               variant="secondary"
