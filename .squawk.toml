@@ -1,0 +1,17 @@
+# マイグレーションの危ない書き方を、コミットの時点で止める（鯉魂の .squawk.toml と同じ、2026-10-11 に入れた）。
+# 本番の DB へは手で当てるので（CLAUDE.md）、止める場所はここしかない。
+# 止めるのは、表や列の削除、名前や型の変更、既存の列を空欄禁止にする、のような、当てたら
+# 戻せない・古い版のコードが落ちる変更。二度に分けて出す（まず使うのをやめ、次の配備で消す）。
+# 2回目で本当に消すときは、その文の上に `-- squawk-ignore ban-drop-column` のように書く
+assume_in_transaction = true
+excluded_rules = [
+  # 表は小さい（1人あたり数千行）。ロックの待ちと時間切れを気にする大きさではない
+  "require-lock-timeout",
+  "require-statement-timeout",
+  "require-concurrent-index-creation",
+  "constraint-missing-not-valid",
+  "adding-foreign-key-constraint",
+  # 記録の数や月に 64 ビットは要らない
+  "prefer-bigint-over-smallint",
+  "prefer-bigint-over-int",
+]

@@ -15,6 +15,14 @@ pre-commit:
     # ルートの型（.next/types）を作り直してから確かめる
     typescript:
       run: pnpm typecheck
+    # 足したマイグレーションの危ない書き方（表や列の削除、型の変更など）を止める（.squawk.toml）
+    squawk:
+      glob: 'db/migrations/*.sql'
+      run: pnpm exec squawk {staged_files}
+  scripts:
+    # 一度コミットしたマイグレーションの書き換えと削除を止める（.lefthook/pre-commit/migrations.sh）
+    'migrations.sh':
+      runner: bash
 commit-msg:
   scripts:
     'commitlint.sh':
