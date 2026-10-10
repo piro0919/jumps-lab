@@ -23,7 +23,6 @@ export type Profile = {
   heightCm: number | null;
   weightKg: number | null;
   events: JumpEvent[];
-  currentEvent: JumpEvent;
   units: Units;
   seasonStartMonth: number;
   timeZone: string;
@@ -37,7 +36,7 @@ type ProfileRow = Omit<Profile, 'heightCm' | 'weightKg'> & {
 export async function getProfile(userId: string): Promise<Profile | null> {
   const { rows } = await db().query<ProfileRow>(
     `select u.name, p.grade, p."gradeOffset", to_char(p.birthdate, 'YYYY-MM-DD') as birthdate, p.gender, p."heightCm", p."weightKg", p.events,
-            p."currentEvent", p.units, p."seasonStartMonth", p."timeZone"
+            p.units, p."seasonStartMonth", p."timeZone"
        from profile p join "user" u on u.id = p."userId"
       where p."userId" = $1`,
     [userId],
@@ -47,11 +46,10 @@ export async function getProfile(userId: string): Promise<Profile | null> {
   return { ...row, heightCm: num(row.heightCm), weightKg: num(row.weightKg) };
 }
 
-export type ProfileInput = Omit<Profile, 'currentEvent'> & { goalM: number | null };
+export type ProfileInput = Profile & { goalM: number | null };
 
 /**
  * プロフィールを保存する。名前は Better Auth の user 表に持つ。
- * 見ている種目が、選んだ種目から外れたら先頭に戻す。
  * 目標は、はじめに選んだ先頭の種目の今季目標として入れる（プロトタイプの「目標記録」）
  */
 export async function saveProfile(userId: string, input: ProfileInput): Promise<void> {
@@ -64,15 +62,13 @@ export async function saveProfile(userId: string, input: ProfileInput): Promise<
     ]);
     await client.query(
       `insert into profile ("userId", grade, "gradeOffset", birthdate, gender, "heightCm", "weightKg", events,
-                            "currentEvent", units, "seasonStartMonth", "timeZone")
-       values ($1, $2, $11, $3, $4, $5, $6, $7::text[], ($7::text[])[1], $8, $9, $10)
+                            units, "seasonStartMonth", "timeZone")
+       values ($1, $2, $11, $3, $4, $5, $6, $7::text[], $8, $9, $10)
        on conflict ("userId") do update set
          grade = excluded.grade, "gradeOffset" = excluded."gradeOffset",
          birthdate = excluded.birthdate, gender = excluded.gender,
          "heightCm" = excluded."heightCm", "weightKg" = excluded."weightKg",
          events = excluded.events,
-         "currentEvent" = case when profile."currentEvent" = any(excluded.events)
-                               then profile."currentEvent" else excluded.events[1] end,
          units = excluded.units, "seasonStartMonth" = excluded."seasonStartMonth",
          "timeZone" = excluded."timeZone", "updatedAt" = now()`,
       [
@@ -106,14 +102,6 @@ export async function saveProfile(userId: string, input: ProfileInput): Promise<
   }
 }
 
-export async function setCurrentEvent(userId: string, event: JumpEvent): Promise<void> {
-  await db().query(
-    `update profile set "currentEvent" = $2, "updatedAt" = now()
-      where "userId" = $1 and $2 = any(events)`,
-    [userId, event],
-  );
-}
-
 export type Target = {
   seasonGoalM: number | null;
   manualPbM: number | null;
@@ -122,7 +110,7 @@ export type Target = {
   manualPracticeBestM: number | null;
 };
 
-export async function getTarget(userId: string, event: JumpEvent): Promise<Target> {
+async function getTarget(userId: string, event: JumpEvent): Promise<Target> {
   const { rows } = await db().query<Record<keyof Target, string | null>>(
     `select "seasonGoalM", "manualPbM", "manualSbM", "manualSbSeason", "manualPracticeBestM"
        from event_target where "userId" = $1 and event = $2`,
@@ -136,6 +124,15 @@ export async function getTarget(userId: string, event: JumpEvent): Promise<Targe
     manualSbSeason: num(row?.manualSbSeason ?? null),
     manualPracticeBestM: num(row?.manualPracticeBestM ?? null),
   };
+}
+
+/** 種目ごとの目標と手で入れたベスト。行の無い種目は空の値 */
+export async function getTargets(
+  userId: string,
+  events: JumpEvent[],
+): Promise<Map<JumpEvent, Target>> {
+  const targets = await Promise.all(events.map((event) => getTarget(userId, event)));
+  return new Map(events.map((event, i) => [event, targets[i]!]));
 }
 
 /** 目標と手で入れたベストのうち、1つだけを書き換える */

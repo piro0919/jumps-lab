@@ -6,6 +6,7 @@ import { useActionState, useState } from 'react';
 import { saveTargetAction } from '@/app/actions/targets';
 import { MarkInput } from '@/components/measure-inputs';
 import { PrimaryButton, SubtleButton } from '@/components/layout-ui';
+import type { JumpEvent } from '@/lib/events';
 import { formatMark, type Units } from '@/lib/units';
 
 /**
@@ -13,6 +14,7 @@ import { formatMark, type Units } from '@/lib/units';
  * shown は記録から出した値と手で入れた値の高い方、manual は手で入れた値だけ
  */
 export function MarkEditor({
+  event,
   field,
   label,
   shown,
@@ -20,6 +22,7 @@ export function MarkEditor({
   units,
   large = false,
 }: {
+  event: JumpEvent;
   field: 'seasonGoalM' | 'manualPbM' | 'manualSbM' | 'manualPracticeBestM';
   label: string;
   shown: number | null;
@@ -40,6 +43,7 @@ export function MarkEditor({
     return (
       <ActionForm action={action} className="flex flex-col gap-2">
         <span className="text-[13px] font-medium text-muted-foreground">{label}</span>
+        <input type="hidden" name="event" value={event} />
         <input type="hidden" name="field" value={field} />
         <MarkInput name="markM" units={units} defaultMeters={manual} autoFocus />
         <div className="flex justify-end gap-2">

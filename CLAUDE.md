@@ -33,6 +33,7 @@ The owner will make this app usable worldwide (said 2026-10-11). Do not design a
   - Profile: name, grade, date of birth (replaced age, agreed 2026-10-11), gender, height, weight, events, goal
   - Home: season goal, PB / SB / practice best, weather (Open-Meteo, location permission), days until next competition
   - Menu (agreed 2026-10-11): Home, Log, Competitions, Analysis. Settings from the avatar menu and the bottom of the side menu
+  - No app-wide "current event" (dropped 2026-10-11): home shows one card per chosen event, a day lists every event's attempts grouped by event, the event is picked in the add-mark drawer, and only analysis filters by event (`?event=`)
   - Log: days with marks or a condition, newest first, with a calendar view; a day (`/log/YYYY-MM-DD`, `/log/today`) holds its attempts, condition (physical condition 1–10, fatigue 1–10, sleep hours, injury note) and practice note
   - Attempt: one at a time, with type (practice / competition), mark, wind (optional), note
   - Competitions: upcoming and past lists, add/edit/delete (venue, call room place and time, start time, notes)

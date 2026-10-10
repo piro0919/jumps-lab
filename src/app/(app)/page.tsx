@@ -1,93 +1,144 @@
-import { getTranslations } from 'next-intl/server';
+import { Plus } from 'lucide-react';
 import Link from 'next/link';
-import { EventSwitcher } from '@/components/event-switcher';
-import { MarkEditor } from '@/components/mark-editor';
+import { getTranslations } from 'next-intl/server';
 import { Card, CardTitle, PageTitle } from '@/components/layout-ui';
+import { MarkEditor } from '@/components/mark-editor';
 import { WeatherCard } from '@/components/weather-card';
 import { computeBests } from '@/lib/bests';
-import { getProfile, getTarget, listAttempts, nextCompetition } from '@/lib/data';
+import { getProfile, getTargets, listAllAttempts, nextCompetition } from '@/lib/data';
 import { daysBetween, todayIn } from '@/lib/dates';
-import { formatMark } from '@/lib/units';
+import type { JumpEvent } from '@/lib/events';
+import { formatMark, type Units } from '@/lib/units';
 import { requireViewer } from '@/lib/viewer';
 
+/** 1種目のカード。今季の目標と、PB・SB・練習ベスト（記録から出した値と手で入れた値の高い方） */
+async function EventCard({
+  event,
+  goalM,
+  bests,
+  manual,
+  units,
+}: {
+  event: JumpEvent;
+  goalM: number | null;
+  bests: { pbM: number | null; sbM: number | null; practiceBestM: number | null };
+  manual: { pbM: number | null; sbM: number | null; practiceBestM: number | null };
+  units: Units;
+}) {
+  const t = await getTranslations('home');
+  const tEvents = await getTranslations('events');
+  // 目標までの差は SB から測る（今季の目標なので）
+  const gap = goalM !== null && bests.sbM !== null ? goalM - bests.sbM : null;
+
+  return (
+    <Card className="flex flex-col gap-3">
+      <CardTitle>{tEvents(event)}</CardTitle>
+      <MarkEditor
+        event={event}
+        field="seasonGoalM"
+        label={t('goal')}
+        shown={goalM}
+        manual={goalM}
+        units={units}
+        large
+      />
+      {gap !== null && (
+        <p
+          className={`-mt-1 text-sm font-semibold ${gap <= 0 ? 'text-good' : 'text-muted-foreground'}`}
+        >
+          {gap <= 0 ? t('goalReached') : t('toGoal', { distance: formatMark(gap, units) })}
+        </p>
+      )}
+      <div className="flex flex-col divide-y divide-border border-t border-border [&>*]:py-3 [&>*:last-child]:pb-0">
+        <MarkEditor
+          event={event}
+          field="manualPbM"
+          label={t('pb')}
+          shown={bests.pbM}
+          manual={manual.pbM}
+          units={units}
+        />
+        <MarkEditor
+          event={event}
+          field="manualSbM"
+          label={t('sb')}
+          shown={bests.sbM}
+          manual={manual.sbM}
+          units={units}
+        />
+        <MarkEditor
+          event={event}
+          field="manualPracticeBestM"
+          label={t('practiceBest')}
+          shown={bests.practiceBestM}
+          manual={manual.practiceBestM}
+          units={units}
+        />
+      </div>
+    </Card>
+  );
+}
+
+/** ホーム。本人の選んだ種目ごとのカードと、次の大会・天気 */
 export default async function Home() {
   const viewer = await requireViewer();
   const profile = (await getProfile(viewer.userId))!;
   const today = todayIn(profile.timeZone);
-  const [target, attempts, competition] = await Promise.all([
-    getTarget(viewer.userId, profile.currentEvent),
-    listAttempts(viewer.userId, profile.currentEvent),
+  const [targets, attempts, competition] = await Promise.all([
+    getTargets(viewer.userId, profile.events),
+    listAllAttempts(viewer.userId),
     nextCompetition(viewer.userId, today),
   ]);
-  const bests = computeBests(
-    attempts,
-    {
-      pbM: target.manualPbM,
-      sbM: target.manualSbM,
-      sbSeason: target.manualSbSeason,
-      practiceBestM: target.manualPracticeBestM,
-    },
-    today,
-    profile.seasonStartMonth,
-  );
   const t = await getTranslations('home');
   const tNav = await getTranslations('nav');
-
-  // 目標までの差は SB から測る（今季の目標なので）
-  const gap =
-    target.seasonGoalM !== null && bests.sbM !== null ? target.seasonGoalM - bests.sbM : null;
+  const tLog = await getTranslations('log');
 
   return (
     <main className="flex flex-col gap-3">
-      <PageTitle action={<EventSwitcher events={profile.events} current={profile.currentEvent} />}>
+      <PageTitle
+        action={
+          <Link
+            href="/log/today"
+            className="inline-flex h-9 items-center gap-1 rounded-full bg-primary px-3.5 text-sm font-semibold text-primary-foreground"
+          >
+            <Plus aria-hidden className="size-4" />
+            {tLog('recordToday')}
+          </Link>
+        }
+      >
         {tNav('home')}
       </PageTitle>
 
       <div className="flex flex-col gap-3 lg:grid lg:grid-cols-2 lg:items-start">
         <div className="flex flex-col gap-3">
-          <Card className="flex flex-col gap-2">
-            <MarkEditor
-              field="seasonGoalM"
-              label={t('goal')}
-              shown={target.seasonGoalM}
-              manual={target.seasonGoalM}
-              units={profile.units}
-              large
-            />
-            {gap !== null && (
-              <p
-                className={`text-sm font-semibold ${gap <= 0 ? 'text-good' : 'text-muted-foreground'}`}
-              >
-                {gap <= 0
-                  ? t('goalReached')
-                  : t('toGoal', { distance: formatMark(gap, profile.units) })}
-              </p>
-            )}
-          </Card>
-
-          <Card className="flex flex-col divide-y divide-border [&>*]:py-3 [&>*:first-child]:pt-0 [&>*:last-child]:pb-0">
-            <MarkEditor
-              field="manualPbM"
-              label={t('pb')}
-              shown={bests.pbM}
-              manual={target.manualPbM}
-              units={profile.units}
-            />
-            <MarkEditor
-              field="manualSbM"
-              label={t('sb')}
-              shown={bests.sbM}
-              manual={target.manualSbSeason === null ? null : target.manualSbM}
-              units={profile.units}
-            />
-            <MarkEditor
-              field="manualPracticeBestM"
-              label={t('practiceBest')}
-              shown={bests.practiceBestM}
-              manual={target.manualPracticeBestM}
-              units={profile.units}
-            />
-          </Card>
+          {profile.events.map((event) => {
+            const target = targets.get(event)!;
+            return (
+              <EventCard
+                key={event}
+                event={event}
+                goalM={target.seasonGoalM}
+                bests={computeBests(
+                  attempts.filter((a) => a.event === event),
+                  {
+                    pbM: target.manualPbM,
+                    // 手で入れた SB は、入れたシーズンのあいだだけ数える
+                    sbM: target.manualSbM,
+                    sbSeason: target.manualSbSeason,
+                    practiceBestM: target.manualPracticeBestM,
+                  },
+                  today,
+                  profile.seasonStartMonth,
+                )}
+                manual={{
+                  pbM: target.manualPbM,
+                  sbM: target.manualSbSeason === null ? null : target.manualSbM,
+                  practiceBestM: target.manualPracticeBestM,
+                }}
+                units={profile.units}
+              />
+            );
+          })}
         </div>
         <div className="flex flex-col gap-3">
           <Link href="/competitions">
@@ -105,7 +156,6 @@ export default async function Home() {
               )}
             </Card>
           </Link>
-
           <WeatherCard />
         </div>
       </div>

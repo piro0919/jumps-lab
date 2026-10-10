@@ -3,7 +3,7 @@
 import { refresh } from 'next/cache';
 import { z } from 'zod';
 import { addAttempt, deleteAttempt, getProfile, saveDayLog } from '@/lib/data';
-import { hasWind } from '@/lib/events';
+import { EVENTS, hasWind } from '@/lib/events';
 import { type ActionResult, optionalNumber, optionalText } from '@/lib/form';
 import { requireViewer } from '@/lib/viewer';
 
@@ -39,13 +39,14 @@ export async function saveDayLogAction(
 
 const attemptSchema = z.object({
   day,
+  event: z.enum(EVENTS),
   kind: z.enum(['practice', 'competition']),
   markM: z.coerce.number({ message: 'mark' }).min(0.01, 'mark').max(29.99, 'mark'),
   windMs: optionalNumber(-20, 20),
   note: optionalText(500),
 });
 
-/** 記録を1本足す。種目は本人がいま見ているもの。風は走幅跳と三段跳だけ残す */
+/** 記録を1本足す。種目は足す窓で選んだもの（本人の選んだ種目だけ）。風は走幅跳と三段跳だけ残す */
 export async function addAttemptAction(
   _previous: ActionResult,
   formData: FormData,
@@ -60,9 +61,8 @@ export async function addAttemptAction(
     return { ok: false, error: parsed.error.issues[0]?.message === 'mark' ? 'mark' : 'generic' };
   }
   const profile = await getProfile(viewer.userId);
-  if (!profile) return { ok: false, error: 'generic' };
-
-  const event = profile.currentEvent;
+  const event = parsed.data.event;
+  if (!profile || !profile.events.includes(event)) return { ok: false, error: 'generic' };
   try {
     await addAttempt(viewer.userId, {
       ...parsed.data,

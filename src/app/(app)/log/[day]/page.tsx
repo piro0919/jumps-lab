@@ -4,7 +4,6 @@ import { redirect } from 'next/navigation';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import { AttemptsCard } from '@/components/attempts-card';
 import { DayLogForm } from '@/components/day-log-form';
-import { EventSwitcher } from '@/components/event-switcher';
 import { PageTitle } from '@/components/layout-ui';
 import { getDayLog, getProfile, listAttemptsBetween } from '@/lib/data';
 import { todayIn } from '@/lib/dates';
@@ -41,7 +40,7 @@ export default async function LogDay({ params }: PageProps<'/log/[day]'>) {
         <ChevronLeft aria-hidden className="size-4" />
         {tNav('log')}
       </Link>
-      <PageTitle action={<EventSwitcher events={profile.events} current={profile.currentEvent} />}>
+      <PageTitle>
         {day === today
           ? t('today')
           : format.dateTime(new Date(`${day}T00:00:00Z`), {
@@ -53,12 +52,7 @@ export default async function LogDay({ params }: PageProps<'/log/[day]'>) {
             })}
       </PageTitle>
       <div className="flex flex-col gap-3 lg:grid lg:grid-cols-2 lg:items-start">
-        <AttemptsCard
-          day={day}
-          event={profile.currentEvent}
-          units={profile.units}
-          attempts={attempts.filter((a) => a.event === profile.currentEvent)}
-        />
+        <AttemptsCard day={day} events={profile.events} units={profile.units} attempts={attempts} />
         <DayLogForm day={day} log={log} />
       </div>
     </main>

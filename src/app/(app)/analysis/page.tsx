@@ -1,27 +1,50 @@
+import Link from 'next/link';
 import { getFormatter, getLocale, getTranslations } from 'next-intl/server';
-import { EventSwitcher } from '@/components/event-switcher';
 import { TrendChart } from '@/components/trend-chart';
 import { Card, CardTitle, PageTitle } from '@/components/layout-ui';
 import { analyze } from '@/lib/analysis';
 import { getProfile, listAttempts } from '@/lib/data';
+import { isJumpEvent } from '@/lib/events';
 import { formatMark } from '@/lib/units';
 import { requireViewer } from '@/lib/viewer';
 
-/** 見ている種目の記録の数字。総数・平均・月別ベスト・直近10本の推移 */
-export default async function Analysis() {
+/**
+ * 1種目の記録の数字。総数・平均・月別ベスト・直近10本の推移。
+ * 種目は ?event= で選び、無ければ本人の選んだ種目の先頭（種目で絞るのはこの画面だけ）
+ */
+export default async function Analysis({ searchParams }: PageProps<'/analysis'>) {
   const viewer = await requireViewer();
   const profile = (await getProfile(viewer.userId))!;
-  const result = analyze(await listAttempts(viewer.userId, profile.currentEvent));
+  const requested = (await searchParams).event;
+  const event =
+    isJumpEvent(requested) && profile.events.includes(requested) ? requested : profile.events[0]!;
+  const result = analyze(await listAttempts(viewer.userId, event));
   const t = await getTranslations('analysis');
   const tNav = await getTranslations('nav');
+  const tEvents = await getTranslations('events');
   const format = await getFormatter();
   const locale = await getLocale();
 
   return (
     <main className="flex flex-col gap-3">
-      <PageTitle action={<EventSwitcher events={profile.events} current={profile.currentEvent} />}>
-        {tNav('analysis')}
-      </PageTitle>
+      <PageTitle>{tNav('analysis')}</PageTitle>
+
+      {profile.events.length > 1 && (
+        <nav className="mx-4 flex w-fit gap-1 rounded-xl bg-muted p-1">
+          {profile.events.map((e) => (
+            <Link
+              key={e}
+              href={`/analysis?event=${e}`}
+              aria-current={e === event ? 'page' : undefined}
+              className={`flex h-8 items-center rounded-lg px-3 text-sm font-semibold ${
+                e === event ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'
+              }`}
+            >
+              {tEvents(e)}
+            </Link>
+          ))}
+        </nav>
+      )}
 
       <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[3fr_2fr] lg:items-start">
         <div className="flex flex-col gap-3">

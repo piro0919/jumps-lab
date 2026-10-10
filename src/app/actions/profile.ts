@@ -3,9 +3,9 @@
 import { refresh } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
-import { saveProfile, setCurrentEvent } from '@/lib/data';
+import { saveProfile } from '@/lib/data';
 import { isTimeZone, todayIn } from '@/lib/dates';
-import { EVENTS, isJumpEvent } from '@/lib/events';
+import { EVENTS } from '@/lib/events';
 import { type ActionResult, optionalNumber } from '@/lib/form';
 import { computesGrade, offsetFor } from '@/lib/grade';
 import { GRADES } from '@/lib/profile-options';
@@ -76,11 +76,4 @@ export async function saveProfileAction(
   if (formData.get('from') === 'welcome') redirect('/');
   refresh();
   return { ok: true };
-}
-
-export async function setCurrentEventAction(event: string): Promise<void> {
-  const viewer = await requireViewer();
-  if (!isJumpEvent(event)) return;
-  await setCurrentEvent(viewer.userId, event);
-  refresh();
 }
