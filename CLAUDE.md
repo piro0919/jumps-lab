@@ -50,6 +50,8 @@ The owner will make this app usable worldwide (said 2026-10-11). Do not design a
 Copy the shape of `~/Repository/onigiri` (which itself copies vocafy). Read its CLAUDE.md before adding something it already solved.
 
 - Next.js 16 App Router, React 19.2, TypeScript 5, ESLint 9 (do not take TS/ESLint majors; renovate.json blocks them), Tailwind 4, pnpm 11 with `packageManager`, Node 24
+- shadcn/ui on Base UI (nova preset, like waraiba and spatto). Generated parts live in `src/components/ui/` (knip ignores them); `src/components/layout-ui.tsx` wraps them with this app's sizes. Colors use the shadcn token names in `globals.css`
+- No ORM (decided 2026-10-11): the data layer is one file of raw SQL in `src/lib/data.ts`; catch mistakes with tests instead of code generation
 - `pnpm-workspace.yaml`: `allowBuilds` and `minimumReleaseAge: 4320`
 - Prettier: singleQuote, trailingComma all, printWidth 100. ESLint and Prettier ignore `.claude/**` and `.playwright-mcp/**`
 - lefthook: pre-commit eslint --fix, prettier, secretlint, typecheck (`next typegen && tsc --noEmit`); commit-msg commitlint (conventional, lower-case subject); pre-push vitest. Never bypass hooks
