@@ -17,7 +17,7 @@ export default async function AppLayout({ children }: LayoutProps<'/'>) {
   return (
     <>
       <SiteHeader name={profile.name} image={viewer.image} />
-      <div className="mx-auto min-h-[calc(100dvh-4rem)] max-w-lg pb-[calc(64px+env(safe-area-inset-bottom))] lg:max-w-6xl lg:px-4 lg:pb-10">
+      <div className="mx-auto min-h-[calc(100dvh-4rem)] max-w-lg pb-[calc(68px+env(safe-area-inset-bottom))] lg:max-w-6xl lg:px-4 lg:pb-10">
         {children}
       </div>
       <TabBar />

@@ -58,6 +58,7 @@ export function HeaderNav() {
 
 /**
  * スマホの下のタブ（手本の Strava のアプリ）。真ん中に、今日の記録を足す丸いボタンを浮かせる。
+ * 寸法は iPhone の標準のタブに寄せる（高さ 49pt・字 10pt。最初は 64px・12px で大きすぎた、本人 2026-10-11）。
  * iPhone のホームバーの分は safe-area で空ける
  */
 export function TabBar() {
@@ -73,11 +74,11 @@ export function TabBar() {
           href={href}
           aria-current={active ? 'page' : undefined}
           className={cn(
-            'flex h-full flex-col items-center justify-center gap-0.5 text-xs font-semibold',
+            'flex h-full flex-col items-center justify-center gap-0.5 text-[10px] font-semibold',
             active ? 'text-foreground' : 'text-muted-foreground',
           )}
         >
-          <Icon aria-hidden className="size-6" strokeWidth={active ? 2.5 : 1.75} />
+          <Icon aria-hidden className="size-5.5" strokeWidth={active ? 2.5 : 1.75} />
           {t(key)}
         </Link>
       </li>
@@ -86,15 +87,15 @@ export function TabBar() {
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-10 border-t border-border bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden">
-      <ul className="mx-auto flex h-16 max-w-lg">
+      <ul className="mx-auto flex h-13 max-w-lg">
         {TABS.slice(0, 2).map(tab)}
         <li className="flex flex-1 justify-center">
           <Link
             href={RECORD_HREF}
             aria-label={tLog('recordToday')}
-            className="-mt-5 flex size-16 items-center justify-center rounded-full bg-brand text-brand-foreground shadow-lg ring-4 ring-card transition active:scale-95"
+            className="-mt-4 flex size-14 items-center justify-center rounded-full bg-brand text-brand-foreground shadow-lg ring-4 ring-card transition active:scale-95"
           >
-            <Plus aria-hidden className="size-8" strokeWidth={3} />
+            <Plus aria-hidden className="size-7" strokeWidth={3} />
           </Link>
         </li>
         {TABS.slice(2).map(tab)}

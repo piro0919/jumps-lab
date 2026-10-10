@@ -60,8 +60,14 @@ describe('見た目の決まり', () => {
     expect(
       offenders(
         (l) => /\btext-\[\d+px\]/.test(l),
-        // 規約の文書の字組みと、グラフの目盛りの字は例外
-        [SYSTEM, 'app/(legal)/legal.tsx', 'components/trend-chart.tsx', 'app/sign-in/page.tsx'],
+        // 規約の文書の字組み、グラフの目盛りの字、下のタブの字（iPhone の標準の 10pt）は例外
+        [
+          SYSTEM,
+          'app/(legal)/legal.tsx',
+          'components/trend-chart.tsx',
+          'app/sign-in/page.tsx',
+          'components/tab-bar.tsx',
+        ],
       ),
     ).toEqual([]);
   });
