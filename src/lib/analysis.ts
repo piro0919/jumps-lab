@@ -25,7 +25,8 @@ export function analyze(rows: MarkRow[]): Analysis {
     averageM:
       rows.length === 0
         ? null
-        : Math.round((rows.reduce((sum, r) => sum + r.markM, 0) / rows.length) * 100) / 100,
+        : // 記録と同じ 0.1mm で丸める（センチで丸めるとフィート・インチの表示がずれる）
+          Math.round((rows.reduce((sum, r) => sum + r.markM, 0) / rows.length) * 10000) / 10000,
     monthlyBest: [...byMonth]
       .map(([month, bestM]) => ({ month, bestM }))
       .sort((a, b) => b.month.localeCompare(a.month)),

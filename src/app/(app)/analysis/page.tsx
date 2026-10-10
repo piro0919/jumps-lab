@@ -8,6 +8,8 @@ import { isJumpEvent } from '@/lib/events';
 import { formatMark } from '@/lib/units';
 import { requireViewer } from '@/lib/viewer';
 
+const KINDS = ['all', 'practice', 'competition'] as const;
+
 /**
  * 1種目の記録の数字。総数・平均・月別ベスト・直近10本の推移。
  * 種目は ?event= で選び、無ければ本人の選んだ種目の先頭（種目で絞るのはこの画面だけ）
@@ -15,36 +17,63 @@ import { requireViewer } from '@/lib/viewer';
 export default async function Analysis({ searchParams }: PageProps<'/analysis'>) {
   const viewer = await requireViewer();
   const profile = (await getProfile(viewer.userId))!;
-  const requested = (await searchParams).event;
+  const params = await searchParams;
   const event =
-    isJumpEvent(requested) && profile.events.includes(requested) ? requested : profile.events[0]!;
-  const result = analyze(await listAttempts(viewer.userId, event));
+    isJumpEvent(params.event) && profile.events.includes(params.event)
+      ? params.event
+      : profile.events[0]!;
+  // 練習と試合を分けて見る。既定は両方
+  const kind = KINDS.find((k) => k === params.kind) ?? 'all';
+  const attempts = await listAttempts(viewer.userId, event);
+  const result = analyze(kind === 'all' ? attempts : attempts.filter((a) => a.kind === kind));
   const t = await getTranslations('analysis');
   const tNav = await getTranslations('nav');
   const tEvents = await getTranslations('events');
   const format = await getFormatter();
   const locale = await getLocale();
 
+  const href = (next: { event?: string; kind?: string }) => {
+    const query = new URLSearchParams({ event, kind, ...next });
+    if (query.get('kind') === 'all') query.delete('kind');
+    return `/analysis?${query}`;
+  };
+  const segment = (active: boolean) =>
+    `flex h-8 items-center rounded-lg px-3 text-sm font-semibold ${
+      active ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'
+    }`;
+
   return (
     <main className="flex flex-col gap-3">
       <PageTitle>{tNav('analysis')}</PageTitle>
 
-      {profile.events.length > 1 && (
-        <nav className="mx-4 flex w-fit gap-1 rounded-xl bg-muted p-1">
-          {profile.events.map((e) => (
+      <div className="mx-4 flex flex-wrap gap-2">
+        {profile.events.length > 1 && (
+          <nav className="flex w-fit gap-1 rounded-xl bg-muted p-1">
+            {profile.events.map((e) => (
+              <Link
+                key={e}
+                href={href({ event: e })}
+                aria-current={e === event ? 'page' : undefined}
+                className={segment(e === event)}
+              >
+                {tEvents(e)}
+              </Link>
+            ))}
+          </nav>
+        )}
+        <nav className="flex w-fit gap-1 rounded-xl bg-muted p-1">
+          {KINDS.map((k) => (
             <Link
-              key={e}
-              href={`/analysis?event=${e}`}
-              aria-current={e === event ? 'page' : undefined}
-              className={`flex h-8 items-center rounded-lg px-3 text-sm font-semibold ${
-                e === event ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'
-              }`}
+              key={k}
+              href={href({ kind: k })}
+              aria-current={k === kind ? 'page' : undefined}
+              className={segment(k === kind)}
             >
-              {tEvents(e)}
+              {t(k)}
             </Link>
           ))}
         </nav>
-      )}
+      </div>
 
       <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[3fr_2fr] lg:items-start">
         <div className="flex flex-col gap-3">

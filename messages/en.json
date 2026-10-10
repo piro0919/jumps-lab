@@ -167,6 +167,9 @@
     "start": "Start {time}"
   },
   "analysis": {
+    "all": "All",
+    "practice": "Practice",
+    "competition": "Competition",
     "total": "Marks",
     "average": "Average",
     "monthlyBest": "Monthly best",

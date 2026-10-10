@@ -167,6 +167,9 @@
     "start": "開始 {time}"
   },
   "analysis": {
+    "all": "すべて",
+    "practice": "練習",
+    "competition": "大会",
     "total": "記録数",
     "average": "平均",
     "monthlyBest": "月別ベスト",
