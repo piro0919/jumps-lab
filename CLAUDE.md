@@ -153,6 +153,12 @@ Copy the shape of `~/Repository/onigiri` (which itself copies vocafy). Read its 
 - Add a row to the Notion portfolio DB (English and Japanese descriptions), run `pnpm portfolio:export` in kk-web and commit
 - Show the owner the real screens before release
 
+## Working with the owner
+
+- Push only when the owner says so, and in one batch: every push to main is a Vercel production build the owner pays for (said 2026-10-11 after several pushes in a row). Commit locally meanwhile
+- Before a push with behavior changes, run `/code-review` and fix only the confirmed findings
+- The owner can run shell commands in VSCode's terminal, not with `!` in the Claude Code chat (it arrives as plain text)
+
 ## Current state
 
 - Released 2026-10-11 at https://jumpslab.kkweb.io. GitHub `piro0919/jumps-lab` is public (the owner: nothing special in it)
@@ -162,8 +168,10 @@ Copy the shape of `~/Repository/onigiri` (which itself copies vocafy). Read its 
 - DNS in Cloudflare (kkweb.io): CNAME `jumpslab` to Vercel (proxy off) and a `_vercel` TXT, added with the DNS-only token in janify's .env.local
 - Google Cloud project `jumps-lab-kkweb`, OAuth client "Jumps Lab web". Consent screen External and in production since 2026-10-11, with home, /privacy and /terms set and no logo (a logo would need Google's review)
 - Listed in the Notion portfolio DB and kk-web (WEB SERVICE, order 17)
-- Web Analytics and Sentry are in the code and the privacy policy (section 5, ja and en) since 2026-10-11. Both send nothing yet:
-  - Web Analytics: `<Analytics />` in the root layout. Turned on in the Vercel dashboard (Analytics tab) by the owner on 2026-10-11; counting starts with the next deploy. No cookies; Vercel keeps the page, referrer, country, device, OS and browser (https://vercel.com/docs/analytics/privacy-policy)
-  - Sentry: server errors only, through `onRequestError` in `src/instrumentation.ts`; settings in `src/lib/monitoring.ts` (koidamashii's). v11 collects user, cookies, headers, bodies and query strings by default, so `dataCollection` turns them all off and `scrubEvent` (`src/lib/scrub-event.ts`, tested) deletes them again. The project is `jumps-lab` in the owner's Sentry org `kk-web` (team `piro`, US region, free Developer plan: 5k errors a month shared with koidamashii, spatto and chappie), created 2026-10-11. SENTRY_DSN (the project's client key) is set in Vercel production since 2026-10-11 (SENTRY_AUTH_TOKEN, SENTRY_ORG and SENTRY_PROJECT would add source maps; not set). Keep what it sends inside what the privacy policy promises
-- Not done: videos, AI advice, coach questions
+- Web Analytics and Sentry are in the code and the privacy policy (section 5, ja and en), live in production since 2026-10-11 (the analytics script loads on production; no Sentry event has arrived yet to confirm delivery):
+  - Web Analytics: `<Analytics />` in the root layout. Turned on in the Vercel dashboard (Analytics tab) by the owner on 2026-10-11. No cookies; Vercel keeps the page, referrer, country, device, OS and browser (https://vercel.com/docs/analytics/privacy-policy)
+  - Sentry: server errors only, through `onRequestError` in `src/instrumentation.ts`; settings in `src/lib/monitoring.ts` (koidamashii's). v11 collects user, cookies, headers, bodies and query strings by default, so `dataCollection` turns them all off and `scrubEvent` (`src/lib/scrub-event.ts`, tested) deletes them again. The project is `jumps-lab` in the owner's Sentry org `kk-web` (team `piro`, US region, free Developer plan: 5k errors a month shared with koidamashii, spatto and chappie), created 2026-10-11. SENTRY_DSN (the project's client key) is set in Vercel production since 2026-10-11 (SENTRY_AUTH_TOKEN, SENTRY_ORG and SENTRY_PROJECT would add source maps; not set). Breadcrumbs are dropped entirely (console breadcrumbs can carry a failed row's marks and notes). Keep what it sends inside what the privacy policy promises
+- Not pushed: see `git log origin/main..HEAD` (the tsconfig format fix and these notes). CI on main is red on format:check until it goes out with the next push. The e2e build made Next add `.next-e2e/types` to tsconfig.json in its own formatting; now that the path is there it should not recur
+- Open: the Neon 0.25 CU fixed compute is not checked; the Japan-shaped parts under "Built for the whole world"
+- Not done: videos (the friend's main feature), AI advice, coach questions
 - Dev server runs on port 3110 (`pnpm dev`); local Postgres on 5436 (`pnpm db:up`, then `pnpm migrate`)
