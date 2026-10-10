@@ -65,7 +65,10 @@
     "upcoming": "これからの大会",
     "past": "過去の大会",
     "noUpcoming": "これからの大会はまだありません。",
-    "noPast": "過去の大会はまだありません。"
+    "noPast": "過去の大会はまだありません。",
+    "result": "結果",
+    "resultItem": "{event} {mark}",
+    "resultWindAided": "{event} {mark}（追い風参考）"
   },
   "profile": {
     "welcome": "ようこそ",

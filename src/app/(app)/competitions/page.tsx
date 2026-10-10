@@ -1,16 +1,23 @@
 import { getTranslations } from 'next-intl/server';
 import { CompetitionsBoard } from '@/components/competitions-board';
 import { PageTitle } from '@/components/layout-ui';
-import { getProfile, listCompetitions } from '@/lib/data';
+import { competitionResults } from '@/lib/competition-results';
+import { getProfile, listAllAttempts, listCompetitions } from '@/lib/data';
 import { todayIn } from '@/lib/dates';
 import { requireViewer } from '@/lib/viewer';
 
-/** 大会の予定と、過去の大会。今日の大会は「これから」に入る */
+/**
+ * 大会の予定と、過去の大会。今日の大会は「これから」に入る。
+ * 大会の日に「大会」として入れた記録を、その大会の結果として出す
+ */
 export default async function Competitions() {
   const viewer = await requireViewer();
   const profile = (await getProfile(viewer.userId))!;
   const today = todayIn(profile.timeZone);
-  const all = await listCompetitions(viewer.userId);
+  const [all, attempts] = await Promise.all([
+    listCompetitions(viewer.userId),
+    listAllAttempts(viewer.userId),
+  ]);
   const t = await getTranslations('nav');
 
   return (
@@ -19,6 +26,8 @@ export default async function Competitions() {
       <CompetitionsBoard
         upcoming={all.filter((c) => c.day >= today)}
         past={all.filter((c) => c.day < today).reverse()}
+        results={Object.fromEntries(competitionResults(attempts))}
+        units={profile.units}
         today={today}
       />
     </main>

@@ -8,22 +8,31 @@ import { CompetitionForm } from '@/components/competition-form';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { Card, CardTitle, SubtleButton } from '@/components/layout-ui';
 import type { Competition } from '@/lib/data';
+import type { CompetitionResult } from '@/lib/competition-results';
 import { daysBetween } from '@/lib/dates';
+import { formatMark, type Units } from '@/lib/units';
 
 /** 大会1件。日付・名前・会場・招集・開始・注意事項。これからの大会には残りの日数を出す */
 function CompetitionItem({
   competition,
+  results,
+  units,
   today,
   onEdit,
   onDelete,
 }: {
   competition: Competition;
+  /** その日に大会として入れた記録の、種目ごとの最高 */
+  results: CompetitionResult[];
+  units: Units;
   today: string;
   onEdit: () => void;
   onDelete: () => void;
 }) {
   const t = useTranslations('calendar');
   const tHome = useTranslations('home');
+  const tEvents = useTranslations('events');
+  const tCompetitions = useTranslations('competitions');
   const format = useFormatter();
   const upcoming = competition.day >= today;
 
@@ -65,6 +74,19 @@ function CompetitionItem({
             .join(' · ')}
         </span>
         {competition.notes && <p className="text-sm whitespace-pre-wrap">{competition.notes}</p>}
+        {results.length > 0 && (
+          <p className="mt-1 text-sm">
+            <span className="font-semibold">{tCompetitions('result')}</span>{' '}
+            {results
+              .map((r) =>
+                tCompetitions(r.windAided ? 'resultWindAided' : 'resultItem', {
+                  event: tEvents(r.event),
+                  mark: formatMark(r.bestM, units),
+                }),
+              )
+              .join(' · ')}
+          </p>
+        )}
       </div>
       <button
         type="button"
@@ -93,10 +115,15 @@ function CompetitionItem({
 export function CompetitionsBoard({
   upcoming,
   past,
+  results,
+  units,
   today,
 }: {
   upcoming: Competition[];
   past: Competition[];
+  /** 日付ごとの大会の結果 */
+  results: Record<string, CompetitionResult[]>;
+  units: Units;
   today: string;
 }) {
   const t = useTranslations('competitions');
@@ -126,6 +153,8 @@ export function CompetitionsBoard({
               ) : (
                 <CompetitionItem
                   competition={competition}
+                  results={results[competition.day] ?? []}
+                  units={units}
                   today={today}
                   onEdit={() => setEditing(competition.id)}
                   onDelete={() => setRemoving(competition.id)}

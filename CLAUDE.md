@@ -36,7 +36,7 @@ The owner will make this app usable worldwide (said 2026-10-11). Do not design a
   - No app-wide "current event" (dropped 2026-10-11): home shows one card per chosen event, a day lists every event's attempts grouped by event, the event is picked in the add-mark drawer, and only analysis filters by event (`?event=`)
   - Log: days with marks or a condition, newest first, with a calendar view; a day (`/log/YYYY-MM-DD`, `/log/today`) holds its attempts, condition (physical condition 1–10, fatigue 1–10, sleep hours, injury note) and practice note
   - Attempt: one at a time, with type (practice / competition), mark, wind (optional), note
-  - Competitions: upcoming and past lists, add/edit/delete (venue, call room place and time, start time, notes)
+  - Competitions: upcoming and past lists, add/edit/delete (venue, call room place and time, start time, notes). A competition shows its result: the best mark per event among the attempts logged as "competition" on that date (legal marks first, else the best wind-aided one, marked)
   - Analysis: total count, average, monthly best, trend of the last 10
 - PB / SB / practice best: show the higher of the value computed from attempts and the manually entered value
   - PB and SB count competition marks only; practice marks go to practice best
