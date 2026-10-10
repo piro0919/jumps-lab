@@ -52,6 +52,7 @@
   },
   "profile": {
     "welcome": "ようこそ",
+    "required": "必須",
     "name": "名前",
     "grade": "学年",
     "birthdate": "生年月日",

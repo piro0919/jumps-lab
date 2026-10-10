@@ -52,6 +52,7 @@
   },
   "profile": {
     "welcome": "Welcome",
+    "required": "Required",
     "name": "Name",
     "grade": "Grade",
     "birthdate": "Date of birth",

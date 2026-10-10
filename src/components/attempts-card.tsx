@@ -33,6 +33,7 @@ function AddSheet({
 }) {
   const t = useTranslations('today');
   const tErrors = useTranslations('errors');
+  const tProfile = useTranslations('profile');
   const [kind, setKind] = useState<'practice' | 'competition'>('practice');
   const [state, action, pending] = useActionState(async (previous: unknown, formData: FormData) => {
     const result = await addAttemptAction(null, formData);
@@ -66,7 +67,7 @@ function AddSheet({
             </button>
           ))}
         </div>
-        <Field label={t('mark')}>
+        <Field label={t('mark')} required={tProfile('required')}>
           <MarkInput name="markM" units={units} autoFocus />
         </Field>
         {hasWind(event) && (

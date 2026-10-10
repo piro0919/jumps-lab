@@ -5,7 +5,7 @@ import { ActionForm } from '@/components/action-form';
 import { useActionState, useEffect, useRef, useState } from 'react';
 import { saveProfileAction } from '@/app/actions/profile';
 import { HeightInput, MarkInput, WeightInput } from '@/components/measure-inputs';
-import { Card, ErrorText, Field, Input, PrimaryButton, Select } from '@/components/ui';
+import { Card, ErrorText, Field, FieldLabel, Input, PrimaryButton, Select } from '@/components/ui';
 import type { Profile } from '@/lib/data';
 import { EVENTS } from '@/lib/events';
 import { todayIn } from '@/lib/dates';
@@ -81,11 +81,11 @@ export function ProfileForm({
       ))}
 
       <Card className="flex flex-col gap-4">
-        <Field label={t('name')}>
+        <Field label={t('name')} required={t('required')}>
           <Input name="name" defaultValue={defaultName} required maxLength={100} />
         </Field>
         <div className="flex flex-col gap-1.5">
-          <span className="text-[13px] font-medium text-sub">{t('events')}</span>
+          <FieldLabel label={t('events')} required={t('required')} />
           <div className="flex flex-wrap gap-2">
             {EVENTS.map((event) => {
               const on = events.includes(event);

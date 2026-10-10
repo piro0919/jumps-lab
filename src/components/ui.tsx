@@ -27,10 +27,35 @@ export function CardTitle({ children, action }: { children: ReactNode; action?: 
   );
 }
 
-export function Field({ label, children }: { label: string; children: ReactNode }) {
+/**
+ * 欄の見出し。必須の欄にだけ印を付ける（必須の方が少ないので、少ない側に付ける）。
+ * 印の文言は使う側が渡す（言語ごとに違うため）
+ */
+export function FieldLabel({ label, required }: { label: string; required?: string }) {
+  return (
+    <span className="flex items-center gap-1.5 text-[13px] font-medium text-sub">
+      {label}
+      {required && (
+        <span className="rounded bg-danger/10 px-1.5 py-px text-[11px] font-semibold text-danger">
+          {required}
+        </span>
+      )}
+    </span>
+  );
+}
+
+export function Field({
+  label,
+  required,
+  children,
+}: {
+  label: string;
+  required?: string;
+  children: ReactNode;
+}) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-[13px] font-medium text-sub">{label}</span>
+      <FieldLabel label={label} required={required} />
       {children}
     </label>
   );
