@@ -39,6 +39,10 @@ export default function PrivacyEn() {
           Your competitions (name, date, venue, call room place and time, start time and notes)
         </li>
         <li>Your goal marks and the bests you enter by hand</li>
+        <li>
+          Your practice and competition videos (the video files with their date, event, practice or
+          competition, linked attempt and note)
+        </li>
       </ul>
       <p>
         Grade, date of birth, gender, height, weight and the injury field are optional. Write only
@@ -54,12 +58,19 @@ export default function PrivacyEn() {
       <p>We use it for nothing else. We do not use it for advertising or sell it to anyone.</p>
 
       <h2>4. Who can see it</h2>
-      <p>Only you can see your information. There is no feature that shows it to other users.</p>
+      <p>
+        Only you can see your information. There is no feature that shows it to other users. Each
+        time you watch a video, we issue an address that stops working after a set time.
+      </p>
 
       <h2>5. What we share with other services</h2>
       <dl>
         <dt>Neon</dt>
-        <dd>All of the information above. Used as our database, stored in Singapore</dd>
+        <dd>
+          All of the information above except video files. Used as our database, stored in Singapore
+        </dd>
+        <dt>Cloudflare R2</dt>
+        <dd>Video files. Used to store videos, in the Asia-Pacific region</dd>
         <dt>Vercel</dt>
         <dd>Your requests to the site. Used to serve the site, processed in Singapore</dd>
         <dt>Google</dt>

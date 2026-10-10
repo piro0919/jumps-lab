@@ -1,6 +1,6 @@
 'use client';
 
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { Pencil, Plus, Trash2, Video } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useState, useTransition } from 'react';
@@ -22,6 +22,7 @@ export function AttemptsCard({
   events,
   units,
   attempts,
+  videos = {},
   sample = false,
 }: {
   day: string;
@@ -30,11 +31,14 @@ export function AttemptsCard({
   units: Units;
   /** その日の記録（全種目）。古い順 */
   attempts: Attempt[];
+  /** 動画を結び付けた試技（試技の id から動画の id）。行に動画への印を出す */
+  videos?: Record<string, string>;
   /** LP の見本。リンクの先読みをしない（押せない枠の中でも、Next は画面に入ったリンクを先読みする） */
   sample?: boolean;
 }) {
   const t = useTranslations('today');
   const tEvents = useTranslations('events');
+  const tVideos = useTranslations('videos');
   // 消す前に確かめている記録
   const [removing, setRemoving] = useState<string | null>(null);
   const [, startTransition] = useTransition();
@@ -103,6 +107,16 @@ export function AttemptsCard({
                           {/* 追い風 2.0 m/s 超え。PB・SB には数えていない */}
                           {isWindAided(attempt.windMs) && (
                             <Badge tone="neutral">{t('windAided')}</Badge>
+                          )}
+                          {/* 結び付けた動画へ。同じ画面の動画の欄まで飛ぶ */}
+                          {videos[attempt.id] && (
+                            <a
+                              href={`#video-${videos[attempt.id]}`}
+                              aria-label={tVideos('play')}
+                              className="self-center text-muted-foreground hover:text-foreground"
+                            >
+                              <Video aria-hidden className="size-4" />
+                            </a>
                           )}
                         </span>
                         <span className="truncate text-xs text-muted-foreground">

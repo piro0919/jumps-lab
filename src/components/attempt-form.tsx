@@ -15,7 +15,7 @@ import { hasWind, type JumpEvent } from '@/lib/events';
 import type { Units } from '@/lib/units';
 
 /** 2つ以上から1つを選ぶ、横並びの切り替え（練習・大会、種目） */
-function Segmented<T extends string>({
+export function Segmented<T extends string>({
   options,
   value,
   label,

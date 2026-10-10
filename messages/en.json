@@ -111,7 +111,10 @@
     "mark": "Enter a mark.",
     "competitionName": "Enter the competition name.",
     "day": "Choose a date.",
-    "generic": "Could not save. Try again."
+    "generic": "Could not save. Try again.",
+    "videoFile": "Choose a video up to 60 seconds and 100 MB.",
+    "videoQuota": "Video storage is full. Delete a video to add another.",
+    "videoUpload": "Could not upload the video. Try again."
   },
   "home": {
     "goal": "Season goal",
@@ -231,5 +234,23 @@
     "photoLongJump": "A long jumper in the air above the sand pit",
     "photoHighJump": "A high jumper clearing the bar in front of a crowd",
     "photoFlight": "A long jumper in flight, legs thrown forward"
+  },
+  "videos": {
+    "title": "Videos",
+    "add": "Add",
+    "addVideo": "Add video",
+    "none": "No videos",
+    "file": "Video",
+    "choose": "Choose a video",
+    "change": "Choose another",
+    "attempt": "Jump",
+    "attemptNone": "None",
+    "note": "Note",
+    "delete": "Delete video",
+    "deleteConfirm": "Delete this video?",
+    "uploading": "Uploading {percent}%",
+    "play": "Watch the video",
+    "usage": "Videos",
+    "usageValue": "{used} of {limit}"
   }
 }

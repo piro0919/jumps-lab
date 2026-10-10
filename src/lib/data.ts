@@ -421,3 +421,121 @@ export async function listCompetitions(userId: string): Promise<Competition[]> {
   );
   return rows;
 }
+
+export type Video = {
+  id: string;
+  day: string;
+  event: JumpEvent;
+  kind: 'practice' | 'competition';
+  attemptId: string | null;
+  note: string | null;
+  objectKey: string;
+  sizeBytes: number;
+};
+
+const videoColumns = `id, to_char(day, 'YYYY-MM-DD') as day, event, kind, "attemptId", note, "objectKey", "sizeBytes"`;
+
+/**
+ * 送る前に1本分の枠を取る（pending の行）。入力の中身もここで入れ、届いたら ready にするだけにする。
+ * 合計が上限を超えるなら取らずに false。合計は届いていない pending も数える（同時に何本も送って上限を抜けないように）。
+ * 結び付ける試技は、本人のその日の試技だけ（違えば結び付けない）
+ */
+export async function reserveVideo(
+  userId: string,
+  video: {
+    id: string;
+    day: string;
+    event: JumpEvent;
+    kind: 'practice' | 'competition';
+    attemptId: string | null;
+    note: string | null;
+    objectKey: string;
+    contentType: string;
+    sizeBytes: number;
+  },
+  limitBytes: number,
+): Promise<boolean> {
+  const { rowCount } = await db().query(
+    `insert into video (id, "userId", day, event, kind, "attemptId", note, "objectKey", "contentType", "sizeBytes")
+     select $1, $2, $3, $4, $5,
+            (select a.id from attempt a where a.id = $6 and a."userId" = $2 and a.day = $3),
+            $7, $8, $9, $10::integer
+      where (select coalesce(sum("sizeBytes"), 0) from video where "userId" = $2) + $10::bigint
+            <= $11::bigint`,
+    [
+      video.id,
+      userId,
+      video.day,
+      video.event,
+      video.kind,
+      video.attemptId,
+      video.note,
+      video.objectKey,
+      video.contentType,
+      video.sizeBytes,
+      limitBytes,
+    ],
+  );
+  return rowCount === 1;
+}
+
+/** 届いたのを確かめた1本を、見せる状態にする */
+export async function completeVideo(userId: string, id: string): Promise<boolean> {
+  const { rowCount } = await db().query(
+    `update video set status = 'ready' where "userId" = $1 and id = $2 and status = 'pending'`,
+    [userId, id],
+  );
+  return rowCount === 1;
+}
+
+/** 枠を取った（pending の）1本。届いた大きさと比べるため */
+export async function getPendingVideo(
+  userId: string,
+  id: string,
+): Promise<{ objectKey: string; sizeBytes: number } | null> {
+  const { rows } = await db().query<{ objectKey: string; sizeBytes: number }>(
+    `select "objectKey", "sizeBytes" from video where "userId" = $1 and id = $2 and status = 'pending'`,
+    [userId, id],
+  );
+  return rows[0] ?? null;
+}
+
+/** 送りかけて1時間たっても届かなかった枠を外し、その置き場所を返す（R2 に途中まで残っていれば消すため） */
+export async function releaseStaleVideos(userId: string): Promise<string[]> {
+  const { rows } = await db().query<{ objectKey: string }>(
+    `delete from video where "userId" = $1 and status = 'pending'
+        and "createdAt" < now() - interval '1 hour'
+      returning "objectKey"`,
+    [userId],
+  );
+  return rows.map((r) => r.objectKey);
+}
+
+/** その日の動画。古い順 */
+export async function listVideosOnDay(userId: string, day: string): Promise<Video[]> {
+  const { rows } = await db().query<Video>(
+    `select ${videoColumns} from video
+      where "userId" = $1 and day = $2 and status = 'ready'
+      order by "createdAt"`,
+    [userId, day],
+  );
+  return rows;
+}
+
+/** 1本を消し、R2 から消すための置き場所を返す */
+export async function deleteVideo(userId: string, id: string): Promise<string | null> {
+  const { rows } = await db().query<{ objectKey: string }>(
+    `delete from video where "userId" = $1 and id = $2 returning "objectKey"`,
+    [userId, id],
+  );
+  return rows[0]?.objectKey ?? null;
+}
+
+/** 動画の合計の大きさ（届いていない枠も含む） */
+export async function videoUsage(userId: string): Promise<number> {
+  const { rows } = await db().query<{ total: string }>(
+    `select coalesce(sum("sizeBytes"), 0) as total from video where "userId" = $1`,
+    [userId],
+  );
+  return Number(rows[0]!.total);
+}

@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 /**
  * プライバシーポリシー。中身はコードから拾った事実で書く。
- * 預かる項目は db/migrations/、外へ渡すものは src/components/weather-card.tsx、src/lib/auth.ts、
+ * 預かる項目は db/migrations/、外へ渡すものは src/components/weather-card.tsx、src/lib/auth.ts、src/lib/r2.ts（動画）、
  * src/lib/monitoring.ts（Sentry）と src/app/layout.tsx（Web Analytics）。
  * 画面や表を足したら、ここと英語版（/en/privacy）の両方に足し、改定日を動かす
  */
@@ -39,6 +39,7 @@ export default function Privacy() {
         <li>その日の体調・疲労度・睡眠時間・ケガや違和感・練習メモ</li>
         <li>大会の予定（大会名・日付・会場・招集場所と時間・試合開始時間・注意事項）</li>
         <li>目標の記録と、手で入れたベスト記録</li>
+        <li>練習と試合の動画（動画ファイルと、日付・種目・練習か大会か・結び付けた試技・メモ）</li>
       </ul>
       <p>
         学年・生年月日・性別・身長・体重とケガや違和感の欄は、入れなくても使えます。
@@ -54,12 +55,18 @@ export default function Privacy() {
       <p>これ以外には使いません。広告に使うことも、他社に売ることもありません。</p>
 
       <h2>4. 誰に見えるか</h2>
-      <p>預かった情報は、ご本人にだけ表示します。ほかの利用者に見せる機能はありません。</p>
+      <p>
+        預かった情報は、ご本人にだけ表示します。ほかの利用者に見せる機能はありません。動画は、見るたびに期限つきのアドレスを発行して表示し、そのアドレスは一定の時間で使えなくなります。
+      </p>
 
       <h2>5. 外部のサービスに渡すもの</h2>
       <dl>
         <dt>Neon</dt>
-        <dd>上記すべての保存データ。データベースとして使い、シンガポールに保存します</dd>
+        <dd>
+          動画ファイルを除く、上記の保存データ。データベースとして使い、シンガポールに保存します
+        </dd>
+        <dt>Cloudflare R2</dt>
+        <dd>動画ファイル。動画の保存先として使い、アジア太平洋の地域に保存します</dd>
         <dt>Vercel</dt>
         <dd>アクセスの通信。サイトの配信に使い、処理はシンガポールで行います</dd>
         <dt>Google</dt>

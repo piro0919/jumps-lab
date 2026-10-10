@@ -20,6 +20,8 @@
     "migrate": "tsx --env-file-if-exists=.env.local scripts/migrate.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1147.0",
+    "@aws-sdk/s3-request-presigner": "^3.1147.0",
     "@base-ui/react": "^1.8.0",
     "@bprogress/next": "3.2.12",
     "@meteocons/svg": "3.0.0-next.10",

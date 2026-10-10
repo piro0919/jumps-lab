@@ -111,7 +111,10 @@
     "mark": "記録を入れてください。",
     "competitionName": "大会名を入れてください。",
     "day": "日付を選んでください。",
-    "generic": "保存できませんでした。もう一度お試しください。"
+    "generic": "保存できませんでした。もう一度お試しください。",
+    "videoFile": "60秒・100MB までの動画を選んでください。",
+    "videoQuota": "動画の保存量がいっぱいです。動画を削除してから追加してください。",
+    "videoUpload": "動画を送れませんでした。もう一度お試しください。"
   },
   "home": {
     "goal": "今季の目標",
@@ -231,5 +234,23 @@
     "photoLongJump": "砂場の上を跳ぶ走幅跳の選手",
     "photoHighJump": "観客の前でバーを越える走高跳の選手",
     "photoFlight": "脚を前に投げ出して空中を進む走幅跳の選手"
+  },
+  "videos": {
+    "title": "動画",
+    "add": "追加",
+    "addVideo": "動画を追加",
+    "none": "動画はありません",
+    "file": "動画",
+    "choose": "動画を選ぶ",
+    "change": "選び直す",
+    "attempt": "試技",
+    "attemptNone": "結び付けない",
+    "note": "メモ",
+    "delete": "動画を削除",
+    "deleteConfirm": "この動画を削除しますか？",
+    "uploading": "送信中 {percent}%",
+    "play": "動画を見る",
+    "usage": "動画",
+    "usageValue": "{limit} のうち {used}"
   }
 }
