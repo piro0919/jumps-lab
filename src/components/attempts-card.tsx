@@ -19,7 +19,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from 'cn';
 import { MarkInput } from '@/components/measure-inputs';
-import { Drawer, DrawerContent, DrawerTitle } from '@/components/ui/drawer';
+import { Sheet } from '@/components/sheet';
 import type { Attempt } from '@/lib/data';
 import { EVENT_BG, hasWind, isWindAided, type JumpEvent } from '@/lib/events';
 import { formatMark, type Units } from '@/lib/units';
@@ -57,7 +57,7 @@ function Segmented<T extends string>({
 }
 
 /**
- * 記録を1本足す入力。下から出る窓（Drawer）の中に置く（Strong の記録の窓と同じ出方）。
+ * 記録を1本足す入力。スマホは下から出る窓、PC は中央の窓（Sheet）の中に置く。
  * 種目はここで選ぶ。はじめはその日に最後に足した種目
  */
 function AddForm({
@@ -86,11 +86,7 @@ function AddForm({
   }, null);
 
   return (
-    <ActionForm
-      action={action}
-      className="flex flex-col gap-4 overflow-y-auto p-5 pb-[calc(20px+env(safe-area-inset-bottom))]"
-    >
-      <DrawerTitle className="text-lg font-extrabold">{t('addAttempt')}</DrawerTitle>
+    <ActionForm action={action} className="flex flex-col gap-4">
       <input type="hidden" name="day" value={day} />
       <input type="hidden" name="event" value={event} />
       <input type="hidden" name="kind" value={kind} />
@@ -241,17 +237,15 @@ export function AttemptsCard({
         </div>
       )}
 
-      <Drawer open={adding} onOpenChange={setAdding}>
-        <DrawerContent className="mx-auto max-w-lg">
-          <AddForm
-            day={day}
-            events={events}
-            initialEvent={initialEvent}
-            units={units}
-            onClose={() => setAdding(false)}
-          />
-        </DrawerContent>
-      </Drawer>
+      <Sheet open={adding} onOpenChange={setAdding} title={t('addAttempt')}>
+        <AddForm
+          day={day}
+          events={events}
+          initialEvent={initialEvent}
+          units={units}
+          onClose={() => setAdding(false)}
+        />
+      </Sheet>
       <ConfirmDialog
         open={removing !== null}
         title={t('deleteConfirm')}
