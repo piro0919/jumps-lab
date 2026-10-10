@@ -90,7 +90,7 @@ export default async function Home() {
           </Card>
         </div>
         <div className="flex flex-col gap-3">
-          <Link href={competition ? `/calendar?day=${competition.day}` : '/calendar'}>
+          <Link href="/competitions">
             <Card>
               <CardTitle>{t('nextCompetition')}</CardTitle>
               {competition ? (

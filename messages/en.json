@@ -45,10 +45,27 @@
   },
   "nav": {
     "home": "Home",
-    "today": "Today",
-    "calendar": "Calendar",
+    "log": "Log",
+    "competitions": "Competitions",
     "analysis": "Analysis",
     "settings": "Settings"
+  },
+  "log": {
+    "today": "Today",
+    "recordToday": "Log today",
+    "list": "List",
+    "calendar": "Calendar",
+    "empty": "No marks yet.",
+    "eventSummary": "{event} {mark} ({count, plural, one {# jump} other {# jumps}})",
+    "condition": "Body {value}/10",
+    "previousMonth": "Previous month",
+    "nextMonth": "Next month"
+  },
+  "competitions": {
+    "upcoming": "Upcoming",
+    "past": "Past",
+    "noUpcoming": "No upcoming competitions.",
+    "noPast": "No past competitions."
   },
   "profile": {
     "welcome": "Welcome",
@@ -129,9 +146,6 @@
     "best": "Best"
   },
   "calendar": {
-    "previous": "Previous month",
-    "next": "Next month",
-    "noRecords": "Nothing on this day.",
     "addCompetition": "Add competition",
     "editCompetition": "Edit competition",
     "competitionName": "Competition",

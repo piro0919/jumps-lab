@@ -258,19 +258,6 @@ export type Competition = {
 const competitionColumns = `id, name, to_char(day, 'YYYY-MM-DD') as day, venue, "callRoomPlace",
   to_char("callRoomTime", 'HH24:MI') as "callRoomTime", to_char("startTime", 'HH24:MI') as "startTime", notes`;
 
-export async function listCompetitionsBetween(
-  userId: string,
-  from: string,
-  to: string,
-): Promise<Competition[]> {
-  const { rows } = await db().query<Competition>(
-    `select ${competitionColumns} from competition where "userId" = $1 and day between $2 and $3
-      order by day, "startTime" nulls last`,
-    [userId, from, to],
-  );
-  return rows;
-}
-
 /** today 以降でいちばん近い大会 */
 export async function nextCompetition(userId: string, today: string): Promise<Competition | null> {
   const { rows } = await db().query<Competition>(
@@ -313,4 +300,34 @@ export async function saveCompetition(
 
 export async function deleteCompetition(userId: string, id: string): Promise<void> {
   await db().query(`delete from competition where "userId" = $1 and id = $2`, [userId, id]);
+}
+
+/** 記録すべて（全種目）。記録の一覧用。古い順 */
+export async function listAllAttempts(userId: string): Promise<Attempt[]> {
+  const { rows } = await db().query<AttemptRow>(
+    `select ${attemptColumns} from attempt where "userId" = $1 order by day, "createdAt"`,
+    [userId],
+  );
+  return rows.map(toAttempt);
+}
+
+/** 体調とメモのある日すべて。記録の一覧用 */
+export async function listDayLogs(
+  userId: string,
+): Promise<{ day: string; condition: number | null; note: string | null }[]> {
+  const { rows } = await db().query<{ day: string; condition: number | null; note: string | null }>(
+    `select to_char(day, 'YYYY-MM-DD') as day, condition, note from day_log where "userId" = $1`,
+    [userId],
+  );
+  return rows;
+}
+
+/** 大会すべて。日付の古い順 */
+export async function listCompetitions(userId: string): Promise<Competition[]> {
+  const { rows } = await db().query<Competition>(
+    `select ${competitionColumns} from competition where "userId" = $1
+      order by day, "startTime" nulls last`,
+    [userId],
+  );
+  return rows;
 }

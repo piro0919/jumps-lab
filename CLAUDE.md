@@ -32,9 +32,10 @@ The owner will make this app usable worldwide (said 2026-10-11). Do not design a
 - Features in v1 (same as the prototype):
   - Profile: name, grade, date of birth (replaced age, agreed 2026-10-11), gender, height, weight, events, goal
   - Home: season goal, PB / SB / practice best, weather (Open-Meteo, location permission), days until next competition
-  - Today: condition (physical condition 1–10, fatigue 1–10, sleep hours, injury note), attempts, practice note
+  - Menu (agreed 2026-10-11): Home, Log, Competitions, Analysis. Settings from the header gear
+  - Log: days with marks or a condition, newest first, with a calendar view; a day (`/log/YYYY-MM-DD`, `/log/today`) holds its attempts, condition (physical condition 1–10, fatigue 1–10, sleep hours, injury note) and practice note
   - Attempt: one at a time, with type (practice / competition), mark, wind (optional), note
-  - Calendar: attempts and competitions per day, competition registration (venue, call room place and time, start time, notes)
+  - Competitions: upcoming and past lists, add/edit/delete (venue, call room place and time, start time, notes)
   - Analysis: total count, average, monthly best, trend of the last 10
 - PB / SB / practice best: show the higher of the value computed from attempts and the manually entered value
   - PB and SB count competition marks only; practice marks go to practice best

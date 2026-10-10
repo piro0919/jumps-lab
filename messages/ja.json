@@ -45,10 +45,27 @@
   },
   "nav": {
     "home": "ホーム",
-    "today": "今日",
-    "calendar": "カレンダー",
+    "log": "記録",
+    "competitions": "大会",
     "analysis": "分析",
     "settings": "設定"
+  },
+  "log": {
+    "today": "今日",
+    "recordToday": "今日を記録",
+    "list": "一覧",
+    "calendar": "カレンダー",
+    "empty": "記録はまだありません。",
+    "eventSummary": "{event} {mark}（{count}本）",
+    "condition": "体調 {value}/10",
+    "previousMonth": "前の月",
+    "nextMonth": "次の月"
+  },
+  "competitions": {
+    "upcoming": "これからの大会",
+    "past": "過去の大会",
+    "noUpcoming": "これからの大会はまだありません。",
+    "noPast": "過去の大会はまだありません。"
   },
   "profile": {
     "welcome": "ようこそ",
@@ -129,9 +146,6 @@
     "best": "ベスト"
   },
   "calendar": {
-    "previous": "前の月",
-    "next": "次の月",
-    "noRecords": "この日の記録はありません。",
     "addCompetition": "大会を追加",
     "editCompetition": "大会を編集",
     "competitionName": "大会名",

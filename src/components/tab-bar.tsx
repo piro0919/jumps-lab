@@ -1,14 +1,14 @@
 'use client';
 
-import { CalendarDays, ChartLine, House, PencilLine } from 'lucide-react';
+import { ChartLine, House, NotebookPen, Trophy } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
 const TABS = [
   { href: '/', key: 'home', Icon: House },
-  { href: '/today', key: 'today', Icon: PencilLine },
-  { href: '/calendar', key: 'calendar', Icon: CalendarDays },
+  { href: '/log', key: 'log', Icon: NotebookPen },
+  { href: '/competitions', key: 'competitions', Icon: Trophy },
   { href: '/analysis', key: 'analysis', Icon: ChartLine },
 ] as const;
 
