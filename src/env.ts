@@ -15,6 +15,8 @@ export const env = createEnv({
     BETTER_AUTH_URL: z.url().optional(),
     GOOGLE_CLIENT_ID: z.string().min(1).optional(),
     GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
+    // Sentry の送り先。無ければ送らない（src/lib/monitoring.ts）
+    SENTRY_DSN: z.url().optional(),
   },
   client: {},
   runtimeEnv: {
@@ -23,6 +25,7 @@ export const env = createEnv({
     BETTER_AUTH_URL: process.env.BETTER_AUTH_URL,
     GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
     GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+    SENTRY_DSN: process.env.SENTRY_DSN,
   },
   emptyStringAsUndefined: true,
 });

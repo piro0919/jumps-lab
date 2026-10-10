@@ -1,3 +1,4 @@
+import { withSentryConfig } from '@sentry/nextjs/config';
 import type { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
 // 環境変数を確かめる。欠けていればビルドの頭で止まる
@@ -29,4 +30,13 @@ const nextConfig: NextConfig = {
 // 画面の文言（messages/）を読む。読み方は src/i18n/request.ts
 const withNextIntl = createNextIntlPlugin();
 
-export default withNextIntl(nextConfig);
+// Sentry（src/instrumentation.ts）。鍵が無いビルド（手元・CI）はソースマップを上げずに通る
+export default withSentryConfig(withNextIntl(nextConfig), {
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  silent: !process.env.CI,
+  // ビルドのたびに SDK の使われ方を Sentry へ送るのを止める。要るのは落ちた知らせだけ
+  telemetry: false,
+  sourcemaps: { deleteSourcemapsAfterUpload: true },
+});

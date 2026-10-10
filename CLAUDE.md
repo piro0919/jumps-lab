@@ -162,5 +162,8 @@ Copy the shape of `~/Repository/onigiri` (which itself copies vocafy). Read its 
 - DNS in Cloudflare (kkweb.io): CNAME `jumpslab` to Vercel (proxy off) and a `_vercel` TXT, added with the DNS-only token in janify's .env.local
 - Google Cloud project `jumps-lab-kkweb`, OAuth client "Jumps Lab web". Consent screen External and in production since 2026-10-11, with home, /privacy and /terms set and no logo (a logo would need Google's review)
 - Listed in the Notion portfolio DB and kk-web (WEB SERVICE, order 17)
-- Not done: Web Analytics and Sentry (both need the privacy policy to mention them first; Analytics is then turned on by the owner), videos, AI advice, coach questions
+- Web Analytics and Sentry are in the code and the privacy policy (section 5, ja and en) since 2026-10-11. Both send nothing yet:
+  - Web Analytics: `<Analytics />` in the root layout. The owner turns it on in the Vercel dashboard (Analytics tab), then the next deploy starts counting. No cookies; Vercel keeps the page, referrer, country, device, OS and browser (https://vercel.com/docs/analytics/privacy-policy)
+  - Sentry: server errors only, through `onRequestError` in `src/instrumentation.ts`; settings in `src/lib/monitoring.ts` (koidamashii's). v11 collects user, cookies, headers, bodies and query strings by default, so `dataCollection` turns them all off and `scrubEvent` (`src/lib/scrub-event.ts`, tested) deletes them again. It sends nothing until a Sentry project exists and SENTRY_DSN is set in Vercel production (SENTRY_AUTH_TOKEN, SENTRY_ORG and SENTRY_PROJECT add source maps). Keep what it sends inside what the privacy policy promises
+- Not done: videos, AI advice, coach questions
 - Dev server runs on port 3110 (`pnpm dev`); local Postgres on 5436 (`pnpm db:up`, then `pnpm migrate`)

@@ -73,6 +73,17 @@ export default function PrivacyEn() {
           your browser only when you ask to show the weather. It is not sent to our servers and is
           not stored
         </dd>
+        <dt>Vercel Web Analytics</dt>
+        <dd>
+          Used to learn which pages are viewed and how often. It counts the page viewed, the
+          referring site, country or region, and device, operating system and browser type, in a
+          form that does not identify you. It uses no cookies
+        </dd>
+        <dt>Sentry</dt>
+        <dd>
+          Used to notice errors on our server. We send only the error and the address of the page
+          where it happened, never your records, profile, IP address or cookies
+        </dd>
       </dl>
 
       <h2>6. Cookies</h2>

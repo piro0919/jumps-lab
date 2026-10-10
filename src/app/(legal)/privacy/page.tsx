@@ -9,7 +9,8 @@ export const metadata: Metadata = {
 
 /**
  * プライバシーポリシー。中身はコードから拾った事実で書く。
- * 預かる項目は db/migrations/、外へ渡すものは src/components/weather-card.tsx と src/lib/auth.ts。
+ * 預かる項目は db/migrations/、外へ渡すものは src/components/weather-card.tsx、src/lib/auth.ts、
+ * src/lib/monitoring.ts（Sentry）と src/app/layout.tsx（Web Analytics）。
  * 画面や表を足したら、ここと英語版（/en/privacy）の両方に足し、改定日を動かす
  */
 export default function Privacy() {
@@ -70,6 +71,16 @@ export default function Privacy() {
         <dd>
           現在地の緯度と経度（約100mの精度に丸めます）。天気の表示を押した場合のみ、
           お使いのブラウザから直接送ります。当方のサーバーには送らず、保存もしません
+        </dd>
+        <dt>Vercel Web Analytics</dt>
+        <dd>
+          どのページがどれくらい見られているかを知るために使います。見たページ・参照元・国や地域・端末と
+          OS とブラウザの種類を、個人を特定しない形で集計します。クッキーは使いません
+        </dd>
+        <dt>Sentry</dt>
+        <dd>
+          サーバーで起きた不具合に気づくために使います。送るのは不具合の内容と、それが起きたページのアドレスだけです。
+          記録・プロフィール・IP アドレス・クッキーは送りません
         </dd>
       </dl>
 
