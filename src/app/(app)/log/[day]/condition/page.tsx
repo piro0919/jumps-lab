@@ -2,9 +2,9 @@ import { redirect } from 'next/navigation';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import { DayLogForm } from '@/components/day-log-form';
 import { Card, PageTitle, FORM_PAGE } from '@/components/layout-ui';
-import { getDayLog, getProfile } from '@/lib/data';
+import { getDayLog } from '@/lib/data';
 import { resolveLogDay, todayIn } from '@/lib/dates';
-import { requireViewer } from '@/lib/viewer';
+import { requireProfile, requireViewer } from '@/lib/viewer';
 
 /** その日のコンディションと練習メモを直す画面。日の画面の「編集」から来る。先の日と実在しない日は今日へ送る */
 export default async function EditCondition({
@@ -12,7 +12,7 @@ export default async function EditCondition({
   searchParams,
 }: PageProps<'/log/[day]/condition'>) {
   const viewer = await requireViewer();
-  const profile = (await getProfile(viewer.userId))!;
+  const profile = await requireProfile(viewer.userId);
   const today = todayIn(profile.timeZone);
   const requested = (await params).day;
   const day = resolveLogDay(requested, today);

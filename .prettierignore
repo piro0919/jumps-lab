@@ -9,3 +9,6 @@ public
 *.png
 # next dev が書き直す
 AGENTS.md
+.next-e2e
+test-results
+playwright-report

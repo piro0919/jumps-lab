@@ -6,10 +6,9 @@ import { ThemeSetting } from '@/components/theme-setting';
 import { LanguageSetting } from '@/components/language-setting';
 import { isLocale, LOCALE_COOKIE } from '@/i18n/locales';
 import { cookies } from 'next/headers';
-import { getProfile } from '@/lib/data';
 import { todayIn } from '@/lib/dates';
 import { currentGrade } from '@/lib/grade';
-import { requireViewer } from '@/lib/viewer';
+import { requireProfile, requireViewer } from '@/lib/viewer';
 
 /**
  * 設定。プロフィールと記録はカードごとに保存し、表示（配色）はその場で切り替わる。
@@ -18,7 +17,7 @@ import { requireViewer } from '@/lib/viewer';
  */
 export default async function Settings() {
   const viewer = await requireViewer();
-  const profile = (await getProfile(viewer.userId))!;
+  const profile = await requireProfile(viewer.userId);
   const t = await getTranslations('nav');
   const tProfile = await getTranslations('profile');
   const chosenLocale = (await cookies()).get(LOCALE_COOKIE)?.value;

@@ -1,9 +1,9 @@
 import { getTranslations } from 'next-intl/server';
 import { CompetitionsBoard } from '@/components/competitions-board';
 import { competitionResults } from '@/lib/competition-results';
-import { getProfile, listAllAttempts, listCompetitions } from '@/lib/data';
+import { listAllAttempts, listCompetitions } from '@/lib/data';
 import { todayIn } from '@/lib/dates';
-import { requireViewer } from '@/lib/viewer';
+import { requireProfile, requireViewer } from '@/lib/viewer';
 
 /**
  * 大会の予定と、過去の大会。今日の大会は「これから」に入る。
@@ -11,7 +11,7 @@ import { requireViewer } from '@/lib/viewer';
  */
 export default async function Competitions() {
   const viewer = await requireViewer();
-  const profile = (await getProfile(viewer.userId))!;
+  const profile = await requireProfile(viewer.userId);
   const today = todayIn(profile.timeZone);
   const [all, attempts] = await Promise.all([
     listCompetitions(viewer.userId),

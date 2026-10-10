@@ -14,10 +14,10 @@ import {
   EmptyState,
 } from '@/components/layout-ui';
 import { analyze } from '@/lib/analysis';
-import { getProfile, listAttempts } from '@/lib/data';
+import { listAttempts } from '@/lib/data';
 import { EVENT_BG, EVENT_MARK, EVENT_TEXT, isJumpEvent } from '@/lib/events';
 import { formatMark, formatMarkParts } from '@/lib/units';
-import { requireViewer } from '@/lib/viewer';
+import { requireProfile, requireViewer } from '@/lib/viewer';
 
 const KINDS = ['all', 'practice', 'competition'] as const;
 
@@ -27,7 +27,7 @@ const KINDS = ['all', 'practice', 'competition'] as const;
  */
 export default async function Analysis({ searchParams }: PageProps<'/analysis'>) {
   const viewer = await requireViewer();
-  const profile = (await getProfile(viewer.userId))!;
+  const profile = await requireProfile(viewer.userId);
   const params = await searchParams;
   const event =
     isJumpEvent(params.event) && profile.events.includes(params.event)

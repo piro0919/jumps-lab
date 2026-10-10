@@ -4,6 +4,9 @@ import createNextIntlPlugin from 'next-intl/plugin';
 import './src/env';
 
 const nextConfig: NextConfig = {
+  // e2e のビルドは別のフォルダに作る（playwright.config.ts が NEXT_DIST_DIR を渡す）。同じ .next に作ると、
+  // 動いている開発サーバーの作りかけを上書きする（vocafy と同じ）
+  distDir: process.env.NEXT_DIST_DIR ?? '.next',
   // スマホから手元の開発サーバーを開くため（http://MacBook-Pro.local:3000 のように Mac の名前で開く）。
   // 開発サーバーは、localhost 以外から開かれると画面を動かす部品を渡さない
   allowedDevOrigins: ['*.local'],

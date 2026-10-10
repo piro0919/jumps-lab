@@ -32,3 +32,8 @@ next-env.d.ts
 
 # Playwright MCP の撮影や記録
 .playwright-mcp/
+
+# e2e（playwright.config.ts）
+/.next-e2e/
+/test-results/
+/playwright-report/

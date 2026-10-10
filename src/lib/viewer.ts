@@ -3,6 +3,7 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { cache } from 'react';
 import { getAuth } from '@/lib/auth';
+import { getProfile, type Profile } from '@/lib/data';
 
 export type Viewer = { userId: string; name: string; email: string; image: string | null };
 
@@ -21,4 +22,15 @@ export const requireViewer = cache(async (): Promise<Viewer> => {
     email: session.user.email,
     image: session.user.image ?? null,
   };
+});
+
+/**
+ * いまの人のプロフィール。まだ作っていなければ、ようこその画面へ送る。
+ * 外枠（app/(app)/layout.tsx）も同じ判断で送るが、ページの本体は外枠と並んで動くので、
+ * 本体が「ある」と決めつけて読むと、送られる前に落ちてエラーが残った（e2e で見つけた、2026-10-11）
+ */
+export const requireProfile = cache(async (userId: string): Promise<Profile> => {
+  const profile = await getProfile(userId);
+  if (!profile) redirect('/welcome');
+  return profile;
 });

@@ -2,9 +2,9 @@ import { redirect } from 'next/navigation';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import { AttemptForm } from '@/components/attempt-form';
 import { Card, PageTitle, FORM_PAGE } from '@/components/layout-ui';
-import { getProfile, listAttemptsBetween } from '@/lib/data';
+import { listAttemptsBetween } from '@/lib/data';
 import { resolveLogDay, todayIn } from '@/lib/dates';
-import { requireViewer } from '@/lib/viewer';
+import { requireProfile, requireViewer } from '@/lib/viewer';
 
 /**
  * 試技を足す画面。「今日を記録」（下のタブの真ん中とヘッダー）は /log/today/new を開く。
@@ -12,7 +12,7 @@ import { requireViewer } from '@/lib/viewer';
  */
 export default async function NewAttempt({ params }: PageProps<'/log/[day]/new'>) {
   const viewer = await requireViewer();
-  const profile = (await getProfile(viewer.userId))!;
+  const profile = await requireProfile(viewer.userId);
   const today = todayIn(profile.timeZone);
   const requested = (await params).day;
   const day = resolveLogDay(requested, today);

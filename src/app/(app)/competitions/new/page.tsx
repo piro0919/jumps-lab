@@ -1,14 +1,13 @@
 import { getTranslations } from 'next-intl/server';
 import { CompetitionForm } from '@/components/competition-form';
 import { Card, PageTitle, FORM_PAGE } from '@/components/layout-ui';
-import { getProfile } from '@/lib/data';
 import { todayIn } from '@/lib/dates';
-import { requireViewer } from '@/lib/viewer';
+import { requireProfile, requireViewer } from '@/lib/viewer';
 
 /** 大会を足す画面。日付ははじめ今日 */
 export default async function NewCompetition() {
   const viewer = await requireViewer();
-  const profile = (await getProfile(viewer.userId))!;
+  const profile = await requireProfile(viewer.userId);
   const t = await getTranslations('calendar');
   const tNav = await getTranslations('nav');
 

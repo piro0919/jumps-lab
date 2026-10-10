@@ -8,10 +8,13 @@ import { scriptEnv } from './lib/env';
  *
  *   pnpm exec tsx --env-file=.env.local scripts/dev-session.ts         既存のテスト利用者で入る
  *   pnpm exec tsx --env-file=.env.local scripts/dev-session.ts --fresh 記録もプロフィールも消して入り直す
+ *   ... scripts/dev-session.ts --fresh --user=e2e-desktop             別の利用者で（e2e が手元の試験用の記録を消さないように）
  *
  * 手元の DB（localhost）にしか書かない。クッキーは Better Auth と同じ形で署名する
  */
-const USER_ID = 'dev-user';
+// --user=<id> で別の利用者を使う。既定は手元の確かめ用の dev-user
+const USER_ID =
+  process.argv.find((a) => a.startsWith('--user='))?.slice('--user='.length) || 'dev-user';
 
 async function main() {
   const url = scriptEnv('DATABASE_URL');
@@ -25,9 +28,9 @@ async function main() {
       await pool.query(`delete from "user" where id = $1`, [USER_ID]);
     }
     await pool.query(
-      `insert into "user" (id, name, email, "emailVerified") values ($1, 'Dev Jumper', 'dev@jumpslab.test', true)
+      `insert into "user" (id, name, email, "emailVerified") values ($1, 'Dev Jumper', $2, true)
        on conflict (id) do nothing`,
-      [USER_ID],
+      [USER_ID, USER_ID === 'dev-user' ? 'dev@jumpslab.test' : `${USER_ID}@jumpslab.test`],
     );
     const token = randomBytes(24).toString('base64url');
     await pool.query(

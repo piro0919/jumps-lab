@@ -3,12 +3,12 @@ import Link from 'next/link';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import { Card, PageTitle, SEGMENTS, Stat, segmentClass, EmptyState } from '@/components/layout-ui';
 import { LogCalendar } from '@/components/log-calendar';
-import { getProfile, listAllAttempts, listDayLogs } from '@/lib/data';
+import { listAllAttempts, listDayLogs } from '@/lib/data';
 import { EVENT_TEXT } from '@/lib/events';
 import { isMonth, todayIn } from '@/lib/dates';
 import { buildLogDays } from '@/lib/log-days';
 import { formatMarkParts } from '@/lib/units';
-import { requireViewer } from '@/lib/viewer';
+import { requireProfile, requireViewer } from '@/lib/viewer';
 
 /**
  * 記録の一覧。記録か体調のある日を新しい日から並べ、押すとその日を開く（Strong の履歴と同じ形）。
@@ -16,7 +16,7 @@ import { requireViewer } from '@/lib/viewer';
  */
 export default async function Log({ searchParams }: PageProps<'/log'>) {
   const viewer = await requireViewer();
-  const profile = (await getProfile(viewer.userId))!;
+  const profile = await requireProfile(viewer.userId);
   const today = todayIn(profile.timeZone);
   const params = await searchParams;
   const calendar = params.view === 'calendar';

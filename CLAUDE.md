@@ -74,8 +74,11 @@ Copy the shape of `~/Repository/onigiri` (which itself copies vocafy). Read its 
 - `pnpm-workspace.yaml`: `allowBuilds` and `minimumReleaseAge: 4320`
 - Prettier: singleQuote, trailingComma all, printWidth 100. ESLint and Prettier ignore `.claude/**` and `.playwright-mcp/**`
 - lefthook: pre-commit eslint --fix, prettier, secretlint, typecheck (`next typegen && tsc --noEmit`); commit-msg commitlint (conventional, lower-case subject); pre-push vitest. Never bypass hooks
-- knip, vitest (TZ=UTC, `server-only` stubbed), Playwright on the production build for desktop and Pixel 7 with `distDir` `.next-e2e` (vocafy)
-- CI on push to main and on PRs: Postgres service, typecheck, lint, format:check, secretlint, test, knip, migrate, build; e2e as a separate job. Renovate PRs are only checked here
+- knip, vitest (TZ=UTC like Vercel, `server-only` stubbed). `test/server-guards.test.ts` (spatto's three guards): every Server Action calls `requireViewer`, every export in a "use server" file is async, every file that reads secrets imports `server-only`
+- Playwright e2e (`pnpm test:e2e`) on the production build for desktop and Pixel 7, built into `.next-e2e` (vocafy). Sign-in skips Google: `e2e/session.ts` runs `scripts/dev-session.ts --fresh --user=e2e-…` and sets the signed cookie, so local runs never touch `dev-user`. The journey test caught pages crashing before the layout's welcome redirect; pages now use `requireProfile`
+- squawk-cli on staged `db/migrations/*.sql` (`.squawk.toml`, koidamashii) and a hook that refuses edits to committed migrations
+- Siblings' runtime packages in use: `@bprogress/next` (page progress bar; navigate in code with its `useRouter`), `use-pwa` + `react-ios-pwa-prompt` (Add to Home Screen button in the header), `use-show-window-size` (dev only). Considered and left out on 2026-10-11: sonner (forms navigate back, so no success toast), Speed Insights (owner does not want to pay), Lighthouse CI (pages are behind sign-in), boring-avatars, schema-dts, sharp
+- CI on push to main and on PRs: `check` (Postgres service, typecheck, lint, format:check, secretlint, test, knip, migrate, build) and `e2e` (migrate, Playwright on `next start` inside GitHub Actions; no Vercel build, no Neon). Renovate PRs are only checked here
 - `src/env.ts` with t3-env, imported from `next.config.ts`. Secrets are optional at build time and throw by name when used. Track `.env.local.example`
 - `vercel.json`: `framework: "nextjs"`, `regions: ["sin1"]`, `buildCommand` runs `migrate.ts --check` before `pnpm build`. Stop Renovate branch builds with Ignored Build Step
 - next.config: security headers (frame-ancestors none, X-Frame-Options DENY, nosniff, Referrer-Policy), `allowedDevOrigins: ['*.local']`
@@ -159,5 +162,5 @@ Copy the shape of `~/Repository/onigiri` (which itself copies vocafy). Read its 
 - DNS in Cloudflare (kkweb.io): CNAME `jumpslab` to Vercel (proxy off) and a `_vercel` TXT, added with the DNS-only token in janify's .env.local
 - Google Cloud project `jumps-lab-kkweb`, OAuth client "Jumps Lab web". Consent screen External and in production since 2026-10-11, with home, /privacy and /terms set and no logo (a logo would need Google's review)
 - Listed in the Notion portfolio DB and kk-web (WEB SERVICE, order 17)
-- Not done: Web Analytics (needs the privacy policy to mention it, then the owner turns it on), videos, AI advice, coach questions, e2e tests
+- Not done: Web Analytics and Sentry (both need the privacy policy to mention them first; Analytics is then turned on by the owner), videos, AI advice, coach questions
 - Dev server runs on port 3110 (`pnpm dev`); local Postgres on 5436 (`pnpm db:up`, then `pnpm migrate`)

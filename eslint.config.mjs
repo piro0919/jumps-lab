@@ -17,6 +17,9 @@ const eslintConfig = defineConfig([
     // 別のセッションの作業用のコピー（git worktree）。読むと同じコードを二重に見て、数万件のエラーになる
     '.claude/**',
     '.playwright-mcp/**',
+    '.next-e2e/**',
+    'test-results/**',
+    'playwright-report/**',
   ]),
 ]);
 

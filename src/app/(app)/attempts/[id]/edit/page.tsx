@@ -3,9 +3,9 @@ import { getFormatter, getTranslations } from 'next-intl/server';
 import { z } from 'zod';
 import { AttemptForm } from '@/components/attempt-form';
 import { Card, FORM_PAGE, PageTitle } from '@/components/layout-ui';
-import { getAttempt, getProfile } from '@/lib/data';
+import { getAttempt } from '@/lib/data';
 import { todayIn } from '@/lib/dates';
-import { requireViewer } from '@/lib/viewer';
+import { requireProfile, requireViewer } from '@/lib/viewer';
 
 /**
  * 試技を1本直す画面。日の画面の行の鉛筆から来て、保存したらその日の画面へ戻る。
@@ -17,7 +17,7 @@ export default async function EditAttempt({ params }: PageProps<'/attempts/[id]/
   const { id } = await params;
   const attempt = z.uuid().safeParse(id).success ? await getAttempt(viewer.userId, id) : null;
   if (!attempt) notFound();
-  const profile = (await getProfile(viewer.userId))!;
+  const profile = await requireProfile(viewer.userId);
   const today = todayIn(profile.timeZone);
   const events = profile.events.includes(attempt.event)
     ? profile.events

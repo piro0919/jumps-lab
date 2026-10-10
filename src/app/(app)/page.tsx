@@ -12,12 +12,12 @@ import {
 import { MarkEditor } from '@/components/mark-editor';
 import { WeatherCard } from '@/components/weather-card';
 import { computeBests } from '@/lib/bests';
-import { getDayLog, getProfile, getTargets, listAllAttempts, nextCompetition } from '@/lib/data';
+import { getDayLog, getTargets, listAllAttempts, nextCompetition } from '@/lib/data';
 import { ConditionCard } from '@/components/condition-card';
 import { daysBetween, seasonOf, todayIn } from '@/lib/dates';
 import { EVENT_BG, EVENT_MARK, type JumpEvent } from '@/lib/events';
 import { formatMark, type Units } from '@/lib/units';
-import { requireViewer } from '@/lib/viewer';
+import { requireProfile, requireViewer } from '@/lib/viewer';
 
 /**
  * 1種目のカード。種目の色で塗り、PB を画面いっぱいの数字で出す（手本の Nike Run Club の色付きのカード）。
@@ -104,7 +104,7 @@ async function EventHero({
  */
 export default async function Home() {
   const viewer = await requireViewer();
-  const profile = (await getProfile(viewer.userId))!;
+  const profile = await requireProfile(viewer.userId);
   const today = todayIn(profile.timeZone);
   const [targets, attempts, competition, todayLog] = await Promise.all([
     getTargets(viewer.userId, profile.events),

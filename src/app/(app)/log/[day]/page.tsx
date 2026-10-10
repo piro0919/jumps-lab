@@ -3,9 +3,9 @@ import { getFormatter, getTranslations } from 'next-intl/server';
 import { AttemptsCard } from '@/components/attempts-card';
 import { ConditionCard } from '@/components/condition-card';
 import { PageTitle, HALVES } from '@/components/layout-ui';
-import { getDayLog, getProfile, listAttemptsBetween } from '@/lib/data';
+import { getDayLog, listAttemptsBetween } from '@/lib/data';
 import { resolveLogDay, todayIn } from '@/lib/dates';
-import { requireViewer } from '@/lib/viewer';
+import { requireProfile, requireViewer } from '@/lib/viewer';
 
 /**
  * 1日分の試技と体調。/log/today は本人の時間帯での今日を開く。
@@ -14,7 +14,7 @@ import { requireViewer } from '@/lib/viewer';
  */
 export default async function LogDay({ params }: PageProps<'/log/[day]'>) {
   const viewer = await requireViewer();
-  const profile = (await getProfile(viewer.userId))!;
+  const profile = await requireProfile(viewer.userId);
   const today = todayIn(profile.timeZone);
   const day = resolveLogDay((await params).day, today);
   if (!day) redirect('/log/today');
