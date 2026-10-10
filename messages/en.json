@@ -119,8 +119,7 @@
     "useLocation": "Show weather here",
     "locationDenied": "Location is off",
     "wind": "Wind {speed} m/s",
-    "edit": "Edit",
-    "clear": "Clear",
+    "targetsTitle": "Goal and bests",
     "jumps": "Jumps",
     "daysLogged": "Days logged"
   },

@@ -14,8 +14,8 @@ const TABS = [
   { href: '/analysis', key: 'analysis', Icon: ChartLine },
 ] as const;
 
-/** 今日の記録を足す入口。開いたら追加の窓まで出す */
-export const RECORD_HREF = '/log/today?add=1';
+/** 今日の試技を足す入口（下のタブの真ん中とヘッダー）。足す画面を直接開く */
+export const RECORD_HREF = '/log/today/new';
 
 function useActive() {
   const pathname = usePathname();

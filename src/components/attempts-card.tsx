@@ -2,139 +2,26 @@
 
 import { Plus, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { usePathname, useRouter } from 'next/navigation';
-import { useActionState, useEffect, useState, useTransition } from 'react';
-import { addAttemptAction, deleteAttemptAction } from '@/app/actions/today';
-import { ActionForm } from '@/components/action-form';
+import Link from 'next/link';
+import { useState, useTransition } from 'react';
+import { deleteAttemptAction } from '@/app/actions/today';
 import { ConfirmDialog } from '@/components/confirm-dialog';
-import {
-  Badge,
-  Card,
-  CardTitle,
-  DisplayNumber,
-  ErrorText,
-  Field,
-  Input,
-  segmentClass,
-} from '@/components/layout-ui';
-import { Button } from '@/components/ui/button';
-import { cn } from 'cn';
-import { MarkInput } from '@/components/measure-inputs';
-import { Sheet } from '@/components/sheet';
+import { Badge, Card, CardTitle, DisplayNumber } from '@/components/layout-ui';
+import { Button, buttonVariants } from '@/components/ui/button';
 import type { Attempt } from '@/lib/data';
-import { EVENT_BG, hasWind, isWindAided, type JumpEvent } from '@/lib/events';
+import { EVENT_BG, isWindAided, type JumpEvent } from '@/lib/events';
 import { formatMark, type Units } from '@/lib/units';
-
-/** 2つ以上から1つを選ぶ、横並びの切り替え（練習・大会、種目） */
-function Segmented<T extends string>({
-  options,
-  value,
-  label,
-  onChange,
-}: {
-  options: readonly T[];
-  value: T;
-  label: (option: T) => string;
-  onChange: (option: T) => void;
-}) {
-  return (
-    <div
-      className="grid gap-1 rounded-full bg-muted p-1"
-      style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}
-    >
-      {options.map((option) => (
-        <button
-          key={option}
-          type="button"
-          aria-pressed={value === option}
-          onClick={() => onChange(option)}
-          className={cn(segmentClass(value === option), 'truncate px-1')}
-        >
-          {label(option)}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-/**
- * 記録を1本足す入力。スマホは下から出る窓、PC は中央の窓（Sheet）の中に置く。
- * 種目はここで選ぶ。はじめはその日に最後に足した種目
- */
-function AddForm({
-  day,
-  events,
-  initialEvent,
-  units,
-  onClose,
-}: {
-  day: string;
-  events: JumpEvent[];
-  initialEvent: JumpEvent;
-  units: Units;
-  onClose: () => void;
-}) {
-  const t = useTranslations('today');
-  const tEvents = useTranslations('events');
-  const tErrors = useTranslations('errors');
-  const tProfile = useTranslations('profile');
-  const [event, setEvent] = useState<JumpEvent>(initialEvent);
-  const [kind, setKind] = useState<'practice' | 'competition'>('practice');
-  const [state, action, pending] = useActionState(async (previous: unknown, formData: FormData) => {
-    const result = await addAttemptAction(null, formData);
-    if (result?.ok) onClose();
-    return result;
-  }, null);
-
-  return (
-    <ActionForm action={action} className="flex flex-col gap-4">
-      <input type="hidden" name="day" value={day} />
-      <input type="hidden" name="event" value={event} />
-      <input type="hidden" name="kind" value={kind} />
-      {events.length > 1 && (
-        <Segmented options={events} value={event} label={(e) => tEvents(e)} onChange={setEvent} />
-      )}
-      <Segmented
-        options={['practice', 'competition'] as const}
-        value={kind}
-        label={(k) => t(k)}
-        onChange={setKind}
-      />
-      <Field label={t('mark')} required={tProfile('required')}>
-        <MarkInput name="markM" units={units} autoFocus />
-      </Field>
-      {hasWind(event) && (
-        <Field label={t('wind')}>
-          <Input name="windMs" type="number" inputMode="decimal" step={0.1} min={-20} max={20} />
-        </Field>
-      )}
-      <Field label={t('attemptNote')}>
-        <Input name="note" maxLength={500} />
-      </Field>
-      <ErrorText>{state?.ok === false ? tErrors(state.error as 'generic') : null}</ErrorText>
-      <div className="grid grid-cols-2 gap-3">
-        <Button variant="secondary" type="button" onClick={onClose}>
-          {t('cancel')}
-        </Button>
-        <Button type="submit" disabled={pending}>
-          {t('add')}
-        </Button>
-      </div>
-    </ActionForm>
-  );
-}
 
 /**
  * その日の記録。種目ごとにまとめて1本ずつ並べ、種目ごとにいちばん良い1本に印を付ける。
  * 並びは本人の選んだ種目の順。種目から外した種目の記録も消さずに後ろに出す。
- * 追加は下から出る窓で、削除は確かめてから
+ * 足すのは別の画面（/log/[day]/new）、削除は確かめてから
  */
 export function AttemptsCard({
   day,
   events,
   units,
   attempts,
-  startAdding = false,
 }: {
   day: string;
   /** 本人の選んだ種目 */
@@ -142,25 +29,9 @@ export function AttemptsCard({
   units: Units;
   /** その日の記録（全種目）。古い順 */
   attempts: Attempt[];
-  /** 追加の窓を開いた状態で出す */
-  startAdding?: boolean;
 }) {
   const t = useTranslations('today');
   const tEvents = useTranslations('events');
-  const [adding, setAdding] = useState(startAdding);
-  const router = useRouter();
-  const pathname = usePathname();
-  // 「今日を記録」から来たら窓を開き、アドレスの ?add=1 は消す。残すと読み込み直すたびに開き、
-  // 同じアドレスのまま押し直しても開かなかった（本人、2026-10-11）。開いている画面で押し直したときは
-  // ?add=1 が付き直して startAdding が false から true に変わるので、描くときにそれを見て開く
-  const [lastStart, setLastStart] = useState(startAdding);
-  if (startAdding !== lastStart) {
-    setLastStart(startAdding);
-    if (startAdding) setAdding(true);
-  }
-  useEffect(() => {
-    if (startAdding) router.replace(pathname, { scroll: false });
-  }, [startAdding, pathname, router]);
   // 消す前に確かめている記録
   const [removing, setRemoving] = useState<string | null>(null);
   const [, startTransition] = useTransition();
@@ -172,17 +43,15 @@ export function AttemptsCard({
   const groups = shown
     .map((event) => ({ event, rows: attempts.filter((a) => a.event === event) }))
     .filter((group) => group.rows.length > 0);
-  const lastEvent = attempts.at(-1)?.event;
-  const initialEvent = lastEvent && events.includes(lastEvent) ? lastEvent : events[0]!;
 
   return (
     <Card>
       <CardTitle
         action={
-          <Button size="sm" type="button" onClick={() => setAdding(true)}>
+          <Link href={`/log/${day}/new`} className={buttonVariants({ size: 'sm' })}>
             <Plus aria-hidden className="size-4" />
             {t('add')}
-          </Button>
+          </Link>
         }
       >
         {t('attempts')}
@@ -251,15 +120,6 @@ export function AttemptsCard({
         </div>
       )}
 
-      <Sheet open={adding} onOpenChange={setAdding} title={t('addAttempt')}>
-        <AddForm
-          day={day}
-          events={events}
-          initialEvent={initialEvent}
-          units={units}
-          onClose={() => setAdding(false)}
-        />
-      </Sheet>
       <ConfirmDialog
         open={removing !== null}
         title={t('deleteConfirm')}

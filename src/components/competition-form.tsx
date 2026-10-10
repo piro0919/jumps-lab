@@ -1,29 +1,33 @@
 'use client';
 
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useActionState } from 'react';
 import { saveCompetitionAction } from '@/app/actions/competitions';
 import { ActionForm } from '@/components/action-form';
 import { ErrorText, Field, Input, TextArea } from '@/components/layout-ui';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import type { Competition } from '@/lib/data';
 
-/** 大会の入力。追加と編集で同じものを使う */
+/**
+ * 大会の入力（/competitions/new と /competitions/[id]/edit の画面）。追加と編集で同じものを使う。
+ * 保存したら大会の一覧へ戻る。入力は窓ではなく画面で行う（本人、2026-10-11「統一性がなくてわかりづらい」）
+ */
 export function CompetitionForm({
   initial,
   defaultDay,
-  onDone,
 }: {
   initial: Competition | null;
   defaultDay: string;
-  onDone: () => void;
 }) {
+  const router = useRouter();
   const t = useTranslations('calendar');
   const tErrors = useTranslations('errors');
   const tProfile = useTranslations('profile');
   const [state, action, pending] = useActionState(async (previous: unknown, formData: FormData) => {
     const result = await saveCompetitionAction(null, formData);
-    if (result?.ok) onDone();
+    if (result?.ok) router.push('/competitions');
     return result;
   }, null);
 
@@ -55,9 +59,9 @@ export function CompetitionForm({
       </Field>
       <ErrorText>{state?.ok === false ? tErrors(state.error as 'generic') : null}</ErrorText>
       <div className="grid grid-cols-2 gap-3">
-        <Button variant="secondary" type="button" onClick={onDone}>
+        <Link href="/competitions" className={buttonVariants({ variant: 'secondary' })}>
           {t('cancel')}
-        </Button>
+        </Link>
         <Button type="submit" disabled={pending}>
           {t('save')}
         </Button>

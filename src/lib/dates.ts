@@ -55,3 +55,12 @@ export function seasonOf(day: string, startMonth: number): number {
 export function seasonStart(season: number, startMonth: number): string {
   return `${season}-${String(startMonth).padStart(2, '0')}-01`;
 }
+
+/**
+ * アドレスの日付（/log/today や /log/2026-10-11）を、記録できる日に直す。
+ * today は本人の時間帯の今日。実在しない日と先の日は null（呼ぶ側が今日へ送る）
+ */
+export function resolveLogDay(requested: string, today: string): string | null {
+  if (requested === 'today') return today;
+  return isDay(requested) && requested <= today ? requested : null;
+}

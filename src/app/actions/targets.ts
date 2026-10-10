@@ -1,22 +1,29 @@
 'use server';
 
-import { refresh } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { z } from 'zod';
-import { getProfile, saveTargetField } from '@/lib/data';
+import { getProfile, saveTargets } from '@/lib/data';
 import { seasonOf, todayIn } from '@/lib/dates';
 import { EVENTS } from '@/lib/events';
 import { type ActionResult, optionalNumber } from '@/lib/form';
 import { requireViewer } from '@/lib/viewer';
 
+// 空で送った欄は消す
+const mark = optionalNumber(0.01, 29.99);
+
 const schema = z.object({
   event: z.enum(EVENTS),
-  field: z.enum(['seasonGoalM', 'manualPbM', 'manualSbM', 'manualPracticeBestM']),
-  // 空で送ると消す
-  markM: optionalNumber(0.01, 29.99),
+  seasonGoalM: mark,
+  manualPbM: mark,
+  manualSbM: mark,
+  manualPracticeBestM: mark,
 });
 
-/** 今季目標と、手で入れるベストのうち1つを書き換える。種目はカードのもの（本人の選んだ種目だけ） */
-export async function saveTargetAction(
+/**
+ * 1種目の今季目標と、手で入れる自己ベスト・今季ベスト・練習ベストをまとめて書き換え、ホームへ戻る。
+ * 種目は本人の選んだ種目だけ
+ */
+export async function saveTargetsAction(
   _previous: ActionResult,
   formData: FormData,
 ): Promise<ActionResult> {
@@ -28,19 +35,13 @@ export async function saveTargetAction(
   if (!profile || !profile.events.includes(parsed.data.event))
     return { ok: false, error: 'generic' };
 
+  const { event, ...values } = parsed.data;
   const season = seasonOf(todayIn(profile.timeZone), profile.seasonStartMonth);
   try {
-    await saveTargetField(
-      viewer.userId,
-      parsed.data.event,
-      parsed.data.field,
-      parsed.data.markM,
-      season,
-    );
+    await saveTargets(viewer.userId, event, values, season);
   } catch (error) {
     console.error(error);
     return { ok: false, error: 'generic' };
   }
-  refresh();
-  return { ok: true };
+  redirect('/');
 }

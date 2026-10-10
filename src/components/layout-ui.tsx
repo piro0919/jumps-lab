@@ -1,4 +1,6 @@
 import { cn } from 'cn';
+import { ChevronLeft } from 'lucide-react';
+import Link from 'next/link';
 import { Input as ShadcnInput } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
@@ -60,6 +62,19 @@ export function Wordmark({
     >
       {children}
     </span>
+  );
+}
+
+/** ページの題の上に置く、ひとつ前の画面へ戻るリンク（入力の画面と日の画面） */
+export function BackLink({ href, children }: { href: string; children: ReactNode }) {
+  return (
+    <Link
+      href={href}
+      className="-mb-4 flex w-fit items-center gap-0.5 px-3 pt-4 text-sm font-bold text-primary"
+    >
+      <ChevronLeft aria-hidden className="size-4" />
+      {children}
+    </Link>
   );
 }
 

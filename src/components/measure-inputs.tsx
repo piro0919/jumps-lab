@@ -29,11 +29,14 @@ function FeetInchesInput({
   inches,
   inchStep,
   onChange,
+  autoFocus,
 }: {
   feet: string;
   inches: string;
   inchStep: number;
   onChange: (feet: string, inches: string) => void;
+  /** フィートの欄に、はじめから入る */
+  autoFocus?: boolean;
 }) {
   const t = useTranslations('units');
   return (
@@ -44,6 +47,7 @@ function FeetInchesInput({
         min={0}
         step={1}
         value={feet}
+        autoFocus={autoFocus}
         onChange={(e) => onChange(e.target.value, inches)}
       />
       <Unit>{t('ft')}</Unit>
@@ -116,6 +120,7 @@ export function MarkInput({
           feet={fi.feet}
           inches={fi.inches}
           inchStep={0.25}
+          autoFocus={autoFocus}
           onChange={(feet, inches) => setFi({ feet, inches })}
         />
       )}

@@ -1,0 +1,24 @@
+import { getTranslations } from 'next-intl/server';
+import { CompetitionForm } from '@/components/competition-form';
+import { BackLink, Card, PageTitle } from '@/components/layout-ui';
+import { getProfile } from '@/lib/data';
+import { todayIn } from '@/lib/dates';
+import { requireViewer } from '@/lib/viewer';
+
+/** 大会を足す画面。日付ははじめ今日 */
+export default async function NewCompetition() {
+  const viewer = await requireViewer();
+  const profile = (await getProfile(viewer.userId))!;
+  const t = await getTranslations('calendar');
+  const tNav = await getTranslations('nav');
+
+  return (
+    <main className="flex flex-col gap-3 lg:mx-auto lg:w-full lg:max-w-xl">
+      <BackLink href="/competitions">{tNav('competitions')}</BackLink>
+      <PageTitle>{t('addCompetition')}</PageTitle>
+      <Card>
+        <CompetitionForm initial={null} defaultDay={todayIn(profile.timeZone)} />
+      </Card>
+    </main>
+  );
+}

@@ -186,25 +186,32 @@ export async function getTargets(
   return new Map(events.map((event) => [event, toTarget(rows.find((row) => row.event === event))]));
 }
 
-/** 目標と手で入れたベストのうち、1つだけを書き換える */
-export async function saveTargetField(
+/**
+ * 1種目の今季目標と手で入れたベスト4つを、まとめて書き換える（空は消す）。
+ * 今季ベストは、どのシーズンの値かも残す（シーズンが変わったら数えない）
+ */
+export async function saveTargets(
   userId: string,
   event: JumpEvent,
-  field: 'seasonGoalM' | 'manualPbM' | 'manualSbM' | 'manualPracticeBestM',
-  value: number | null,
+  values: Pick<Target, 'seasonGoalM' | 'manualPbM' | 'manualSbM' | 'manualPracticeBestM'>,
   season: number,
 ): Promise<void> {
-  // 列の名前は型で4つに限っているので、文字列に埋めてよい。
-  // SB を書くときだけ、どのシーズンの値かも残す
-  const isSb = field === 'manualSbM';
   await db().query(
-    `insert into event_target ("userId", event, "${field}", "manualSbSeason")
-     values ($1, $2, $3, case when $5 then $4::smallint end)
+    `insert into event_target ("userId", event, "seasonGoalM", "manualPbM", "manualSbM", "manualSbSeason", "manualPracticeBestM")
+     values ($1, $2, $3::numeric, $4::numeric, $5::numeric, case when $5::numeric is null then null else $6::smallint end, $7::numeric)
      on conflict ("userId", event) do update set
-       "${field}" = $3,
-       "manualSbSeason" = case when $5 then $4::smallint else event_target."manualSbSeason" end,
-       "updatedAt" = now()`,
-    [userId, event, value, season, isSb],
+       "seasonGoalM" = excluded."seasonGoalM", "manualPbM" = excluded."manualPbM",
+       "manualSbM" = excluded."manualSbM", "manualSbSeason" = excluded."manualSbSeason",
+       "manualPracticeBestM" = excluded."manualPracticeBestM", "updatedAt" = now()`,
+    [
+      userId,
+      event,
+      values.seasonGoalM,
+      values.manualPbM,
+      values.manualSbM,
+      season,
+      values.manualPracticeBestM,
+    ],
   );
 }
 
@@ -371,6 +378,15 @@ export async function listDayLogs(
 }
 
 /** 大会すべて。日付の古い順 */
+/** 本人の大会を1つ。無いか他人の大会なら null */
+export async function getCompetition(userId: string, id: string): Promise<Competition | null> {
+  const { rows } = await db().query<Competition>(
+    `select ${competitionColumns} from competition where "userId" = $1 and id = $2`,
+    [userId, id],
+  );
+  return rows[0] ?? null;
+}
+
 export async function listCompetitions(userId: string): Promise<Competition[]> {
   const { rows } = await db().query<Competition>(
     `select ${competitionColumns} from competition where "userId" = $1

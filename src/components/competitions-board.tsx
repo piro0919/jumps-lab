@@ -4,11 +4,10 @@ import { MapPin, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
 import { deleteCompetitionAction } from '@/app/actions/competitions';
-import { CompetitionForm } from '@/components/competition-form';
 import { ConfirmDialog } from '@/components/confirm-dialog';
-import { Sheet } from '@/components/sheet';
 import { Badge, Card, CardTitle, DisplayNumber, PageTitle, Stat } from '@/components/layout-ui';
-import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { Button, buttonVariants } from '@/components/ui/button';
 import type { Competition } from '@/lib/data';
 import type { CompetitionResult } from '@/lib/competition-results';
 import { daysBetween } from '@/lib/dates';
@@ -21,7 +20,6 @@ function CompetitionItem({
   results,
   units,
   today,
-  onEdit,
   onDelete,
 }: {
   competition: Competition;
@@ -29,7 +27,6 @@ function CompetitionItem({
   results: CompetitionResult[];
   units: Units;
   today: string;
-  onEdit: () => void;
   onDelete: () => void;
 }) {
   const t = useTranslations('calendar');
@@ -108,15 +105,13 @@ function CompetitionItem({
           </div>
         )}
       </div>
-      <Button
-        variant="ghost"
-        size="icon"
-        type="button"
+      <Link
+        href={`/competitions/${competition.id}/edit`}
         aria-label={t('editCompetition')}
-        onClick={onEdit}
+        className={buttonVariants({ variant: 'ghost', size: 'icon' })}
       >
         <Pencil aria-hidden />
-      </Button>
+      </Link>
       <Button variant="ghost" size="icon" type="button" aria-label={t('delete')} onClick={onDelete}>
         <Trash2 aria-hidden />
       </Button>
@@ -147,8 +142,6 @@ export function CompetitionsBoard({
 }) {
   const t = useTranslations('competitions');
   const tCalendar = useTranslations('calendar');
-  // 'new' は追加、id は編集中の大会
-  const [editing, setEditing] = useState<string | null>(null);
   const [removing, setRemoving] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
@@ -166,7 +159,6 @@ export function CompetitionsBoard({
                 results={results[competition.day] ?? []}
                 units={units}
                 today={today}
-                onEdit={() => setEditing(competition.id)}
                 onDelete={() => setRemoving(competition.id)}
               />
             </li>
@@ -180,44 +172,14 @@ export function CompetitionsBoard({
     <>
       <PageTitle
         action={
-          <Button
-            size="sm"
-            type="button"
-            disabled={editing === 'new'}
-            onClick={() => setEditing('new')}
-          >
+          <Link href="/competitions/new" className={buttonVariants({ size: 'sm' })}>
             <Plus aria-hidden className="size-4" />
             {tCalendar('add')}
-          </Button>
+          </Link>
         }
       >
         {title}
       </PageTitle>
-      {/* 足すのも直すのも窓で（試技を足す窓と同じ出方。ページに差し込む形と2通りになっていた） */}
-      <Sheet
-        open={editing !== null}
-        onOpenChange={(open) => {
-          if (!open) setEditing(null);
-        }}
-        title={editing === 'new' ? tCalendar('addCompetition') : tCalendar('editCompetition')}
-      >
-        {editing !== null && (
-          <CompetitionForm
-            key={editing}
-            initial={
-              editing === 'new'
-                ? null
-                : ([...upcoming, ...past].find((c) => c.id === editing) ?? null)
-            }
-            defaultDay={
-              editing === 'new'
-                ? today
-                : ([...upcoming, ...past].find((c) => c.id === editing)?.day ?? today)
-            }
-            onDone={() => setEditing(null)}
-          />
-        )}
-      </Sheet>
       <div className="flex flex-col gap-3 lg:grid lg:grid-cols-2 lg:items-start">
         {section(t('upcoming'), upcoming, t('noUpcoming'))}
         {section(t('past'), past, t('noPast'))}
