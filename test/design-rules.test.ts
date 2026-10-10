@@ -112,6 +112,15 @@ describe('見た目の決まり', () => {
     expect(offenders((l) => /\blg:max-w-/.test(l), [SYSTEM, 'app/(app)/layout.tsx'])).toEqual([]);
   });
 
+  it('塊の見出し（16px の極太）は SectionTitle からだけ使う（大会名や題をその場で組まない）', () => {
+    expect(
+      offenders(
+        (l) => /\btext-base\b.*\bfont-extrabold\b|\bfont-extrabold\b.*\btext-base\b/.test(l),
+        [SYSTEM],
+      ),
+    ).toEqual([]);
+  });
+
   it('色を直に書かない（Google のボタンの決まりの色だけ例外）', () => {
     expect(
       offenders(

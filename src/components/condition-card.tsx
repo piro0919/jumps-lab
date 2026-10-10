@@ -1,7 +1,7 @@
 import { Pencil } from 'lucide-react';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
-import { Card, CardTitle, LABEL } from '@/components/layout-ui';
+import { Card, CardTitle, LABEL, Stat } from '@/components/layout-ui';
 import { buttonVariants } from '@/components/ui/button';
 import type { DayLog } from '@/lib/data';
 
@@ -67,17 +67,17 @@ export async function ConditionCard({
       ) : (
         <div className="flex flex-col gap-4">
           {numbers.length > 0 && (
-            <dl className="grid grid-cols-3 gap-2">
+            // 数字はほかの画面と同じ Stat で（普通の太字で出していて、数字の書体が揃っていなかった）
+            <div className="grid grid-cols-3 gap-2">
               {numbers.map((row) => (
-                <div key={row.label} className="flex flex-col gap-1">
-                  <dt className={LABEL}>{row.label}</dt>
-                  <dd className="text-base font-bold tabular-nums">
-                    {row.value}
-                    {row.suffix}
-                  </dd>
-                </div>
+                <Stat
+                  key={row.label}
+                  size="sm"
+                  value={{ value: String(row.value), unit: row.suffix }}
+                  label={row.label}
+                />
               ))}
-            </dl>
+            </div>
           )}
           {texts.map((row) => (
             <div key={row.label} className="flex flex-col gap-1">

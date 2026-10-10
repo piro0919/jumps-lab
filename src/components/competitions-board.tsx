@@ -13,6 +13,7 @@ import {
   PageTitle,
   Stat,
   HALVES,
+  LABEL,
 } from '@/components/layout-ui';
 import Link from 'next/link';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -64,7 +65,7 @@ function CompetitionItem({
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="flex items-start justify-between gap-2">
-          <span className="text-base font-extrabold">{competition.name}</span>
+          <span className="text-lg font-extrabold">{competition.name}</span>
           {upcoming && (
             <Badge tone="accent">
               {tHome('daysLeft', { days: daysBetween(today, competition.day) })}
@@ -93,9 +94,7 @@ function CompetitionItem({
         {competition.notes && <p className="text-sm whitespace-pre-wrap">{competition.notes}</p>}
         {results.length > 0 && (
           <div className="mt-2 flex flex-col gap-1">
-            <span className="text-xs font-bold text-muted-foreground">
-              {tCompetitions('result')}
-            </span>
+            <span className={LABEL}>{tCompetitions('result')}</span>
             <div className="flex flex-wrap gap-x-5 gap-y-2">
               {results.map((r) => (
                 <div key={r.event} className="flex flex-col gap-1">
