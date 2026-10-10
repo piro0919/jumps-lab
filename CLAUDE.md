@@ -106,6 +106,7 @@ Copy the shape of `~/Repository/onigiri` (which itself copies vocafy). Read its 
 
 ### Screens
 
+- Light theme only for now (owner, 2026-10-11: "いったんライトで固定"). Dark values are parked under `.dark`, which nothing applies; see the comment at the top of globals.css to restore
 - Frame (koidamashii and spatto): a sticky full-width header (icon and name left, the account avatar menu right), the menu under it on the left from 1024px, a bottom tab bar on phones. Settings sits in the avatar menu (name, settings, sign out) and at the bottom of the side menu, not in the tabs (agreed 2026-10-11)
 - System Japanese font stack; shadcn's Geist (Latin only) was removed
 - Minimum width 375px, `viewportFit: 'cover'` with safe-area insets for the bottom tabs

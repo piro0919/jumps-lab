@@ -5,9 +5,11 @@
 /*
  * 色は shadcn/ui の名前で持ち、値は手本の Strong に寄せる（灰色の地に白い面、青い差し色）。
  * 部品は名前で使い、値を直に書かない（暗いテーマで値が変わるため）。
- * 暗いテーマは端末の設定に従う（.dark のクラスではなく prefers-color-scheme）
+ * いまは明るいテーマに固定している（本人、2026-10-11「いったんライトで固定」）。
+ * 暗いテーマの値は .dark に残してあり、どこにも付けていないので効かない。
+ * 戻すときは、下の custom-variant と .dark を prefers-color-scheme のメディアクエリに戻す
  */
-@custom-variant dark (@media (prefers-color-scheme: dark));
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme inline {
   /* 書体は端末のもの。shadcn が入れた Geist は英字だけなので外した（鯉魂と同じ） */
@@ -79,29 +81,27 @@
   --radius: 0.75rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    color-scheme: dark;
-    --background: #000000;
-    --foreground: #f2f2f7;
-    --card: #1c1c1e;
-    --card-foreground: #f2f2f7;
-    --popover: #1c1c1e;
-    --popover-foreground: #f2f2f7;
-    --primary: #4b93f0;
-    --primary-foreground: #0b1a2e;
-    --secondary: #15243a;
-    --secondary-foreground: #4b93f0;
-    --muted: #2c2c2e;
-    --muted-foreground: #a1a1a8;
-    --accent: #2c2c2e;
-    --accent-foreground: #f2f2f7;
-    --destructive: #ff6b66;
-    --good: #4cc27d;
-    --border: #2c2c2e;
-    --input: #3a3a3c;
-    --ring: #4b93f0;
-  }
+.dark {
+  color-scheme: dark;
+  --background: #000000;
+  --foreground: #f2f2f7;
+  --card: #1c1c1e;
+  --card-foreground: #f2f2f7;
+  --popover: #1c1c1e;
+  --popover-foreground: #f2f2f7;
+  --primary: #4b93f0;
+  --primary-foreground: #0b1a2e;
+  --secondary: #15243a;
+  --secondary-foreground: #4b93f0;
+  --muted: #2c2c2e;
+  --muted-foreground: #a1a1a8;
+  --accent: #2c2c2e;
+  --accent-foreground: #f2f2f7;
+  --destructive: #ff6b66;
+  --good: #4cc27d;
+  --border: #2c2c2e;
+  --input: #3a3a3c;
+  --ring: #4b93f0;
 }
 
 @layer base {
