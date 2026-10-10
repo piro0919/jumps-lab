@@ -71,14 +71,15 @@
   --popover: #ffffff;
   --popover-foreground: #1c1c1e;
   /*
-   * 差し色は持たない（本人、2026-10-11「ボタンがやたらカラフル」）。選んでいるもの・押すボタン・リンクは
-   * すべて文字の色（黒）。色が付くのは、種目の4色・「今日を記録」の黄緑（--brand）・消すときの赤だけ
+   * 青は「選んでいるもの」だけの色（切り替え・選んだ種目の札・カレンダーの今日）。押すボタンとリンクは文字の色（黒）。
+   * 青を全部なくしたら、黒い切り替えが押すボタンと見分けられず強すぎた（本人、2026-10-11）。
+   * 白い字を載せても、薄い青や灰色の地の上の字にしても 4.5 を超える濃さ
    */
-  --primary: #1c1c1e;
+  --primary: #1a64c8;
   --primary-foreground: #ffffff;
   /* 控えめなボタン（追加・キャンセル）と、選ばれていることの表示 */
-  --secondary: #e5e5ea;
-  --secondary-foreground: #1c1c1e;
+  --secondary: #e6f0fc;
+  --secondary-foreground: #1a64c8;
   /* 入力欄の地 */
   --muted: #f2f2f7;
   /* 白い面の上で 4.5 を超える灰色 */
@@ -111,10 +112,10 @@
   --card-foreground: #f2f2f7;
   --popover: #1c1c1e;
   --popover-foreground: #f2f2f7;
-  --primary: #f2f2f7;
-  --primary-foreground: #1c1c1e;
-  --secondary: #2c2c2e;
-  --secondary-foreground: #f2f2f7;
+  --primary: #4b93f0;
+  --primary-foreground: #0b1a2e;
+  --secondary: #15243a;
+  --secondary-foreground: #4b93f0;
   --muted: #2c2c2e;
   --muted-foreground: #a1a1a8;
   --accent: #2c2c2e;

@@ -182,7 +182,7 @@ function RecordFields({
                 aria-pressed={on}
                 onClick={() => onToggle(event)}
                 className={`h-9 rounded-full px-3 text-sm font-semibold transition active:scale-[0.98] ${
-                  on ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground'
+                  on ? 'bg-secondary text-primary' : 'bg-muted text-muted-foreground'
                 }`}
               >
                 {tEvents(event)}

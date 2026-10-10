@@ -15,8 +15,8 @@ import type { ComponentProps, ReactNode } from 'react';
  * 太さ: semibold・bold・extrabold の3つ（medium は使わない）
  * 角: ボタン・札・丸いもの full、入力欄と行 xl、面の中の小さな面 2xl、カード 3xl
  * 余白: カードどうし 12px（gap-3）、カードの内側 20px（p-5）、カードの中の塊どうし 16px（gap-4）
- * 色: 差し色は持たない。押すボタン・選んでいるもの・リンクは文字の色（primary は文字の色と同じ値）。
- *     色が付くのは、種目の4色・「今日を記録」の黄緑（brand）・消すときの赤（destructive）だけ
+ * 色: 青（primary）は「選んでいるもの」だけ。押すボタンとリンクは文字の色（黒）。
+ *     ほかに色が付くのは、種目の4色・「今日を記録」の黄緑（brand）・消すときの赤（destructive）だけ
  */
 
 /** 欄のラベル。入力欄の上、数字の下、スライダーの名前 */
