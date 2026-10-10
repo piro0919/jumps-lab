@@ -14,6 +14,7 @@ import {
   Stat,
   HALVES,
   LABEL,
+  EmptyState,
 } from '@/components/layout-ui';
 import Link from 'next/link';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -152,11 +153,16 @@ export function CompetitionsBoard({
   const [removing, setRemoving] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
-  const section = (title: string, items: Competition[], empty: string) => (
+  const section = (
+    title: string,
+    items: Competition[],
+    empty: string,
+    action?: { href: string; label: string },
+  ) => (
     <Card>
       <CardTitle>{title}</CardTitle>
       {items.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{empty}</p>
+        <EmptyState message={empty} action={action} />
       ) : (
         <ul className="flex flex-col divide-y divide-border">
           {items.map((competition) => (
@@ -188,7 +194,10 @@ export function CompetitionsBoard({
         {title}
       </PageTitle>
       <div className={HALVES}>
-        {section(t('upcoming'), upcoming, t('noUpcoming'))}
+        {section(t('upcoming'), upcoming, t('noUpcoming'), {
+          href: '/competitions/new',
+          label: tCalendar('addCompetition'),
+        })}
         {section(t('past'), past, t('noPast'))}
       </div>
       <ConfirmDialog

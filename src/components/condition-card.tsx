@@ -1,27 +1,24 @@
 import { Pencil } from 'lucide-react';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
-import { Card, CardTitle, LABEL, Stat } from '@/components/layout-ui';
+import { Card, CardTitle, LABEL, Stat, EmptyState } from '@/components/layout-ui';
 import { buttonVariants } from '@/components/ui/button';
 import type { DayLog } from '@/lib/data';
 
 /**
  * コンディション。見るだけで、直すのは「編集」から移る /log/[day]/condition の画面。入れていない欄は出さない。
- * 日の画面と、ホームの「今日のコンディション」で使う。ホームでまだ入れていない日は、「入力する」のボタンだけを出す
- * （日の画面を経由せずに1往復で入れられるように。本人、2026-10-11）
+ * 日の画面と、ホームの「今日のコンディション」で使う。入れていない日は、ほかの空のカードと同じく
+ * 文と「コンディションを入力」のボタン（EmptyState）。ホームからは日の画面を経由せずに1往復で入れられる
  */
 export async function ConditionCard({
   log,
   editHref,
   title,
-  emptyAsButton = false,
 }: {
   log: DayLog | null;
   editHref: string;
   /** 題。無ければ「コンディション」 */
   title?: string;
-  /** 入れていないとき、「ありません」の文の代わりに入力のボタンを出す */
-  emptyAsButton?: boolean;
 }) {
   const t = await getTranslations('today');
   const tUnits = await getTranslations('units');
@@ -37,33 +34,25 @@ export async function ConditionCard({
   ].filter((row) => row.value);
   const empty = numbers.length === 0 && texts.length === 0;
 
-  // 天気のカードの空のときと同じ組み方（題、その下に灰色のボタン）。題とボタンを横に並べた別の形にしていて、
-  // 隣の天気と見た目が食い違い、狭い列で題も折れていた（本人、2026-10-11）
-  if (empty && emptyAsButton) {
-    return (
-      <Card>
-        <CardTitle>{title ?? t('condition')}</CardTitle>
-        <Link href={editHref} className={buttonVariants({ variant: 'secondary', size: 'sm' })}>
-          {t('enterCondition')}
-        </Link>
-      </Card>
-    );
-  }
-
   return (
     <Card>
       <CardTitle
         action={
-          <Link href={editHref} className={buttonVariants({ variant: 'secondary', size: 'sm' })}>
-            <Pencil aria-hidden className="size-4" />
-            {t('edit')}
-          </Link>
+          empty ? undefined : (
+            <Link href={editHref} className={buttonVariants({ variant: 'secondary', size: 'sm' })}>
+              <Pencil aria-hidden className="size-4" />
+              {t('edit')}
+            </Link>
+          )
         }
       >
         {title ?? t('condition')}
       </CardTitle>
       {empty ? (
-        <p className="text-sm text-muted-foreground">{t('noCondition')}</p>
+        <EmptyState
+          message={t('noCondition')}
+          action={{ href: editHref, label: t('enterCondition') }}
+        />
       ) : (
         <div className="flex flex-col gap-4">
           {numbers.length > 0 && (

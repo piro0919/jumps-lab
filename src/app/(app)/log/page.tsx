@@ -1,7 +1,7 @@
 import { ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { getFormatter, getTranslations } from 'next-intl/server';
-import { Card, PageTitle, SEGMENTS, Stat, segmentClass } from '@/components/layout-ui';
+import { Card, PageTitle, SEGMENTS, Stat, segmentClass, EmptyState } from '@/components/layout-ui';
 import { LogCalendar } from '@/components/log-calendar';
 import { getProfile, listAllAttempts, listDayLogs } from '@/lib/data';
 import { EVENT_TEXT } from '@/lib/events';
@@ -58,7 +58,10 @@ export default async function Log({ searchParams }: PageProps<'/log'>) {
         <LogCalendar month={month} today={today} recorded={new Set(days.map((d) => d.day))} />
       ) : days.length === 0 ? (
         <Card>
-          <p className="text-sm text-muted-foreground">{t('empty')}</p>
+          <EmptyState
+            message={t('empty')}
+            action={{ href: '/log/today/new', label: t('recordToday') }}
+          />
         </Card>
       ) : (
         <ul className="flex flex-col gap-3 lg:grid lg:grid-cols-2">

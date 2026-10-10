@@ -11,6 +11,7 @@ import {
   Watermark,
   segmentClass,
   MAIN_SIDE,
+  EmptyState,
 } from '@/components/layout-ui';
 import { analyze } from '@/lib/analysis';
 import { getProfile, listAttempts } from '@/lib/data';
@@ -38,6 +39,7 @@ export default async function Analysis({ searchParams }: PageProps<'/analysis'>)
   const attempts = await listAttempts(viewer.userId, event);
   const result = analyze(kind === 'all' ? attempts : attempts.filter((a) => a.kind === kind));
   const t = await getTranslations('analysis');
+  const tLog = await getTranslations('log');
   const tNav = await getTranslations('nav');
   const tEvents = await getTranslations('events');
   const format = await getFormatter();
@@ -119,7 +121,10 @@ export default async function Analysis({ searchParams }: PageProps<'/analysis'>)
         <Card>
           <CardTitle>{t('monthlyBest')}</CardTitle>
           {result.monthlyBest.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{t('noMarks')}</p>
+            <EmptyState
+              message={t('noMarks')}
+              action={{ href: '/log/today/new', label: tLog('recordToday') }}
+            />
           ) : (
             <ul className="flex flex-col divide-y divide-border">
               {result.monthlyBest.map(({ month, bestM }) => (

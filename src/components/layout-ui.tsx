@@ -16,6 +16,8 @@ import type { ComponentProps, ReactNode } from 'react';
  * 太さ: semibold・bold・extrabold の3つ（medium は使わない）
  * 角: ボタン・札・丸いもの full、入力欄と行 xl、面の中の小さな面 2xl、カード 3xl
  * 余白: カードどうし 12px（gap-3）、カードの内側 20px（p-5）、カードの中の塊どうし 16px（gap-4）
+ * 操作: カードの題の横の操作は文字付きのボタン（追加は青・編集は灰）、一覧の1行ごとの操作はアイコンだけのボタン（鉛筆・ごみ箱）。
+ *     空のときは EmptyState（文＋足すボタン）にして、題の横の操作は隠す
  * 色: アプリの色は青（primary）1つ。押すボタン・選んでいるもの・次の大会に使う。黒で塗ったものは置かない。
  *     ほかに色が付くのは、種目の4色・「今日を記録」の黄緑（brand）・消すときの赤（destructive）だけ
  */
@@ -353,6 +355,29 @@ export function TextArea({
         className,
       )}
     />
+  );
+}
+
+/**
+ * 一覧やカードが空のときの出し方。「〜はありません」の文と、足せるものがあれば足す画面へのボタン（灰色・小）。
+ * 空のときにボタンがあるカードと、文だけのカードが混ざっていて、最初に何を押せばよいか迷う画面があった（2026-10-11）
+ */
+export function EmptyState({
+  message,
+  action,
+}: {
+  message: string;
+  action?: { href: string; label: string };
+}) {
+  return (
+    <div className="flex flex-col items-start gap-3">
+      <p className="text-sm text-muted-foreground">{message}</p>
+      {action && (
+        <Link href={action.href} className={buttonVariants({ variant: 'secondary', size: 'sm' })}>
+          {action.label}
+        </Link>
+      )}
+    </div>
   );
 }
 

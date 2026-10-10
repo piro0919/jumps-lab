@@ -183,7 +183,6 @@ export default async function Home() {
             log={todayLog}
             editHref="/log/today/condition?from=home"
             title={t('todayCondition')}
-            emptyAsButton
           />
           <WeatherCard />
         </div>

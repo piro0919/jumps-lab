@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useState, useTransition } from 'react';
 import { deleteAttemptAction } from '@/app/actions/today';
 import { ConfirmDialog } from '@/components/confirm-dialog';
-import { Badge, Card, CardTitle, DisplayNumber } from '@/components/layout-ui';
+import { Badge, Card, CardTitle, DisplayNumber, EmptyState } from '@/components/layout-ui';
 import { Button, buttonVariants } from '@/components/ui/button';
 import type { Attempt } from '@/lib/data';
 import { EVENT_BG, isWindAided, type JumpEvent } from '@/lib/events';
@@ -46,18 +46,24 @@ export function AttemptsCard({
 
   return (
     <Card>
+      {/* 空のときは題の横の追加を出さず、空の文の下のボタンだけにする（2つ並ばないように） */}
       <CardTitle
         action={
-          <Link href={`/log/${day}/new`} className={buttonVariants({ size: 'sm' })}>
-            <Plus aria-hidden className="size-4" />
-            {t('add')}
-          </Link>
+          groups.length === 0 ? undefined : (
+            <Link href={`/log/${day}/new`} className={buttonVariants({ size: 'sm' })}>
+              <Plus aria-hidden className="size-4" />
+              {t('add')}
+            </Link>
+          )
         }
       >
         {t('attempts')}
       </CardTitle>
       {groups.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{t('noAttempts')}</p>
+        <EmptyState
+          message={t('noAttempts')}
+          action={{ href: `/log/${day}/new`, label: t('addAttempt') }}
+        />
       ) : (
         <div className="flex flex-col gap-4">
           {groups.map(({ event, rows }) => {
