@@ -13,7 +13,9 @@ function shiftMonth(month: string, n: number): string {
 
 /**
  * 記録をカレンダーの形で見る。記録か体調のある日に点を付け、押すとその日を開く（先の日は開かない）。
- * 週は日曜から（全員。国ごとの週の始まりはまだ合わせていない。CLAUDE.md）
+ * 週は日曜から（全員。国ごとの週の始まりはまだ合わせていない。CLAUDE.md）。
+ * パソコンでは画面の幅いっぱいに広げ、マスを高くして日付を左上に置く（壁掛けのカレンダーの形）。
+ * 最初は幅 448px に収めていて、小さいと言われた（本人、2026-10-11）
  */
 export async function LogCalendar({
   month,
@@ -50,7 +52,7 @@ export async function LogCalendar({
 
   return (
     <Card>
-      <div className="mb-3 flex items-center justify-between">
+      <div className="mb-4 flex items-center justify-between">
         <Link
           href={monthLink(shiftMonth(month, -1))}
           aria-label={t('previousMonth')}
@@ -69,25 +71,25 @@ export async function LogCalendar({
           <ChevronRight aria-hidden className="size-5" />
         </Link>
       </div>
-      <div className="grid grid-cols-7 text-center text-xs font-semibold text-muted-foreground">
+      <div className="grid grid-cols-7 text-center text-xs font-semibold text-muted-foreground lg:text-left lg:text-sm">
         {weekdays.map((weekday, i) => (
-          <span key={i} className="py-1">
+          <span key={i} className="py-1 lg:px-3">
             {weekday}
           </span>
         ))}
       </div>
-      <div className="grid grid-cols-7">
+      <div className="grid grid-cols-7 gap-1">
         {cells.map((cell, i) => {
           if (cell === null) return <span key={`blank-${i}`} />;
           const label = (
             <>
               {Number(cell.slice(8))}
-              <span className="flex h-1.5">
-                {recorded.has(cell) && <span className="size-1.5 rounded-full bg-primary" />}
+              <span className="flex h-2">
+                {recorded.has(cell) && <span className="size-2 rounded-full bg-primary" />}
               </span>
             </>
           );
-          const className = `flex h-12 flex-col items-center justify-center gap-1 rounded-xl text-base tabular-nums ${
+          const className = `flex h-14 flex-col items-center justify-center gap-1.5 rounded-xl text-lg font-semibold tabular-nums lg:h-24 lg:items-start lg:justify-between lg:p-3 ${
             cell === today ? 'font-bold text-primary' : ''
           }`;
           return cell > today ? (

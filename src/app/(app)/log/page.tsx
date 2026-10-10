@@ -57,9 +57,7 @@ export default async function Log({ searchParams }: PageProps<'/log'>) {
       </nav>
 
       {calendar ? (
-        <div className="lg:max-w-md">
-          <LogCalendar month={month} today={today} recorded={new Set(days.map((d) => d.day))} />
-        </div>
+        <LogCalendar month={month} today={today} recorded={new Set(days.map((d) => d.day))} />
       ) : days.length === 0 ? (
         <Card>
           <p className="text-sm text-muted-foreground">{t('empty')}</p>
