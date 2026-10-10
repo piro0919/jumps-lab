@@ -1,13 +1,12 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useActionState } from 'react';
 import { saveCompetitionAction } from '@/app/actions/competitions';
 import { ActionForm } from '@/components/action-form';
 import { ErrorText, Field, Input, TextArea } from '@/components/layout-ui';
-import { Button, buttonVariants } from '@/components/ui/button';
+import { FormActions } from '@/components/form-actions';
 import type { Competition } from '@/lib/data';
 
 /**
@@ -57,15 +56,13 @@ export function CompetitionForm({
       <Field label={t('notes')}>
         <TextArea name="notes" defaultValue={initial?.notes ?? ''} maxLength={2000} />
       </Field>
-      <ErrorText>{state?.ok === false ? tErrors(state.error as 'generic') : null}</ErrorText>
-      <div className="grid grid-cols-2 gap-3">
-        <Link href="/competitions" className={buttonVariants({ variant: 'secondary' })}>
-          {t('cancel')}
-        </Link>
-        <Button type="submit" disabled={pending}>
-          {t('save')}
-        </Button>
-      </div>
+      <FormActions
+        label={t('save')}
+        pending={pending}
+        message={
+          <ErrorText>{state?.ok === false ? tErrors(state.error as 'generic') : null}</ErrorText>
+        }
+      />
     </ActionForm>
   );
 }

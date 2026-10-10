@@ -21,7 +21,7 @@ import {
   Select,
   segmentClass,
 } from '@/components/layout-ui';
-import { Button } from '@/components/ui/button';
+import { FormActions } from '@/components/form-actions';
 import type { Profile } from '@/lib/data';
 import { EVENTS } from '@/lib/events';
 import type { ActionResult } from '@/lib/form';
@@ -217,7 +217,7 @@ function RecordFields({
   );
 }
 
-/** カードの右下の保存（記録の日の画面と同じ）。結果を左に出す */
+/** カードの右下の保存（ほかの入力の画面と同じ FormActions）。結果を左に出す */
 function SaveRow({
   state,
   pending,
@@ -232,13 +232,19 @@ function SaveRow({
   const t = useTranslations('profile');
   const tErrors = useTranslations('errors');
   return (
-    <div className="flex items-center justify-end gap-3">
-      <ErrorText>{state?.ok === false ? tErrors(state.error as 'generic') : null}</ErrorText>
-      {state?.ok && !pending && <span className="text-sm text-muted-foreground">{t('saved')}</span>}
-      <Button type="submit" disabled={pending || disabled}>
-        {label}
-      </Button>
-    </div>
+    <FormActions
+      label={label}
+      pending={pending}
+      disabled={disabled}
+      message={
+        <>
+          <ErrorText>{state?.ok === false ? tErrors(state.error as 'generic') : null}</ErrorText>
+          {state?.ok && !pending && (
+            <span className="text-sm text-muted-foreground">{t('saved')}</span>
+          )}
+        </>
+      }
+    />
   );
 }
 

@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useActionState, useState } from 'react';
@@ -8,7 +7,7 @@ import { addAttemptAction } from '@/app/actions/today';
 import { ActionForm } from '@/components/action-form';
 import { ErrorText, Field, Input, segmentClass } from '@/components/layout-ui';
 import { MarkInput } from '@/components/measure-inputs';
-import { Button, buttonVariants } from '@/components/ui/button';
+import { FormActions } from '@/components/form-actions';
 import { cn } from 'cn';
 import { hasWind, type JumpEvent } from '@/lib/events';
 import type { Units } from '@/lib/units';
@@ -101,15 +100,13 @@ export function AttemptForm({
       <Field label={t('attemptNote')}>
         <Input name="note" maxLength={500} />
       </Field>
-      <ErrorText>{state?.ok === false ? tErrors(state.error as 'generic') : null}</ErrorText>
-      <div className="grid grid-cols-2 gap-3">
-        <Link href={backHref} className={buttonVariants({ variant: 'secondary' })}>
-          {t('cancel')}
-        </Link>
-        <Button type="submit" disabled={pending}>
-          {t('add')}
-        </Button>
-      </div>
+      <FormActions
+        label={t('save')}
+        pending={pending}
+        message={
+          <ErrorText>{state?.ok === false ? tErrors(state.error as 'generic') : null}</ErrorText>
+        }
+      />
     </ActionForm>
   );
 }

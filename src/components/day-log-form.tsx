@@ -1,13 +1,12 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { ActionForm } from '@/components/action-form';
 import { useActionState, useState } from 'react';
 import { saveDayLogAction } from '@/app/actions/today';
 import { ErrorText, Field, Input, LABEL, TextArea } from '@/components/layout-ui';
-import { Button, buttonVariants } from '@/components/ui/button';
+import { FormActions } from '@/components/form-actions';
 import type { DayLog } from '@/lib/data';
 
 function Slider({
@@ -112,15 +111,11 @@ export function DayLogForm({
       <Field label={t('note')}>
         <TextArea name="note" defaultValue={log?.note ?? ''} maxLength={2000} />
       </Field>
-      <ErrorText>{state?.ok === false ? tErrors('generic') : null}</ErrorText>
-      <div className="grid grid-cols-2 gap-3">
-        <Link href={backHref} className={buttonVariants({ variant: 'secondary' })}>
-          {t('cancel')}
-        </Link>
-        <Button type="submit" disabled={pending}>
-          {t('save')}
-        </Button>
-      </div>
+      <FormActions
+        label={t('save')}
+        pending={pending}
+        message={<ErrorText>{state?.ok === false ? tErrors('generic') : null}</ErrorText>}
+      />
     </ActionForm>
   );
 }
