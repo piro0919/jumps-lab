@@ -12,7 +12,8 @@ export function TimeZoneRepair({ saved }: { saved: string }) {
   useEffect(() => {
     if (saved !== 'UTC') return;
     const browser = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    if (browser && browser !== 'UTC') void repairTimeZoneAction(browser);
+    // 失敗しても次に開いたときにまたやる。画面には何も出さない
+    if (browser && browser !== 'UTC') repairTimeZoneAction(browser).catch(() => {});
   }, [saved]);
   return null;
 }

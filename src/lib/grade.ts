@@ -47,7 +47,7 @@ export function usesGrade(timeZone: string): boolean {
  * ほかの国は学年の始まりも区切りの誕生日も違う（米英・中国は9月、韓国は3月、豪州は1〜2月）
  */
 export function computesGrade(birthdate: string | null, timeZone: string): birthdate is string {
-  return birthdate !== null && timeZone === 'Asia/Tokyo';
+  return birthdate !== null && usesGrade(timeZone);
 }
 
 /** いまの学年。計算する人は計算とずれから、ほかの人は手で選んだ値 */

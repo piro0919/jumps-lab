@@ -3,7 +3,13 @@
 import { refresh } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
-import { repairTimeZone, saveProfile, saveProfileDetails, saveRecordSettings } from '@/lib/data';
+import {
+  getProfile,
+  repairTimeZone,
+  saveProfile,
+  saveProfileDetails,
+  saveRecordSettings,
+} from '@/lib/data';
 import { isTimeZone, todayIn } from '@/lib/dates';
 import { EVENTS } from '@/lib/events';
 import { type ActionResult, optionalNumber } from '@/lib/form';
@@ -40,10 +46,7 @@ const recordsSchema = z.object({
   events: z.array(z.enum(EVENTS)).min(1, 'events'),
   units: z.enum(['metric', 'imperial']),
   seasonStartMonth: z.coerce.number().int().min(1).max(12),
-  weekStart: z.coerce
-    .number()
-    .pipe(z.union([z.literal(0), z.literal(1)]))
-    .catch(0),
+  weekStart: z.coerce.number().pipe(z.union([z.literal(0), z.literal(1)])),
   timeZone,
 });
 
@@ -121,9 +124,13 @@ export async function saveProfileDetailsAction(
   if (!parsed.success) return errorOf(parsed.error);
   if (futureBirthdate(parsed.data)) return { ok: false, error: 'generic' };
 
-  const result = await run(() =>
-    saveProfileDetails(viewer.userId, { ...parsed.data, ...gradeFields(parsed.data) }),
-  );
+  // 学年の欄が無い（日本の外で開いた）ときは、保存済みの学年に触れない。東京の人が旅行先で
+  // 身長を直しただけで、学年が消えないように
+  const existing = formData.has('grade') ? null : await getProfile(viewer.userId);
+  const grade = existing
+    ? { grade: existing.grade, gradeOffset: existing.gradeOffset }
+    : gradeFields(parsed.data);
+  const result = await run(() => saveProfileDetails(viewer.userId, { ...parsed.data, ...grade }));
   refresh();
   return result;
 }
@@ -149,7 +156,21 @@ export async function saveRecordSettingsAction(
 export async function repairTimeZoneAction(value: string): Promise<boolean> {
   const viewer = await requireViewer();
   if (value === 'UTC' || !isTimeZone(value)) return false;
-  const repaired = await repairTimeZone(viewer.userId, value);
+  // UTC の間は学年を計算しないので、手で選んだ学年で持っている。東京に直すと計算に切り替わるので、
+  // 選んだ学年を計算とのずれに持ち替える（そのままだと選んだ学年が消える）
+  const profile = await getProfile(viewer.userId);
+  if (!profile || profile.timeZone !== 'UTC') return false;
+  const grade =
+    computesGrade(profile.birthdate, value) && profile.grade
+      ? {
+          grade: null,
+          gradeOffset: Math.max(
+            -10,
+            Math.min(10, offsetFor(profile.birthdate, profile.grade, todayIn(value))),
+          ),
+        }
+      : { grade: profile.grade, gradeOffset: profile.gradeOffset };
+  const repaired = await repairTimeZone(viewer.userId, value, grade);
   if (repaired) refresh();
   return repaired;
 }

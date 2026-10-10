@@ -13,6 +13,11 @@ describe('weekStartFor', () => {
     expect(weekStartFor('ar-EG', 'Africa/Cairo')).toBe(0);
   });
 
+  it('言語に地域が付いていなければ時間帯で推す', () => {
+    expect(weekStartFor('en', 'Europe/London')).toBe(1);
+    expect(weekStartFor('en', 'America/New_York')).toBe(0);
+  });
+
   it('言語の名前が読めなければ時間帯で推す', () => {
     expect(weekStartFor('not a locale', 'Asia/Tokyo')).toBe(0);
     expect(weekStartFor('not a locale', 'America/Chicago')).toBe(0);
