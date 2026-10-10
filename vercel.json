@@ -2,5 +2,6 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
   "regions": ["sin1"],
-  "buildCommand": "pnpm exec tsx scripts/migrate.ts --check && pnpm build"
+  "buildCommand": "pnpm exec tsx scripts/migrate.ts --check && pnpm build",
+  "ignoreCommand": "case \"$VERCEL_GIT_COMMIT_REF\" in renovate/*) exit 0 ;; *) exit 1 ;; esac"
 }
