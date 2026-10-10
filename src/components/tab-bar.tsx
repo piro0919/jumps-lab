@@ -70,7 +70,7 @@ export function TabBar() {
         </ul>
       </nav>
 
-      <nav className="fixed top-16 bottom-0 left-0 z-10 hidden w-60 flex-col border-r border-border bg-card px-3 py-4 lg:flex">
+      <nav className="fixed top-16 bottom-0 left-0 z-10 hidden w-60 flex-col px-3 py-4 lg:flex">
         <ul className="flex flex-col gap-1">{TABS.map(sideLink)}</ul>
         <ul className="mt-auto flex flex-col gap-1 border-t border-border pt-4">
           {SIDE_BOTTOM.map(sideLink)}
