@@ -15,6 +15,7 @@ import {
   Sun,
   type LucideIcon,
 } from 'lucide-react';
+import { cn } from 'cn';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Card, CardTitle, DisplayNumber } from '@/components/layout-ui';
@@ -57,6 +58,26 @@ const ICONS: Record<WeatherKey, { day: LucideIcon; night: LucideIcon }> = {
   thunder: { day: CloudLightning, night: CloudLightning },
 };
 
+/**
+ * 絵の色。線は白い地で 3:1 を超える濃さにし、中を薄い同じ色で塗る。
+ * 晴れは橙、夜は藍、曇りと霧は灰、雨と雪は青、雷は紫
+ */
+const SUN = 'text-amber-600 fill-amber-200';
+const NIGHT = 'text-indigo-500 fill-indigo-100';
+const GREY = 'text-slate-500 fill-slate-100';
+const WET = 'text-sky-600 fill-sky-100';
+const COLORS: Record<WeatherKey, { day: string; night: string }> = {
+  clear: { day: SUN, night: NIGHT },
+  partlyCloudy: { day: SUN, night: NIGHT },
+  cloudy: { day: GREY, night: GREY },
+  fog: { day: GREY, night: GREY },
+  drizzle: { day: WET, night: WET },
+  rain: { day: WET, night: WET },
+  snow: { day: WET, night: WET },
+  showers: { day: WET, night: WET },
+  thunder: { day: 'text-violet-600 fill-violet-100', night: 'text-violet-600 fill-violet-100' },
+};
+
 async function fetchWeather(latitude: number, longitude: number): Promise<Weather> {
   const url = new URL('https://api.open-meteo.com/v1/forecast');
   url.search = new URLSearchParams({
@@ -84,11 +105,12 @@ function WeatherNow({
   label: string;
   children: ReactNode;
 }) {
-  const icons = ICONS[weatherKey(weather.code)];
-  const Icon = weather.isDay ? icons.day : icons.night;
+  const key = weatherKey(weather.code);
+  const time = weather.isDay ? 'day' : 'night';
+  const Icon = ICONS[key][time];
   return (
     <div className="flex items-center gap-4">
-      <Icon aria-hidden className="size-12 shrink-0" strokeWidth={1.75} />
+      <Icon aria-hidden className={cn('size-12 shrink-0', COLORS[key][time])} strokeWidth={1.75} />
       <div className="flex min-w-0 flex-col gap-1">
         <span className="flex flex-wrap items-baseline gap-x-2">
           <DisplayNumber size="md">{Math.round(weather.temperature)}°</DisplayNumber>
