@@ -59,7 +59,7 @@ async function EventHero({
           size="giant"
           inverse
         />
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-3 gap-4">
           <MarkEditor
             event={event}
             field="manualSbM"

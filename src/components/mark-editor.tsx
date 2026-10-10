@@ -51,10 +51,12 @@ export function MarkEditor({
 
   return (
     <>
+      {/* 押せる範囲と、指を乗せたときの地は、数字の周りに 8px の余白を取る。外側は同じだけ縮めて、
+          並びの位置は変えない（地が数字にぴったり付いていた。本人、2026-10-11） */}
       <button
         type="button"
         onClick={() => setEditing(true)}
-        className={`w-full rounded-xl text-left ${inverse ? 'hover:bg-white/10' : 'hover:bg-accent/60'}`}
+        className={`-m-2 block w-[calc(100%+1rem)] rounded-xl p-2 text-left ${inverse ? 'hover:bg-white/10' : 'hover:bg-accent/60'}`}
       >
         <Stat
           value={shown === null ? null : formatMarkParts(shown, units)}
