@@ -5,8 +5,8 @@ import { useTranslations } from 'next-intl';
 import { useActionState, useState } from 'react';
 import { addAttemptAction } from '@/app/actions/today';
 import { ActionForm } from '@/components/action-form';
-import { ErrorText, Field, Input, segmentClass } from '@/components/layout-ui';
-import { MarkInput } from '@/components/measure-inputs';
+import { ErrorText, Field, FieldLabel, segmentClass, TextArea } from '@/components/layout-ui';
+import { MarkInput, WindInput } from '@/components/measure-inputs';
 import { FormActions } from '@/components/form-actions';
 import { cn } from 'cn';
 import { hasWind, type JumpEvent } from '@/lib/events';
@@ -80,25 +80,32 @@ export function AttemptForm({
       <input type="hidden" name="day" value={day} />
       <input type="hidden" name="event" value={event} />
       <input type="hidden" name="kind" value={kind} />
+      {/* 切り替えにも、ほかの欄と同じく名前を付ける（名前の無い欄が混ざっていた。本人、2026-10-11） */}
       {events.length > 1 && (
-        <Segmented options={events} value={event} label={(e) => tEvents(e)} onChange={setEvent} />
+        <div className="flex flex-col gap-1.5">
+          <FieldLabel label={tProfile('events')} />
+          <Segmented options={events} value={event} label={(e) => tEvents(e)} onChange={setEvent} />
+        </div>
       )}
-      <Segmented
-        options={['practice', 'competition'] as const}
-        value={kind}
-        label={(k) => t(k)}
-        onChange={setKind}
-      />
+      <div className="flex flex-col gap-1.5">
+        <FieldLabel label={t('kind')} />
+        <Segmented
+          options={['practice', 'competition'] as const}
+          value={kind}
+          label={(k) => t(k)}
+          onChange={setKind}
+        />
+      </div>
       <Field label={t('mark')} required={tProfile('required')}>
         <MarkInput name="markM" units={units} autoFocus />
       </Field>
       {hasWind(event) && (
         <Field label={t('wind')}>
-          <Input name="windMs" type="number" inputMode="decimal" step={0.1} min={-20} max={20} />
+          <WindInput name="windMs" />
         </Field>
       )}
       <Field label={t('attemptNote')}>
-        <Input name="note" maxLength={500} />
+        <TextArea name="note" maxLength={500} />
       </Field>
       <FormActions
         label={t('save')}

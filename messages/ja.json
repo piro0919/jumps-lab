@@ -155,7 +155,7 @@
     "competition": "大会",
     "kind": "種別",
     "mark": "記録",
-    "wind": "風速（m/s）",
+    "wind": "風速",
     "attemptNote": "メモ",
     "addAttempt": "試技を追加",
     "delete": "削除",

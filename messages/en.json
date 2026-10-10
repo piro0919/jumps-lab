@@ -155,7 +155,7 @@
     "competition": "Competition",
     "kind": "Type",
     "mark": "Mark",
-    "wind": "Wind (m/s)",
+    "wind": "Wind",
     "attemptNote": "Note",
     "addAttempt": "Add attempt",
     "delete": "Delete",

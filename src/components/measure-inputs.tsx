@@ -75,6 +75,20 @@ function toFeetInches(
 }
 
 /** 記録（メートル）。imperial は 4分の1インチ刻み */
+/**
+ * 風速（m/s）。単位は国によらず m/s のまま。単位はほかの欄と同じく欄の右に出す
+ * （名前に「（m/s）」と括弧で入れていて、記録の欄と書き方が違っていた。本人、2026-10-11）
+ */
+export function WindInput({ name }: { name: string }) {
+  const t = useTranslations('units');
+  return (
+    <div className="flex items-center gap-2">
+      <Input name={name} type="number" inputMode="decimal" step={0.1} min={-20} max={20} />
+      <Unit>{t('ms')}</Unit>
+    </div>
+  );
+}
+
 export function MarkInput({
   name,
   units,

@@ -3,7 +3,7 @@ import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import { Input as ShadcnInput } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
-import { Textarea } from '@/components/ui/textarea';
+import TextareaAutosize, { type TextareaAutosizeProps } from 'react-textarea-autosize';
 import type { ComponentProps, ReactNode } from 'react';
 
 /**
@@ -316,12 +316,23 @@ export function Select({ className, children, ...props }: Omit<ComponentProps<'s
   );
 }
 
-export function TextArea({ className, ...props }: ComponentProps<'textarea'>) {
+/**
+ * 自由に文を書く欄（メモ・ケガ・注意事項）。2行から始めて、書いた分だけ縦に伸びる（react-textarea-autosize）。
+ * メモを1行の入力欄にしていて改行できなかった（本人、2026-10-11）。CSS の field-sizing は iPhone の Safari で
+ * 効くか確かめきれないので使わない。見た目は入力欄（Input）と同じ地と角
+ */
+export function TextArea({
+  className,
+  style,
+  ...props
+}: Omit<ComponentProps<'textarea'>, 'style'> & { style?: TextareaAutosizeProps['style'] }) {
   return (
-    <Textarea
+    <TextareaAutosize
+      minRows={2}
       {...props}
+      style={style}
       className={cn(
-        'min-h-24 rounded-xl border-transparent bg-muted p-3 text-base md:text-base',
+        'w-full resize-none rounded-xl border border-transparent bg-muted px-3 py-2.5 text-base outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50',
         className,
       )}
     />

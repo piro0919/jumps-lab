@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { ActionForm } from '@/components/action-form';
 import { useActionState, useState } from 'react';
 import { saveDayLogAction } from '@/app/actions/today';
-import { ErrorText, Field, Input, LABEL, TextArea } from '@/components/layout-ui';
+import { ErrorText, Field, LABEL, TextArea } from '@/components/layout-ui';
 import { FormActions } from '@/components/form-actions';
 import type { DayLog } from '@/lib/data';
 
@@ -106,7 +106,7 @@ export function DayLogForm({
         suffix={tUnits('hours')}
       />
       <Field label={t('injury')}>
-        <Input name="injury" defaultValue={log?.injury ?? ''} maxLength={500} />
+        <TextArea name="injury" defaultValue={log?.injury ?? ''} maxLength={500} />
       </Field>
       <Field label={t('note')}>
         <TextArea name="note" defaultValue={log?.note ?? ''} maxLength={2000} />
