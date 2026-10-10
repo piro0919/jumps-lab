@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { cn } from 'cn';
+import { segmentClass } from '@/components/layout-ui';
 
 const TABS = [
   { href: '/', key: 'home', Icon: House },
@@ -22,30 +23,27 @@ function useActive() {
 }
 
 /**
- * 幅 1024px 以上の画面の切り替え。ヘッダーの中に横に並べる（手本の Strava の上のメニュー）。
- * 選んでいる画面は字を濃くし、ヘッダーの下端に線を引く
+ * 幅 1024px 以上の画面の切り替え。ヘッダーの真ん中に横に並べる（手本の Strava の上のメニュー）。
+ * 形は画面の中の切り替えと同じ丸い札で、白い帯に載せて灰色の地から浮かせる。
+ * 最初は下線の形にしたが、ださいと言われた（本人、2026-10-11）
  */
 export function HeaderNav() {
   const t = useTranslations('nav');
   const isActive = useActive();
 
   return (
-    <nav className="hidden h-full lg:block">
-      <ul className="flex h-full">
-        {TABS.map(({ href, key }) => {
+    <nav className="hidden lg:block">
+      <ul className="flex gap-1 rounded-full bg-card p-1 shadow-sm">
+        {TABS.map(({ href, key, Icon }) => {
           const active = isActive(href);
           return (
-            <li key={key} className="h-full">
+            <li key={key}>
               <Link
                 href={href}
                 aria-current={active ? 'page' : undefined}
-                className={cn(
-                  'flex h-full items-center border-b-3 px-4 text-sm font-bold',
-                  active
-                    ? 'border-foreground text-foreground'
-                    : 'border-transparent text-muted-foreground hover:text-foreground',
-                )}
+                className={cn(segmentClass(active), 'gap-1.5')}
               >
+                <Icon aria-hidden className="size-4" strokeWidth={active ? 2.5 : 2} />
                 {t(key)}
               </Link>
             </li>
