@@ -74,7 +74,6 @@ function toFeetInches(
   return { feet: String(feet), inches: String(inches) };
 }
 
-/** 記録（メートル）。imperial は 4分の1インチ刻み */
 /**
  * 風速（m/s）。単位は国によらず m/s のまま。単位はほかの欄と同じく欄の右に出す
  * （名前に「（m/s）」と括弧で入れていて、記録の欄と書き方が違っていた。本人、2026-10-11）
@@ -103,6 +102,7 @@ export function WindInput({
   );
 }
 
+/** 記録（メートル）。imperial は 4分の1インチ刻み */
 export function MarkInput({
   name,
   units,

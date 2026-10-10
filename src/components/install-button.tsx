@@ -19,6 +19,9 @@ function isAppleDevice(): boolean {
   );
 }
 
+/** 端末の種類は変わらないので、知らせることは無い */
+const subscribeNothing = () => () => {};
+
 /**
  * ホーム画面に置くための入り口（鯉魂・spatto・vocafy と同じ use-pwa と react-ios-pwa-prompt）。
  * Chrome 系はブラウザの確認を出す。iOS は API が無いので、共有ボタンから追加する手順を案内する。
@@ -29,11 +32,7 @@ export function InstallButton() {
   const { canInstall, install, isInstalled } = usePwa();
   const [guide, setGuide] = useState(false);
   // 端末の判定は window を見る。サーバー側では決まらないので、載ってから読む
-  const isApple = useSyncExternalStore(
-    () => () => {},
-    isAppleDevice,
-    () => false,
-  );
+  const isApple = useSyncExternalStore(subscribeNothing, isAppleDevice, () => false);
 
   if (isInstalled || (!canInstall && !isApple)) return null;
 

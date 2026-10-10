@@ -28,9 +28,8 @@ export function scrubEvent(event: ErrorEvent): ErrorEvent {
   if (nextjs !== undefined && typeof nextjs.request_path === 'string') {
     nextjs.request_path = scrubUrl(nextjs.request_path);
   }
-  for (const crumb of event.breadcrumbs ?? []) {
-    const value = crumb.data?.url;
-    if (typeof value === 'string') crumb.data!.url = scrubUrl(value);
-  }
+  // 落ちる前の足跡は丸ごと送らない。console.error の中身（DB のエラーには保存しかけた行、つまり記録やメモが載る）や、
+  // 天気の問い合わせの緯度・経度が入る
+  delete event.breadcrumbs;
   return event;
 }

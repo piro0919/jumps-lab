@@ -85,7 +85,9 @@ export async function saveAttemptAction(
   const existing = id ? await getAttempt(viewer.userId, id) : null;
   if (id && !existing) return { ok: false, error: 'generic' };
   const allowed = profile?.events.includes(event) || existing?.event === event;
-  if (!profile || !allowed || !openDay(input.day, profile.timeZone)) {
+  // 先の日を弾くのは足すときだけ。書き換えは日を変えない（updateAttempt）ので、時間帯を変えて
+  // 元の日が「明日」になった試技も直せる
+  if (!profile || !allowed || (!existing && !openDay(input.day, profile.timeZone))) {
     return { ok: false, error: 'generic' };
   }
   const values = { ...input, event, windMs: hasWind(event) ? input.windMs : null };
