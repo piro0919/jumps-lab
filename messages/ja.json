@@ -4,7 +4,8 @@
     "description": "走高跳・走幅跳・三段跳・棒高跳の記録をつけるサービスです。"
   },
   "signIn": {
-    "google": "Google でログイン"
+    "google": "Google でログイン",
+    "consent": "ログインすると、<terms>利用規約</terms>と<privacy>プライバシーポリシー</privacy>に同意したものとみなします。"
   },
   "events": {
     "high_jump": "走高跳",

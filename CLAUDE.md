@@ -17,7 +17,7 @@ A record-keeping service for jumpers (high jump, long jump, triple jump, pole va
 - Units: store meters internally. Display and input switch between meters and feet/inches. Height and weight follow the same switch. Wind stays in m/s.
 - Sign-in: Google only, and required. No signed-out use, no local-only mode
 - Storage: Neon (Singapore). Vercel functions in sin1. Both on the owner's own accounts.
-- Legal: privacy policy and terms in Japanese and English, operated by the owner (not the friend). Japanese is the authoritative text, English is a translation with matching sections (spatto)
+- Legal: privacy policy and terms in Japanese and English at /privacy, /terms, /en/privacy, /en/terms. Operator "kk-web", contact kk.web.kawamura@gmail.com. Japanese is the authoritative text, English is a translation with matching sections (spatto)
 - Features in v1 (same as the prototype):
   - Profile: name, grade, age, gender, height, weight, events, goal
   - Home: season goal, PB / SB / practice best, weather (Open-Meteo, location permission), days until next competition

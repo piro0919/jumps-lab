@@ -6,9 +6,15 @@ import { type NextRequest, NextResponse } from 'next/server';
  * Better Auth の Cookie があるかだけを見て、DB には問い合わせない（印が古いときは各画面がセッションを確かめる）。
  * ログインの画面に印のある人が来たら、トップへ送る
  */
+// 規約とポリシー。ログインの画面と Google の同意画面の審査から踏まれるので、誰でも開ける
+const PUBLIC = new Set(['/privacy', '/terms', '/en/privacy', '/en/terms']);
+
 export function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  if (PUBLIC.has(pathname)) return NextResponse.next();
+
   const signedIn = getSessionCookie(request) !== null;
-  const onSignIn = request.nextUrl.pathname === '/sign-in';
+  const onSignIn = pathname === '/sign-in';
 
   if (!signedIn && !onSignIn) return NextResponse.redirect(new URL('/sign-in', request.url));
   if (signedIn && onSignIn) return NextResponse.redirect(new URL('/', request.url));

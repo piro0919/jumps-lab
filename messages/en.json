@@ -4,7 +4,8 @@
     "description": "Log your high jump, long jump, triple jump and pole vault marks."
   },
   "signIn": {
-    "google": "Sign in with Google"
+    "google": "Sign in with Google",
+    "consent": "By signing in, you agree to the <terms>Terms of Use</terms> and <privacy>Privacy Policy</privacy>."
   },
   "events": {
     "high_jump": "High jump",
