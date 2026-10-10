@@ -112,6 +112,7 @@
     "toGoal": "目標まで {distance}",
     "goalReached": "目標達成",
     "nextCompetition": "次の大会",
+    "todayCondition": "今日のコンディション",
     "noCompetition": "大会はありません",
     "daysLeft": "{days, plural, =0 {今日} other {あと#日}}",
     "daysUnit": "日後",
@@ -137,6 +138,8 @@
   "today": {
     "condition": "コンディション",
     "editCondition": "コンディションを編集",
+    "newCondition": "コンディションを入力",
+    "enterCondition": "コンディションを入力",
     "noCondition": "コンディションはありません",
     "edit": "編集",
     "physical": "体調",

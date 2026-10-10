@@ -6,10 +6,23 @@ import { buttonVariants } from '@/components/ui/button';
 import type { DayLog } from '@/lib/data';
 
 /**
- * 日の画面のコンディション。見るだけで、直すのは「編集」から移る /log/[day]/condition の画面。
- * 入れていない欄は出さない
+ * コンディション。見るだけで、直すのは「編集」から移る /log/[day]/condition の画面。入れていない欄は出さない。
+ * 日の画面と、ホームの「今日のコンディション」で使う。ホームでまだ入れていない日は、「入力する」のボタンだけを出す
+ * （日の画面を経由せずに1往復で入れられるように。本人、2026-10-11）
  */
-export async function ConditionCard({ log, editHref }: { log: DayLog | null; editHref: string }) {
+export async function ConditionCard({
+  log,
+  editHref,
+  title,
+  emptyAsButton = false,
+}: {
+  log: DayLog | null;
+  editHref: string;
+  /** 題。無ければ「コンディション」 */
+  title?: string;
+  /** 入れていないとき、「ありません」の文の代わりに入力のボタンを出す */
+  emptyAsButton?: boolean;
+}) {
   const t = await getTranslations('today');
   const tUnits = await getTranslations('units');
 
@@ -22,6 +35,20 @@ export async function ConditionCard({ log, editHref }: { log: DayLog | null; edi
     { label: t('injury'), value: log?.injury },
     { label: t('note'), value: log?.note },
   ].filter((row) => row.value);
+  const empty = numbers.length === 0 && texts.length === 0;
+
+  // 天気のカードの空のときと同じ組み方（題、その下に灰色のボタン）。題とボタンを横に並べた別の形にしていて、
+  // 隣の天気と見た目が食い違い、狭い列で題も折れていた（本人、2026-10-11）
+  if (empty && emptyAsButton) {
+    return (
+      <Card>
+        <CardTitle>{title ?? t('condition')}</CardTitle>
+        <Link href={editHref} className={buttonVariants({ variant: 'secondary', size: 'sm' })}>
+          {t('enterCondition')}
+        </Link>
+      </Card>
+    );
+  }
 
   return (
     <Card>
@@ -33,9 +60,9 @@ export async function ConditionCard({ log, editHref }: { log: DayLog | null; edi
           </Link>
         }
       >
-        {t('condition')}
+        {title ?? t('condition')}
       </CardTitle>
-      {numbers.length === 0 && texts.length === 0 ? (
+      {empty ? (
         <p className="text-sm text-muted-foreground">{t('noCondition')}</p>
       ) : (
         <div className="flex flex-col gap-4">

@@ -112,6 +112,7 @@
     "toGoal": "{distance} to go",
     "goalReached": "Goal reached",
     "nextCompetition": "Next competition",
+    "todayCondition": "Today's condition",
     "noCompetition": "No competitions",
     "daysLeft": "{days, plural, =0 {Today} one {# day} other {# days}}",
     "daysUnit": "{days, plural, one {day left} other {days left}}",
@@ -137,6 +138,8 @@
   "today": {
     "condition": "Condition",
     "editCondition": "Edit condition",
+    "newCondition": "Add condition",
+    "enterCondition": "Add condition",
     "noCondition": "No condition",
     "edit": "Edit",
     "physical": "Body",

@@ -14,7 +14,8 @@ import {
 import { MarkEditor } from '@/components/mark-editor';
 import { WeatherCard } from '@/components/weather-card';
 import { computeBests } from '@/lib/bests';
-import { getProfile, getTargets, listAllAttempts, nextCompetition } from '@/lib/data';
+import { getDayLog, getProfile, getTargets, listAllAttempts, nextCompetition } from '@/lib/data';
+import { ConditionCard } from '@/components/condition-card';
 import { daysBetween, seasonOf, todayIn } from '@/lib/dates';
 import { EVENT_BG, EVENT_MARK, type JumpEvent } from '@/lib/events';
 import { formatMark, type Units } from '@/lib/units';
@@ -155,10 +156,11 @@ export default async function Home() {
   const viewer = await requireViewer();
   const profile = (await getProfile(viewer.userId))!;
   const today = todayIn(profile.timeZone);
-  const [targets, attempts, competition] = await Promise.all([
+  const [targets, attempts, competition, todayLog] = await Promise.all([
     getTargets(viewer.userId, profile.events),
     listAllAttempts(viewer.userId),
     nextCompetition(viewer.userId, today),
+    getDayLog(viewer.userId, today),
   ]);
   const t = await getTranslations('home');
   const tNav = await getTranslations('nav');
@@ -235,6 +237,13 @@ export default async function Home() {
             )}
             <ChevronRight aria-hidden className="size-5 shrink-0" />
           </Link>
+          {/* 今日のコンディション。押すと直す画面へ移り、保存したらホームへ戻る */}
+          <ConditionCard
+            log={todayLog}
+            editHref="/log/today/condition?from=home"
+            title={t('todayCondition')}
+            emptyAsButton
+          />
           <WeatherCard />
         </div>
       </div>

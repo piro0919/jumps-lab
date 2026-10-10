@@ -7,7 +7,10 @@ import { resolveLogDay, todayIn } from '@/lib/dates';
 import { requireViewer } from '@/lib/viewer';
 
 /** その日のコンディションと練習メモを直す画面。日の画面の「編集」から来る。先の日と実在しない日は今日へ送る */
-export default async function EditCondition({ params }: PageProps<'/log/[day]/condition'>) {
+export default async function EditCondition({
+  params,
+  searchParams,
+}: PageProps<'/log/[day]/condition'>) {
   const viewer = await requireViewer();
   const profile = (await getProfile(viewer.userId))!;
   const today = todayIn(profile.timeZone);
@@ -19,9 +22,13 @@ export default async function EditCondition({ params }: PageProps<'/log/[day]/co
   const t = await getTranslations('today');
   const tLog = await getTranslations('log');
   const format = await getFormatter();
-  const backHref = `/log/${requested === 'today' ? 'today' : day}`;
-  const dayLabel =
-    day === today
+  // ホームの「今日のコンディション」から来たら（?from=home）、ホームへ戻る
+  const fromHome = (await searchParams).from === 'home';
+  const tNav = await getTranslations('nav');
+  const backHref = fromHome ? '/' : `/log/${requested === 'today' ? 'today' : day}`;
+  const dayLabel = fromHome
+    ? tNav('home')
+    : day === today
       ? tLog('today')
       : format.dateTime(new Date(`${day}T00:00:00Z`), {
           month: 'short',
@@ -33,7 +40,8 @@ export default async function EditCondition({ params }: PageProps<'/log/[day]/co
   return (
     <main className="flex flex-col gap-3 lg:mx-auto lg:w-full lg:max-w-xl">
       <BackLink href={backHref}>{dayLabel}</BackLink>
-      <PageTitle>{t('editCondition')}</PageTitle>
+      {/* まだ入れていない日は「入力」、入れてある日は「編集」（ホームのボタンの「入力する」と合わせる） */}
+      <PageTitle>{t(log ? 'editCondition' : 'newCondition')}</PageTitle>
       <Card>
         <DayLogForm day={day} log={log} backHref={backHref} />
       </Card>
