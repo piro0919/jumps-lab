@@ -14,6 +14,18 @@ export function todayIn(timeZone: string, now: Date = new Date()): string {
   }).format(now);
 }
 
+/** 実在する日付の 'YYYY-MM-DD' か（2026-02-30 や 2026-13-01 は外す） */
+export function isDay(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
+/** 'YYYY-MM' の形で、月が 01〜12 か */
+export function isMonth(value: string): boolean {
+  return /^\d{4}-(0[1-9]|1[0-2])$/.test(value);
+}
+
 /** 時間帯の名前が使えるか。ブラウザから受け取った値を保存する前に確かめる */
 export function isTimeZone(value: string): boolean {
   try {

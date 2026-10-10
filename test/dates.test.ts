@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { daysBetween, isTimeZone, seasonOf, seasonStart, todayIn } from '@/lib/dates';
+import {
+  daysBetween,
+  isDay,
+  isMonth,
+  isTimeZone,
+  seasonOf,
+  seasonStart,
+  todayIn,
+} from '@/lib/dates';
 
 describe('todayIn', () => {
   // UTC の 2026-10-10 20:00 は、東京では翌日の朝5時
@@ -40,5 +48,23 @@ describe('seasonOf', () => {
 
   it('シーズンの初日', () => {
     expect(seasonStart(2025, 4)).toBe('2025-04-01');
+  });
+});
+
+describe('isDay', () => {
+  it('実在する日付だけを通す', () => {
+    expect(isDay('2026-10-11')).toBe(true);
+    expect(isDay('2024-02-29')).toBe(true);
+    expect(isDay('2026-02-30')).toBe(false);
+    expect(isDay('2026-13-01')).toBe(false);
+    expect(isDay('2026-1-1')).toBe(false);
+  });
+});
+
+describe('isMonth', () => {
+  it('01〜12 の月だけを通す', () => {
+    expect(isMonth('2026-10')).toBe(true);
+    expect(isMonth('2026-13')).toBe(false);
+    expect(isMonth('2026-00')).toBe(false);
   });
 });

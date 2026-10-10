@@ -19,9 +19,10 @@ const detailsSchema = z.object({
   grade: z.preprocess((v) => (v === '' ? null : v), z.enum(GRADES).nullable()),
   birthdate: z.preprocess(
     (v) => (v === '' || v === undefined ? null : v),
+    // 上限（本人の時間帯の今日まで）は時間帯と合わせて gradeFields の前に確かめる
     z.iso
       .date()
-      .refine((d) => d >= '1900-01-01' && d <= new Date().toISOString().slice(0, 10))
+      .refine((d) => d >= '1900-01-01')
       .nullable(),
   ),
   gender: z.preprocess(
@@ -68,6 +69,11 @@ function gradeFields(details: z.infer<typeof detailsSchema>) {
   };
 }
 
+/** 生年月日が本人の時間帯の今日より後なら誤り（サーバーの UTC の今日では、日本の朝に今日を入れると弾かれる） */
+function futureBirthdate(details: z.infer<typeof detailsSchema>): boolean {
+  return details.birthdate !== null && details.birthdate > todayIn(details.timeZone);
+}
+
 /** 保存して、失敗は文言の鍵で返す */
 async function run(save: () => Promise<void>): Promise<ActionResult> {
   try {
@@ -91,6 +97,7 @@ export async function saveProfileAction(
     goalM: formData.get('goalM') ?? '',
   });
   if (!parsed.success) return errorOf(parsed.error);
+  if (futureBirthdate(parsed.data)) return { ok: false, error: 'generic' };
 
   const result = await run(() =>
     saveProfile(viewer.userId, { ...parsed.data, ...gradeFields(parsed.data) }),
@@ -107,6 +114,7 @@ export async function saveProfileDetailsAction(
   const viewer = await requireViewer();
   const parsed = detailsSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return errorOf(parsed.error);
+  if (futureBirthdate(parsed.data)) return { ok: false, error: 'generic' };
 
   const result = await run(() =>
     saveProfileDetails(viewer.userId, { ...parsed.data, ...gradeFields(parsed.data) }),

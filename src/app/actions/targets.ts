@@ -29,13 +29,18 @@ export async function saveTargetAction(
     return { ok: false, error: 'generic' };
 
   const season = seasonOf(todayIn(profile.timeZone), profile.seasonStartMonth);
-  await saveTargetField(
-    viewer.userId,
-    parsed.data.event,
-    parsed.data.field,
-    parsed.data.markM,
-    season,
-  );
+  try {
+    await saveTargetField(
+      viewer.userId,
+      parsed.data.event,
+      parsed.data.field,
+      parsed.data.markM,
+      season,
+    );
+  } catch (error) {
+    console.error(error);
+    return { ok: false, error: 'generic' };
+  }
   refresh();
   return { ok: true };
 }

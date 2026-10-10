@@ -15,7 +15,7 @@ import { MarkEditor } from '@/components/mark-editor';
 import { WeatherCard } from '@/components/weather-card';
 import { computeBests } from '@/lib/bests';
 import { getProfile, getTargets, listAllAttempts, nextCompetition } from '@/lib/data';
-import { daysBetween, todayIn } from '@/lib/dates';
+import { daysBetween, seasonOf, todayIn } from '@/lib/dates';
 import { EVENT_BG, EVENT_MARK, type JumpEvent } from '@/lib/events';
 import { formatMark, type Units } from '@/lib/units';
 import { requireViewer } from '@/lib/viewer';
@@ -193,7 +193,10 @@ export default async function Home() {
                 )}
                 manual={{
                   pbM: target.manualPbM,
-                  sbM: target.manualSbSeason === null ? null : target.manualSbM,
+                  sbM:
+                    target.manualSbSeason === seasonOf(today, profile.seasonStartMonth)
+                      ? target.manualSbM
+                      : null,
                   practiceBestM: target.manualPracticeBestM,
                 }}
                 units={profile.units}

@@ -162,13 +162,7 @@ export type Target = {
   manualPracticeBestM: number | null;
 };
 
-async function getTarget(userId: string, event: JumpEvent): Promise<Target> {
-  const { rows } = await db().query<Record<keyof Target, string | null>>(
-    `select "seasonGoalM", "manualPbM", "manualSbM", "manualSbSeason", "manualPracticeBestM"
-       from event_target where "userId" = $1 and event = $2`,
-    [userId, event],
-  );
-  const row = rows[0];
+function toTarget(row: Record<keyof Target, string | null> | undefined): Target {
   return {
     seasonGoalM: num(row?.seasonGoalM ?? null),
     manualPbM: num(row?.manualPbM ?? null),
@@ -183,8 +177,13 @@ export async function getTargets(
   userId: string,
   events: JumpEvent[],
 ): Promise<Map<JumpEvent, Target>> {
-  const targets = await Promise.all(events.map((event) => getTarget(userId, event)));
-  return new Map(events.map((event, i) => [event, targets[i]!]));
+  // 種目ごとに問い合わせると、4種目でプールの接続を4本ふさぐ。1回でまとめて読む
+  const { rows } = await db().query<Record<keyof Target, string | null> & { event: JumpEvent }>(
+    `select event, "seasonGoalM", "manualPbM", "manualSbM", "manualSbSeason", "manualPracticeBestM"
+       from event_target where "userId" = $1 and event = any($2::text[])`,
+    [userId, events],
+  );
+  return new Map(events.map((event) => [event, toTarget(rows.find((row) => row.event === event))]));
 }
 
 /** 目標と手で入れたベストのうち、1つだけを書き換える */

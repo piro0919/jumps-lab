@@ -3,11 +3,18 @@
 import { refresh } from 'next/cache';
 import { z } from 'zod';
 import { addAttempt, deleteAttempt, getProfile, saveDayLog } from '@/lib/data';
+import { isDay, todayIn } from '@/lib/dates';
 import { EVENTS, hasWind } from '@/lib/events';
 import { type ActionResult, optionalNumber, optionalText } from '@/lib/form';
 import { requireViewer } from '@/lib/viewer';
 
-const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+// 実在する日付だけ。先の日は画面で開けないので、本人の時間帯の今日と比べて弾く（openDay）
+const day = z.string().refine(isDay);
+
+/** 本人の時間帯で今日までの日か。画面と同じく先の日には書かせない */
+function openDay(date: string, timeZone: string): boolean {
+  return date <= todayIn(timeZone);
+}
 
 const dayLogSchema = z.object({
   day,
@@ -27,6 +34,8 @@ export async function saveDayLogAction(
   const parsed = dayLogSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { ok: false, error: 'generic' };
   const { day: date, ...log } = parsed.data;
+  const profile = await getProfile(viewer.userId);
+  if (!profile || !openDay(date, profile.timeZone)) return { ok: false, error: 'generic' };
   try {
     await saveDayLog(viewer.userId, date, log);
   } catch (error) {
@@ -62,7 +71,9 @@ export async function addAttemptAction(
   }
   const profile = await getProfile(viewer.userId);
   const event = parsed.data.event;
-  if (!profile || !profile.events.includes(event)) return { ok: false, error: 'generic' };
+  if (!profile || !profile.events.includes(event) || !openDay(parsed.data.day, profile.timeZone)) {
+    return { ok: false, error: 'generic' };
+  }
   try {
     await addAttempt(viewer.userId, {
       ...parsed.data,

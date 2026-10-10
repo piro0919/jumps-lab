@@ -4,7 +4,8 @@ import { type NextRequest, NextResponse } from 'next/server';
 /**
  * ログインしていない人をログインの画面へ送る。アプリはログインした人だけが使う。
  * Better Auth の Cookie があるかだけを見て、DB には問い合わせない（印が古いときは各画面がセッションを確かめる）。
- * ログインの画面に印のある人が来たら、トップへ送る
+ * ログインの画面からトップへ送るのはここではしない。印だけ残ってセッションが切れた人を、
+ * ログインの画面とトップのあいだで往復させてしまうため（ログインの画面がセッションを確かめて送る）
  */
 // 規約とポリシー。ログインの画面と Google の同意画面の審査から踏まれるので、誰でも開ける
 const PUBLIC = new Set(['/privacy', '/terms', '/en/privacy', '/en/terms']);
@@ -17,7 +18,6 @@ export function proxy(request: NextRequest) {
   const onSignIn = pathname === '/sign-in';
 
   if (!signedIn && !onSignIn) return NextResponse.redirect(new URL('/sign-in', request.url));
-  if (signedIn && onSignIn) return NextResponse.redirect(new URL('/', request.url));
   return NextResponse.next();
 }
 

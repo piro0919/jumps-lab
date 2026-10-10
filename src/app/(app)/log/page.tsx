@@ -5,7 +5,7 @@ import { Card, PageTitle, SEGMENTS, Stat, segmentClass } from '@/components/layo
 import { LogCalendar } from '@/components/log-calendar';
 import { getProfile, listAllAttempts, listDayLogs } from '@/lib/data';
 import { EVENT_TEXT } from '@/lib/events';
-import { todayIn } from '@/lib/dates';
+import { isMonth, todayIn } from '@/lib/dates';
 import { buildLogDays } from '@/lib/log-days';
 import { formatMarkParts } from '@/lib/units';
 import { requireViewer } from '@/lib/viewer';
@@ -21,9 +21,7 @@ export default async function Log({ searchParams }: PageProps<'/log'>) {
   const params = await searchParams;
   const calendar = params.view === 'calendar';
   const month =
-    typeof params.month === 'string' && /^\d{4}-\d{2}$/.test(params.month)
-      ? params.month
-      : today.slice(0, 7);
+    typeof params.month === 'string' && isMonth(params.month) ? params.month : today.slice(0, 7);
 
   const [attempts, logs] = await Promise.all([
     listAllAttempts(viewer.userId),

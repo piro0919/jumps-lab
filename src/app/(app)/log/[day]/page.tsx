@@ -6,7 +6,7 @@ import { AttemptsCard } from '@/components/attempts-card';
 import { DayLogForm } from '@/components/day-log-form';
 import { PageTitle } from '@/components/layout-ui';
 import { getDayLog, getProfile, listAttemptsBetween } from '@/lib/data';
-import { todayIn } from '@/lib/dates';
+import { isDay, todayIn } from '@/lib/dates';
 import { requireViewer } from '@/lib/viewer';
 
 /**
@@ -20,7 +20,7 @@ export default async function LogDay({ params, searchParams }: PageProps<'/log/[
   const { day: requested } = await params;
   // 下のタブの真ん中とヘッダーの「今日を記録」から来たら、追加の窓を開いた状態で出す
   const { add } = await searchParams;
-  if (requested !== 'today' && (!/^\d{4}-\d{2}-\d{2}$/.test(requested) || requested > today)) {
+  if (requested !== 'today' && (!isDay(requested) || requested > today)) {
     redirect('/log/today');
   }
   const day = requested === 'today' ? today : requested;

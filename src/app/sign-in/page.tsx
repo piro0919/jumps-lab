@@ -1,9 +1,21 @@
+import { getSessionCookie } from 'better-auth/cookies';
+import { headers } from 'next/headers';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { Wordmark } from '@/components/layout-ui';
+import { getAuth } from '@/lib/auth';
 import { GoogleButton } from './google-button';
 
 export default async function SignIn() {
+  // 印のある人だけ、セッションが生きているかを確かめてトップへ送る（印の無い人のために DB を起こさない）
+  const requestHeaders = await headers();
+  if (
+    getSessionCookie(requestHeaders) &&
+    (await getAuth().api.getSession({ headers: requestHeaders }))
+  ) {
+    redirect('/');
+  }
   const t = await getTranslations('metadata');
   const tSignIn = await getTranslations('signIn');
   // 規約は日本語が /terms、英語が /en/terms
