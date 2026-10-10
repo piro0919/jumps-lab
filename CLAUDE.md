@@ -8,7 +8,7 @@ A record-keeping service for jumpers (high jump, long jump, triple jump, pole va
 
 - Spec source: <https://earnest-peony-78beee.netlify.app/> (the friend's prototype, "跳躍ラボ"). Clone its **spec only**.
 - Reference only: <https://choyaku.renren-life.com/>
-- Look and interaction are rebuilt for usability, modeled on the workout app **Strong** (open a session, add attempts one by one, bests detected automatically, bottom tabs). Check the real Strong screens before building a screen.
+- Look and interaction are rebuilt for usability. The visual model is **Nike Run Club** (since 2026-10-11; Strong was the first model and the screens kept the prototype's stacked cards, which the owner found uncool): numbers are the hero in Barlow Condensed extra bold italic with the label small below, secondary numbers in a row, rounded pill switches with the chosen one filled, recent items as cards with a row of numbers. Check the real NRC screens before building a screen.
 
 ## Built for the whole world
 
