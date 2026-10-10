@@ -23,7 +23,8 @@ export const LABEL = 'text-[13px] font-semibold text-muted-foreground';
  * 書体は Google Fonts から10個を並べて本人が選んだ（2026-10-11。数字の Barlow Condensed とは分けた）
  */
 const WORDMARK_SIZE = {
-  header: 'text-xl',
+  // 20px では小さいと言われて 24px に（本人、2026-10-11）
+  header: 'text-2xl',
   hero: 'text-[44px]',
 } as const;
 

@@ -10,7 +10,8 @@ import { Wordmark } from '@/components/layout-ui';
  * 画面の上端に貼り付く、幅いっぱいのヘッダー（手本の Strava）。
  * 左にアイコンと名前、幅 1024px 以上は真ん中に画面の切り替え。
  * 右端に今日の記録を足すボタン（スマホは下のタブの真ん中にあるので出さない）と、自分のアイコン（設定とログアウト）。
- * 地の色と下の線は付けない（本人、2026-10-11）
+ * 地の色と下の線は付けない（本人、2026-10-11）。左のアイコンと右の自分のアイコンは、
+ * 「今日を記録」のボタンと同じ 36px にそろえる（32px だと小さく見えると言われた）
  */
 export async function SiteHeader({
   name,
@@ -28,7 +29,7 @@ export async function SiteHeader({
     <header className="sticky top-0 z-40 flex h-16 items-center gap-6 px-4 lg:grid lg:grid-cols-[1fr_auto_1fr]">
       <Link href="/" className="flex w-fit items-center gap-2.5">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/icon-192x192.png" alt="" className="size-8 rounded-xl" />
+        <img src="/icon-192x192.png" alt="" className="size-9 rounded-xl" />
         <Wordmark size="header">{tMeta('title')}</Wordmark>
       </Link>
       <HeaderNav />

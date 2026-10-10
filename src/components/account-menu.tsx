@@ -44,7 +44,7 @@ export function AccountMenu({
         aria-label={name}
         className="rounded-full outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
       >
-        {avatar()}
+        {avatar('size-9')}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-72">
         <div className="flex items-center gap-3 px-3 py-3">
