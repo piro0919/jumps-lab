@@ -120,6 +120,7 @@ Copy the shape of `~/Repository/onigiri` (which itself copies vocafy). Read its 
 - Light theme only for now (owner, 2026-10-11: "いったんライトで固定"). Dark values are parked under `.dark`, which nothing applies; see the comment at the top of globals.css to restore
 - Frame (Strava): a sticky full-width header with icon and name left, the four menus beside it from 1024px, and on the right "Log today" plus the avatar menu (name, settings, sign out). Phones get a bottom tab bar of Home, Log, a raised round "Log today" in the middle, Competitions, Analysis. "Log today" opens `/log/today?add=1`, which shows the add drawer at once
 - The brand color (neon yellow-green `--brand`, black text) is only for "Log today". Strava's orange clashes with the long jump color
+- Weather card (owner, 2026-10-11): once the weather is known, the card is painted in that sky's color (like the iPhone weather widget; night is navy) with a big animated Meteocons fill picture (`@meteocons/svg`, MIT) hanging off the top right. Plain line icons were rejected as uncool. The sky runs left to right with the text side kept dark so white text stays above 4.5
 - Home from 1024px: three columns, own card (photo, name, events, jumps, days logged), event cards, next competition and weather
 - System Japanese font stack; shadcn's Geist (Latin only) was removed
 - Minimum width 375px, `viewportFit: 'cover'` with safe-area insets for the bottom tabs

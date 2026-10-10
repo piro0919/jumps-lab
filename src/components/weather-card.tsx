@@ -1,24 +1,23 @@
 'use client';
 
-import {
-  Cloud,
-  CloudDrizzle,
-  CloudFog,
-  CloudLightning,
-  CloudMoon,
-  CloudMoonRain,
-  CloudRain,
-  CloudSnow,
-  CloudSun,
-  CloudSunRain,
-  Moon,
-  Sun,
-  type LucideIcon,
-} from 'lucide-react';
+import clearDay from '@meteocons/svg/fill/clear-day.svg';
+import clearNight from '@meteocons/svg/fill/clear-night.svg';
+import drizzle from '@meteocons/svg/fill/drizzle.svg';
+import fogDay from '@meteocons/svg/fill/fog-day.svg';
+import fogNight from '@meteocons/svg/fill/fog-night.svg';
+import overcast from '@meteocons/svg/fill/overcast.svg';
+import partlyCloudyDay from '@meteocons/svg/fill/partly-cloudy-day.svg';
+import partlyCloudyDayRain from '@meteocons/svg/fill/partly-cloudy-day-rain.svg';
+import partlyCloudyNight from '@meteocons/svg/fill/partly-cloudy-night.svg';
+import partlyCloudyNightRain from '@meteocons/svg/fill/partly-cloudy-night-rain.svg';
+import rain from '@meteocons/svg/fill/rain.svg';
+import snow from '@meteocons/svg/fill/snow.svg';
+import thunderstormsDay from '@meteocons/svg/fill/thunderstorms-day.svg';
+import thunderstormsNight from '@meteocons/svg/fill/thunderstorms-night.svg';
 import { cn } from 'cn';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState, type ReactNode } from 'react';
-import { Card, CardTitle, DisplayNumber } from '@/components/layout-ui';
+import { useEffect, useState } from 'react';
+import { Card, CardTitle, DisplayNumber, SectionTitle } from '@/components/layout-ui';
 import { Button } from '@/components/ui/button';
 
 type Weather = { temperature: number; code: number; windMs: number; isDay: boolean };
@@ -44,38 +43,47 @@ function weatherKey(code: number) {
 }
 
 type WeatherKey = ReturnType<typeof weatherKey>;
+type Time = 'day' | 'night';
 
-/** まとめた天気ごとの絵。晴れ・晴れ時々曇り・にわか雨は、夜なら太陽を月に替える */
-const ICONS: Record<WeatherKey, { day: LucideIcon; night: LucideIcon }> = {
-  clear: { day: Sun, night: Moon },
-  partlyCloudy: { day: CloudSun, night: CloudMoon },
-  cloudy: { day: Cloud, night: Cloud },
-  fog: { day: CloudFog, night: CloudFog },
-  drizzle: { day: CloudDrizzle, night: CloudDrizzle },
-  rain: { day: CloudRain, night: CloudRain },
-  snow: { day: CloudSnow, night: CloudSnow },
-  showers: { day: CloudSunRain, night: CloudMoonRain },
-  thunder: { day: CloudLightning, night: CloudLightning },
+/**
+ * まとめた天気ごとの絵（Meteocons の fill、MIT。動く SVG で、img で出しても動く）。
+ * 晴れ・晴れ時々曇り・霧・にわか雨・雷雨は、夜なら太陽を月に替える
+ */
+const PICTURES: Record<WeatherKey, Record<Time, unknown>> = {
+  clear: { day: clearDay, night: clearNight },
+  partlyCloudy: { day: partlyCloudyDay, night: partlyCloudyNight },
+  cloudy: { day: overcast, night: overcast },
+  fog: { day: fogDay, night: fogNight },
+  drizzle: { day: drizzle, night: drizzle },
+  rain: { day: rain, night: rain },
+  snow: { day: snow, night: snow },
+  showers: { day: partlyCloudyDayRain, night: partlyCloudyNightRain },
+  thunder: { day: thunderstormsDay, night: thunderstormsNight },
 };
 
 /**
- * 絵の色。線は白い地で 3:1 を超える濃さにし、中を薄い同じ色で塗る。
- * 晴れは橙、夜は藍、曇りと霧は灰、雨と雪は青、雷は紫
+ * 取り込んだ SVG の URL。型は { src } だが、node_modules の SVG は開発サーバーでは文字列の URL で来た
+ * （2026-10-11 に実測。.src だけを読むと絵が出なかった）ので、どちらでも読む
  */
-const SUN = 'text-amber-600 fill-amber-200';
-const NIGHT = 'text-indigo-500 fill-indigo-100';
-const GREY = 'text-slate-500 fill-slate-100';
-const WET = 'text-sky-600 fill-sky-100';
-const COLORS: Record<WeatherKey, { day: string; night: string }> = {
-  clear: { day: SUN, night: NIGHT },
-  partlyCloudy: { day: SUN, night: NIGHT },
-  cloudy: { day: GREY, night: GREY },
-  fog: { day: GREY, night: GREY },
-  drizzle: { day: WET, night: WET },
-  rain: { day: WET, night: WET },
-  snow: { day: WET, night: WET },
-  showers: { day: WET, night: WET },
-  thunder: { day: 'text-violet-600 fill-violet-100', night: 'text-violet-600 fill-violet-100' },
+function pictureUrl(picture: unknown): string {
+  return typeof picture === 'string' ? picture : (picture as { src: string }).src;
+}
+
+/**
+ * カードの地に敷く空の色（iPhone の天気のウィジェットの形）。左から右へ明るくし、字を載せる左の45%は
+ * 濃い色のまま塗って、白い字が 4.5 を割らないようにする（斜めにすると左下の風の字で割った）。夜はどの天気も紺
+ */
+const NIGHT_SKY = 'from-indigo-950 to-indigo-700';
+const SKIES: Record<WeatherKey, string> = {
+  clear: 'from-blue-600 to-sky-400',
+  partlyCloudy: 'from-blue-700 to-slate-400',
+  cloudy: 'from-slate-600 to-slate-400',
+  fog: 'from-slate-600 to-zinc-400',
+  drizzle: 'from-slate-700 to-blue-500',
+  rain: 'from-slate-700 to-blue-500',
+  snow: 'from-slate-600 to-sky-300',
+  showers: 'from-slate-700 to-blue-500',
+  thunder: 'from-slate-800 to-violet-700',
 };
 
 async function fetchWeather(latitude: number, longitude: number): Promise<Weather> {
@@ -95,36 +103,10 @@ async function fetchWeather(latitude: number, longitude: number): Promise<Weathe
   };
 }
 
-/** 左に天気の絵、右に気温と天気の名前、その下に風 */
-function WeatherNow({
-  weather,
-  label,
-  children,
-}: {
-  weather: Weather;
-  label: string;
-  children: ReactNode;
-}) {
-  const key = weatherKey(weather.code);
-  const time = weather.isDay ? 'day' : 'night';
-  const Icon = ICONS[key][time];
-  return (
-    <div className="flex items-center gap-4">
-      <Icon aria-hidden className={cn('size-12 shrink-0', COLORS[key][time])} strokeWidth={1.75} />
-      <div className="flex min-w-0 flex-col gap-1">
-        <span className="flex flex-wrap items-baseline gap-x-2">
-          <DisplayNumber size="md">{Math.round(weather.temperature)}°</DisplayNumber>
-          <span className="text-base font-bold">{label}</span>
-        </span>
-        {children}
-      </div>
-    </div>
-  );
-}
-
 /**
  * 現在地の天気（Open-Meteo、鍵は要らない）。位置はブラウザから取り、サーバーには送らない。
- * 位置の許可が済んでいれば開いたときに出し、まだなら押してから聞く
+ * 位置の許可が済んでいれば開いたときに出し、まだなら押してから聞く。
+ * 天気が出たら、カードを空の色に塗り、天気の絵を右上に大きくはみ出させて置く
  */
 export function WeatherCard() {
   const t = useTranslations('home');
@@ -156,16 +138,42 @@ export function WeatherCard() {
     });
   }, []);
 
+  if (state.kind === 'ready') {
+    const { weather } = state;
+    const key = weatherKey(weather.code);
+    const time: Time = weather.isDay ? 'day' : 'night';
+    return (
+      <Card
+        className={cn(
+          'relative overflow-hidden bg-linear-to-r from-45% text-white',
+          time === 'day' ? SKIES[key] : NIGHT_SKY,
+        )}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={pictureUrl(PICTURES[key][time])}
+          alt=""
+          aria-hidden
+          className="pointer-events-none absolute -top-8 -right-8 size-44 select-none"
+        />
+        <div className="relative flex flex-col gap-4">
+          <SectionTitle inverse>{t('weather')}</SectionTitle>
+          <div className="flex flex-col gap-1">
+            <DisplayNumber size="hero">{Math.round(weather.temperature)}°</DisplayNumber>
+            <span className="text-base font-bold">{tWeather(key)}</span>
+            <span className="text-sm tabular-nums">
+              {t('wind', { speed: weather.windMs.toFixed(1) })}
+            </span>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardTitle>{t('weather')}</CardTitle>
-      {state.kind === 'ready' ? (
-        <WeatherNow weather={state.weather} label={tWeather(weatherKey(state.weather.code))}>
-          <span className="text-sm text-muted-foreground tabular-nums">
-            {t('wind', { speed: state.weather.windMs.toFixed(1) })}
-          </span>
-        </WeatherNow>
-      ) : state.kind === 'denied' ? (
+      {state.kind === 'denied' ? (
         <p className="text-sm text-muted-foreground">{t('locationDenied')}</p>
       ) : (
         <Button
