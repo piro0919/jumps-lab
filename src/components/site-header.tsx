@@ -4,6 +4,7 @@ import { getTranslations } from 'next-intl/server';
 import { AccountMenu } from '@/components/account-menu';
 import { HeaderNav, RECORD_HREF } from '@/components/tab-bar';
 import { buttonVariants } from '@/components/ui/button';
+import { Wordmark } from '@/components/layout-ui';
 
 /**
  * 画面の上端に貼り付く、幅いっぱいのヘッダー（手本の Strava）。
@@ -28,7 +29,7 @@ export async function SiteHeader({
       <Link href="/" className="flex w-fit items-center gap-2.5">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/icon-192x192.png" alt="" className="size-8 rounded-xl" />
-        <span className="text-lg font-bold tracking-tight">{tMeta('title')}</span>
+        <Wordmark size="header">{tMeta('title')}</Wordmark>
       </Link>
       <HeaderNav />
       <div className="ml-auto flex items-center gap-3">

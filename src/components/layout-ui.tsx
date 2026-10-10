@@ -18,6 +18,37 @@ import type { ComponentProps, ReactNode } from 'react';
 /** 欄のラベル。入力欄の上、数字の下、スライダーの名前 */
 export const LABEL = 'text-[13px] font-semibold text-muted-foreground';
 
+/**
+ * ロゴの文字（Kanit の極太の斜体、大文字）。ヘッダーとログインの画面だけで使う。
+ * 書体は Google Fonts から10個を並べて本人が選んだ（2026-10-11。数字の Barlow Condensed とは分けた）
+ */
+const WORDMARK_SIZE = {
+  header: 'text-xl',
+  hero: 'text-[44px]',
+} as const;
+
+export function Wordmark({
+  children,
+  size,
+  className,
+}: {
+  children: ReactNode;
+  size: keyof typeof WORDMARK_SIZE;
+  className?: string;
+}) {
+  return (
+    <span
+      className={cn(
+        'font-logo leading-none tracking-tight whitespace-nowrap uppercase italic',
+        WORDMARK_SIZE[size],
+        className,
+      )}
+    >
+      {children}
+    </span>
+  );
+}
+
 export function PageTitle({ children, action }: { children: ReactNode; action?: ReactNode }) {
   return (
     <div className="flex items-end justify-between gap-3 px-4 pt-6 pb-3">

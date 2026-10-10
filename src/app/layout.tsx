@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getTranslations } from 'next-intl/server';
-import { Barlow_Condensed } from 'next/font/google';
+import { Barlow_Condensed, Kanit } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
 import './globals.css';
 
@@ -12,6 +12,14 @@ const display = Barlow_Condensed({
   weight: ['700', '800'],
   style: ['italic'],
   variable: '--font-barlow',
+});
+
+// ロゴの字（Kanit の極太の斜体）。数字の書体と分けて、ロゴを看板として立たせる（本人が選んだ、2026-10-11）
+const logo = Kanit({
+  subsets: ['latin'],
+  weight: '800',
+  style: 'italic',
+  variable: '--font-kanit',
 });
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -35,7 +43,7 @@ export default async function RootLayout({ children }: LayoutProps<'/'>) {
     // 配色は next-themes が描く前に data-theme を書き込むので、そのずれの警告は出さない
     <html
       lang={locale}
-      className={`${display.variable} h-full antialiased`}
+      className={`${display.variable} ${logo.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full min-w-[375px] font-sans">

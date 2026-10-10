@@ -47,13 +47,11 @@ describe('見た目の決まり', () => {
   });
 
   it('数字の字（font-display）は部品からだけ使う', () => {
-    expect(
-      offenders(
-        (l) => /\bfont-display\b/.test(l),
-        // 単位の字は Stat の中、ログインの画面の題字は1か所だけの看板
-        [SYSTEM, 'app/sign-in/page.tsx'],
-      ),
-    ).toEqual([]);
+    expect(offenders((l) => /\bfont-display\b/.test(l), [SYSTEM])).toEqual([]);
+  });
+
+  it('ロゴの字（font-logo）は Wordmark からだけ使う', () => {
+    expect(offenders((l) => /\bfont-logo\b/.test(l), [SYSTEM])).toEqual([]);
   });
 
   it('字の大きさを px で書くのは部品の中だけ（ほかは text-xs・sm・base・lg）', () => {
@@ -61,13 +59,7 @@ describe('見た目の決まり', () => {
       offenders(
         (l) => /\btext-\[\d+px\]/.test(l),
         // 規約の文書の字組み、グラフの目盛りの字、下のタブの字（iPhone の標準の 10pt）は例外
-        [
-          SYSTEM,
-          'app/(legal)/legal.tsx',
-          'components/trend-chart.tsx',
-          'app/sign-in/page.tsx',
-          'components/tab-bar.tsx',
-        ],
+        [SYSTEM, 'app/(legal)/legal.tsx', 'components/trend-chart.tsx', 'components/tab-bar.tsx'],
       ),
     ).toEqual([]);
   });

@@ -125,6 +125,7 @@ Copy the shape of `~/Repository/onigiri` (which itself copies vocafy). Read its 
 - The brand color (neon yellow-green `--brand`, black text) is only for "Log today". Strava's orange clashes with the long jump color
 - Weather card (owner, 2026-10-11): once the weather is known, the card is painted in that sky's color (like the iPhone weather widget; night is navy) with a big animated Meteocons fill picture (`@meteocons/svg`, MIT) hanging off the top right. Plain line icons were rejected as uncool. The sky runs left to right with the text side kept dark so white text stays above 4.5
 - Home from 1024px: three columns, own card (photo, name, events, jumps, days logged), event cards, next competition and weather
+- Logo: the wordmark "JUMPS LAB" in Kanit ExtraBold Italic, upper case, via `Wordmark` in layout-ui (header and sign-in). The owner picked it from ten Google Fonts side by side (2026-10-11); Barlow Condensed stays for numbers only
 - System Japanese font stack; shadcn's Geist (Latin only) was removed
 - Minimum width 375px, `viewportFit: 'cover'` with safe-area insets for the bottom tabs
 - No explanatory text or notes on screens

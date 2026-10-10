@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { getLocale, getTranslations } from 'next-intl/server';
+import { Wordmark } from '@/components/layout-ui';
 import { GoogleButton } from './google-button';
 
 export default async function SignIn() {
@@ -13,8 +14,8 @@ export default async function SignIn() {
       <div className="flex flex-col items-center gap-4">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/icon-192x192.png" alt="" className="size-20 rounded-3xl" />
-        <h1 className="font-display text-[56px] leading-none font-extrabold tracking-tight italic">
-          {t('title')}
+        <h1>
+          <Wordmark size="hero">{t('title')}</Wordmark>
         </h1>
       </div>
       <div className="flex w-full flex-col gap-4">
