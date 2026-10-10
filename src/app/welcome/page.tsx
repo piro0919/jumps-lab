@@ -14,13 +14,9 @@ export default async function Welcome() {
   return (
     <main className="mx-auto max-w-lg">
       <PageTitle>{t('welcome')}</PageTitle>
-      <ProfileForm
-        from="welcome"
-        initial={null}
-        initialGrade={null}
-        defaultName={viewer.name}
-        locale={await getLocale()}
-      />
+      <div className="pb-8">
+        <ProfileForm defaultName={viewer.name} locale={await getLocale()} />
+      </div>
     </main>
   );
 }

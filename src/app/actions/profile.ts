@@ -3,7 +3,7 @@
 import { refresh } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
-import { saveProfile } from '@/lib/data';
+import { saveProfile, saveProfileDetails, saveRecordSettings } from '@/lib/data';
 import { isTimeZone, todayIn } from '@/lib/dates';
 import { EVENTS } from '@/lib/events';
 import { type ActionResult, optionalNumber } from '@/lib/form';
@@ -11,7 +11,10 @@ import { computesGrade, offsetFor } from '@/lib/grade';
 import { GRADES } from '@/lib/profile-options';
 import { requireViewer } from '@/lib/viewer';
 
-const schema = z.object({
+const timeZone = z.string().refine(isTimeZone).catch('UTC');
+
+/** 本人のこと（設定の画面の「プロフィール」の区画） */
+const detailsSchema = z.object({
   name: z.string().trim().min(1, 'name').max(100),
   grade: z.preprocess((v) => (v === '' ? null : v), z.enum(GRADES).nullable()),
   birthdate: z.preprocess(
@@ -27,53 +30,104 @@ const schema = z.object({
   ),
   heightCm: optionalNumber(50, 250),
   weightKg: optionalNumber(20, 300),
-  events: z.array(z.enum(EVENTS)).min(1, 'events'),
-  goalM: optionalNumber(0.01, 29.99),
-  units: z.enum(['metric', 'imperial']),
-  seasonStartMonth: z.coerce.number().int().min(1).max(12),
-  timeZone: z.string().refine(isTimeZone).catch('UTC'),
+  timeZone,
 });
 
+/** 記録のつけ方（設定の画面の「記録」の区画） */
+const recordsSchema = z.object({
+  events: z.array(z.enum(EVENTS)).min(1, 'events'),
+  units: z.enum(['metric', 'imperial']),
+  seasonStartMonth: z.coerce.number().int().min(1).max(12),
+  timeZone,
+});
+
+/** 初回はどちらも一度に入れ、先頭の種目の今季目標も入れられる */
+const fullSchema = detailsSchema.extend(recordsSchema.shape).extend({
+  goalM: optionalNumber(0.01, 29.99),
+});
+
+/** 入力の誤りを、画面に出す文言の鍵へ */
+function errorOf(error: z.ZodError): ActionResult {
+  const message = error.issues[0]?.message;
+  return { ok: false, error: message === 'name' || message === 'events' ? message : 'generic' };
+}
+
 /**
- * プロフィールを保存する。初回（ようこそ画面）と設定画面の両方から呼ぶ。
- * 初回はホームへ送る。設定画面からは画面をそのまま描き直す
+ * 学年を計算する人は、選んだ学年を計算とのずれに直して持つ（学年そのものは保存しない）。
+ * ほかの人は選んだ学年をそのまま持つ
  */
+function gradeFields(details: z.infer<typeof detailsSchema>) {
+  const { grade: chosen, birthdate, timeZone } = details;
+  const computes = computesGrade(birthdate, timeZone);
+  return {
+    grade: computes ? null : chosen,
+    gradeOffset:
+      computes && chosen
+        ? Math.max(-10, Math.min(10, offsetFor(birthdate, chosen, todayIn(timeZone))))
+        : 0,
+  };
+}
+
+/** 保存して、失敗は文言の鍵で返す */
+async function run(save: () => Promise<void>): Promise<ActionResult> {
+  try {
+    await save();
+  } catch (error) {
+    console.error(error);
+    return { ok: false, error: 'generic' };
+  }
+  return { ok: true };
+}
+
+/** 初回（ようこそ画面）。プロフィールと記録のつけ方をまとめて入れ、ホームへ送る */
 export async function saveProfileAction(
   _previous: ActionResult,
   formData: FormData,
 ): Promise<ActionResult> {
   const viewer = await requireViewer();
-  const parsed = schema.safeParse({
+  const parsed = fullSchema.safeParse({
     ...Object.fromEntries(formData),
     events: formData.getAll('events'),
     goalM: formData.get('goalM') ?? '',
   });
-  if (!parsed.success) {
-    const message = parsed.error.issues[0]?.message;
-    return { ok: false, error: message === 'name' || message === 'events' ? message : 'generic' };
-  }
+  if (!parsed.success) return errorOf(parsed.error);
 
-  // 学年を計算する人は、選んだ学年を計算とのずれに直して持つ（学年そのものは保存しない）。
-  // ほかの人は選んだ学年をそのまま持つ
-  const { grade: chosen, birthdate, timeZone } = parsed.data;
-  const computes = computesGrade(birthdate, timeZone);
-  const gradeOffset =
-    computes && chosen
-      ? Math.max(-10, Math.min(10, offsetFor(birthdate, chosen, todayIn(timeZone))))
-      : 0;
+  const result = await run(() =>
+    saveProfile(viewer.userId, { ...parsed.data, ...gradeFields(parsed.data) }),
+  );
+  if (!result?.ok) return result;
+  redirect('/');
+}
 
-  try {
-    await saveProfile(viewer.userId, {
-      ...parsed.data,
-      grade: computes ? null : chosen,
-      gradeOffset,
-    });
-  } catch (error) {
-    console.error(error);
-    return { ok: false, error: 'generic' };
-  }
+/** 設定の画面の「プロフィール」の区画だけを保存する */
+export async function saveProfileDetailsAction(
+  _previous: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  const viewer = await requireViewer();
+  const parsed = detailsSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return errorOf(parsed.error);
 
-  if (formData.get('from') === 'welcome') redirect('/');
+  const result = await run(() =>
+    saveProfileDetails(viewer.userId, { ...parsed.data, ...gradeFields(parsed.data) }),
+  );
   refresh();
-  return { ok: true };
+  return result;
+}
+
+/** 設定の画面の「記録」の区画だけを保存する */
+export async function saveRecordSettingsAction(
+  _previous: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  const viewer = await requireViewer();
+  const parsed = recordsSchema.safeParse({
+    ...Object.fromEntries(formData),
+    events: formData.getAll('events'),
+  });
+  if (!parsed.success) return errorOf(parsed.error);
+
+  const result = await run(() => saveRecordSettings(viewer.userId, parsed.data));
+  refresh();
+  return result;
 }

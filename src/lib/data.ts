@@ -102,6 +102,58 @@ export async function saveProfile(userId: string, input: ProfileInput): Promise<
   }
 }
 
+/** 設定の画面の「プロフィール」の区画で保存するもの */
+export type ProfileDetails = Pick<
+  Profile,
+  'name' | 'grade' | 'gradeOffset' | 'birthdate' | 'gender' | 'heightCm' | 'weightKg' | 'timeZone'
+>;
+
+/** 設定の画面の「プロフィール」の区画だけを保存する。記録のつけ方（種目・単位・シーズン）には触れない */
+export async function saveProfileDetails(userId: string, input: ProfileDetails): Promise<void> {
+  const client = await db().connect();
+  try {
+    await client.query('begin');
+    await client.query(`update "user" set name = $2, "updatedAt" = now() where id = $1`, [
+      userId,
+      input.name,
+    ]);
+    await client.query(
+      `update profile set grade = $2, "gradeOffset" = $3, birthdate = $4, gender = $5,
+              "heightCm" = $6, "weightKg" = $7, "timeZone" = $8, "updatedAt" = now()
+        where "userId" = $1`,
+      [
+        userId,
+        input.grade,
+        input.gradeOffset,
+        input.birthdate,
+        input.gender,
+        input.heightCm,
+        input.weightKg,
+        input.timeZone,
+      ],
+    );
+    await client.query('commit');
+  } catch (error) {
+    await client.query('rollback');
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+/** 設定の画面の「記録」の区画で保存するもの */
+export type RecordSettings = Pick<Profile, 'events' | 'units' | 'seasonStartMonth' | 'timeZone'>;
+
+/** 設定の画面の「記録」の区画だけを保存する。名前や身長などには触れない */
+export async function saveRecordSettings(userId: string, input: RecordSettings): Promise<void> {
+  await db().query(
+    `update profile set events = $2::text[], units = $3, "seasonStartMonth" = $4, "timeZone" = $5,
+            "updatedAt" = now()
+      where "userId" = $1`,
+    [userId, input.events, input.units, input.seasonStartMonth, input.timeZone],
+  );
+}
+
 export type Target = {
   seasonGoalM: number | null;
   manualPbM: number | null;

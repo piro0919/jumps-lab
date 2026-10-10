@@ -1,5 +1,5 @@
 import { getLocale, getTranslations } from 'next-intl/server';
-import { ProfileForm } from '@/components/profile-form';
+import { ProfileSettingsForm, RecordSettingsForm } from '@/components/profile-form';
 import { Card, CardTitle, LABEL, PageTitle } from '@/components/layout-ui';
 import { SignOutButton } from '@/components/sign-out-button';
 import { ThemeSetting } from '@/components/theme-setting';
@@ -9,7 +9,7 @@ import { currentGrade } from '@/lib/grade';
 import { requireViewer } from '@/lib/viewer';
 
 /**
- * 設定。プロフィール・記録の2つは保存ボタンでまとめて保存し、表示（配色）はその場で切り替わる。
+ * 設定。プロフィールと記録はカードごとに保存し、表示（配色）はその場で切り替わる。
  * 最後にアカウント（ログインしている Google アカウントとログアウト）。
  * プロフィールの欄だけを並べていて「設定がプロフィールっぽい」と言われ、区画に分けた（本人、2026-10-11）
  */
@@ -22,8 +22,7 @@ export default async function Settings() {
   return (
     <main className="flex flex-col gap-3 pb-6 lg:mx-auto lg:w-full lg:max-w-2xl">
       <PageTitle>{t('settings')}</PageTitle>
-      <ProfileForm
-        from="settings"
+      <ProfileSettingsForm
         initial={profile}
         initialGrade={currentGrade(
           profile.birthdate,
@@ -32,9 +31,8 @@ export default async function Settings() {
           profile.grade,
           todayIn(profile.timeZone),
         )}
-        defaultName={profile.name}
-        locale={await getLocale()}
       />
+      <RecordSettingsForm initial={profile} locale={await getLocale()} />
       <Card>
         <CardTitle>{tProfile('sectionDisplay')}</CardTitle>
         <div className="flex flex-col gap-1.5">
