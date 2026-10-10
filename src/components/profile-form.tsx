@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from 'cn';
+import { cn } from '@/lib/cn';
 import { useTranslations } from 'next-intl';
 import { ActionForm } from '@/components/action-form';
 import { useActionState, useState, useSyncExternalStore } from 'react';
@@ -30,6 +30,11 @@ import { computesGrade, gradeFromNumber, gradeNumber, usesGrade } from '@/lib/gr
 import { GRADES } from '@/lib/profile-options';
 import type { Units } from '@/lib/units';
 import { weekStartFor } from '@/lib/week';
+
+/** 月と曜日の名前を Intl で出すための基準の日。2026-10-11 は日曜、12 は月曜（月は Date の 0 始まりで 9 が10月） */
+const REFERENCE_YEAR = 2026;
+const REFERENCE_MONTH_INDEX = 9;
+const REFERENCE_SUNDAY = 11;
 
 /*
  * プロフィールの入力。本人のこと（名前・生年月日・学年・性別・身長・体重）と、
@@ -187,11 +192,13 @@ function RecordFields({
   const tEvents = useTranslations('events');
   const tUnits = useTranslations('units');
   const monthName = (month: number) =>
-    new Intl.DateTimeFormat(locale, { month: 'long' }).format(new Date(2026, month - 1, 1));
+    new Intl.DateTimeFormat(locale, { month: 'long' }).format(
+      new Date(REFERENCE_YEAR, month - 1, 1),
+    );
   // 曜日の名前は言語に合わせて Intl で出す（2026-10-11 は日曜、12 は月曜）
   const dayName = (day: 0 | 1) =>
     new Intl.DateTimeFormat(locale, { weekday: 'long', timeZone: 'UTC' }).format(
-      new Date(Date.UTC(2026, 9, 11 + day)),
+      new Date(Date.UTC(REFERENCE_YEAR, REFERENCE_MONTH_INDEX, REFERENCE_SUNDAY + day)),
     );
 
   return (
@@ -210,7 +217,7 @@ function RecordFields({
                 type="button"
                 aria-pressed={on}
                 onClick={() => onToggle(event)}
-                className={`h-9 rounded-full px-3 text-sm font-semibold transition active:scale-[0.98] ${
+                className={`h-9 rounded-full px-3 text-sm font-semibold transition active:scale-press ${
                   on ? 'bg-secondary text-primary' : 'bg-muted text-muted-foreground'
                 }`}
               >

@@ -4,7 +4,7 @@ import { ChartLine, House, NotebookPen, Plus, Trophy } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { cn } from 'cn';
+import { cn } from '@/lib/cn';
 import { segmentClass } from '@/components/layout-ui';
 
 const TABS = [
@@ -13,6 +13,10 @@ const TABS = [
   { href: '/competitions', key: 'competitions', Icon: Trophy },
   { href: '/analysis', key: 'analysis', Icon: ChartLine },
 ] as const;
+
+/** アイコンの線の太さ。選んでいる画面は太く、下のタブのほかの画面は細く */
+const ACTIVE_STROKE = 2.5;
+const TAB_STROKE = 1.75;
 
 /** 今日の試技を足す入口（下のタブの真ん中とヘッダー）。足す画面を直接開く */
 export const RECORD_HREF = '/log/today/new';
@@ -43,7 +47,7 @@ export function HeaderNav() {
                 aria-current={active ? 'page' : undefined}
                 className={cn(segmentClass(active), 'gap-1.5')}
               >
-                <Icon aria-hidden className="size-4" strokeWidth={active ? 2.5 : 2} />
+                <Icon aria-hidden className="size-4" strokeWidth={active ? ACTIVE_STROKE : 2} />
                 {t(key)}
               </Link>
             </li>
@@ -72,11 +76,15 @@ export function TabBar() {
           href={href}
           aria-current={active ? 'page' : undefined}
           className={cn(
-            'flex h-full flex-col items-center justify-center gap-0.5 text-[10px] font-semibold',
+            'flex h-full flex-col items-center justify-center gap-0.5 text-tab-label font-semibold',
             active ? 'text-foreground' : 'text-muted-foreground',
           )}
         >
-          <Icon aria-hidden className="size-5.5" strokeWidth={active ? 2.5 : 1.75} />
+          <Icon
+            aria-hidden
+            className="size-5.5"
+            strokeWidth={active ? ACTIVE_STROKE : TAB_STROKE}
+          />
           {t(key)}
         </Link>
       </li>
@@ -84,7 +92,7 @@ export function TabBar() {
   };
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-10 border-t border-border bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-10 border-t border-border bg-card/95 pb-safe-bottom backdrop-blur lg:hidden">
       <ul className="mx-auto flex h-13 max-w-lg">
         {TABS.slice(0, 2).map(tab)}
         <li className="flex flex-1 justify-center">

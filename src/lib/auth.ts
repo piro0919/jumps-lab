@@ -3,6 +3,10 @@ import { betterAuth } from 'better-auth';
 import { env } from '@/env';
 import { db } from '@/lib/db';
 
+/** セッションをクッキーに持たせておく時間（5分） */
+const SESSION_CACHE_MINUTES = 5;
+const SESSION_CACHE_SECONDS = SESSION_CACHE_MINUTES * 60;
+
 /**
  * 選手のログイン。Better Auth を自前で持つ（onigiri・Vocafy と同じ作り）。手段は Google だけ。
  * ユーザーとセッションは同じ Postgres の表に入る（db/migrations/0001_auth.sql）。
@@ -25,7 +29,7 @@ function createAuth() {
       google: { clientId: GOOGLE_CLIENT_ID, clientSecret: GOOGLE_CLIENT_SECRET },
     },
     // セッションは署名付きのクッキーに5分持たせ、そのあいだは DB を読みに行かない
-    session: { cookieCache: { enabled: true, maxAge: 5 * 60 } },
+    session: { cookieCache: { enabled: true, maxAge: SESSION_CACHE_SECONDS } },
   });
 }
 

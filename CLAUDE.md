@@ -74,6 +74,7 @@ Copy the shape of `~/Repository/onigiri` (which itself copies vocafy). Read its 
   - No hex colors outside Google's button and the OG image
   - The LP has its own parts in layout-ui: `Headline` (Kanit italic upper case for Latin, system extrabold for Japanese) and `PhoneFrame` (its device corners are the one radius outside the scale, allowed only inside layout-ui). `PageTitle as="p"` inside frames keeps one h1 per page
   - Header buttons beside a page title must fit at 375px in English: a short verb ("Add"), the title says what
+- Shared lint rules (`@piro0919/eslint-config`, at error level for `src/` since 2026-10-11, like vocafy): no unnamed numbers (name them; limits shared by forms and Server Actions live in `src/lib/limits.ts`) and no Tailwind `[...]` values (name them in the `@theme` block of `globals.css`). Tests, scripts, the OG image and shadcn's generated `src/components/ui/*` (except `button.tsx`) are outside. Import `cn` only from `@/lib/cn`: plain `cn` mistakes named text sizes like `text-button` for colors and drops one of them; add every new `--text-*` name there (a design-rules test checks both)
 - No ORM (decided 2026-10-11): the data layer is one file of raw SQL in `src/lib/data.ts`; catch mistakes with tests instead of code generation
 - `pnpm-workspace.yaml`: `allowBuilds` and `minimumReleaseAge: 4320`
 - Prettier: singleQuote, trailingComma all, printWidth 100. ESLint and Prettier ignore `.claude/**` and `.playwright-mcp/**`

@@ -9,6 +9,7 @@ import { ActionForm } from '@/components/action-form';
 import { ErrorText, Field, Input, TextArea } from '@/components/layout-ui';
 import { FormActions } from '@/components/form-actions';
 import type { Competition } from '@/lib/data';
+import { LONG_NOTE_MAX_LENGTH } from '@/lib/limits';
 
 /**
  * 大会の入力（/competitions/new と /competitions/[id]/edit の画面）。追加と編集で同じものを使う。
@@ -55,7 +56,11 @@ export function CompetitionForm({
         </Field>
       </div>
       <Field label={t('notes')}>
-        <TextArea name="notes" defaultValue={initial?.notes ?? ''} maxLength={2000} />
+        <TextArea
+          name="notes"
+          defaultValue={initial?.notes ?? ''}
+          maxLength={LONG_NOTE_MAX_LENGTH}
+        />
       </Field>
       <FormActions
         label={t('save')}

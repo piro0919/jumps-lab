@@ -56,7 +56,7 @@ export function MarkEditor({
       <button
         type="button"
         onClick={() => setEditing(true)}
-        className={`-m-2 block w-[calc(100%+1rem)] rounded-xl p-2 text-left ${inverse ? 'hover:bg-white/10' : 'hover:bg-accent/60'}`}
+        className={`-m-2 block w-bleed rounded-xl p-2 text-left ${inverse ? 'hover:bg-white/10' : 'hover:bg-accent/60'}`}
       >
         <Stat
           value={shown === null ? null : formatMarkParts(shown, units)}

@@ -4,8 +4,12 @@
  * R2 の無料枠 10GB を利用者で分け合うための数。長さはファイルを開いた画面で確かめ、大きさは署名で R2 に守らせる
  */
 export const MAX_VIDEO_SECONDS = 60;
-export const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
-export const USER_VIDEO_BYTES = 1024 * 1024 * 1024;
+/** 1KB・1MB・1GB のバイト数（2進） */
+const KIB = 1024;
+export const MIB = KIB * KIB;
+export const GIB = MIB * KIB;
+export const MAX_VIDEO_BYTES = 100 * MIB;
+export const USER_VIDEO_BYTES = 1 * GIB;
 
 /** 受け付ける種類。iPhone は mov（quicktime）、Android は mp4、PC のブラウザの録画は webm */
 export const VIDEO_TYPES = ['video/mp4', 'video/quicktime', 'video/webm'] as const;

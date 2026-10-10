@@ -9,7 +9,7 @@ import { cookies } from 'next/headers';
 import { todayIn } from '@/lib/dates';
 import { videoUsage } from '@/lib/data';
 import { currentGrade } from '@/lib/grade';
-import { USER_VIDEO_BYTES } from '@/lib/videos';
+import { GIB, MIB, USER_VIDEO_BYTES } from '@/lib/videos';
 import { requireProfile, requireViewer } from '@/lib/viewer';
 
 /**
@@ -31,7 +31,7 @@ export default async function Settings() {
   const format = await getFormatter();
   // 動画に使った量。1人 1GB まで（src/lib/videos.ts）。MB は 1024 の倍で数える
   const megabytes = (bytes: number) =>
-    format.number(bytes / 1024 / 1024, {
+    format.number(bytes / MIB, {
       style: 'unit',
       unit: 'megabyte',
       maximumFractionDigits: 0,
@@ -76,7 +76,7 @@ export default async function Settings() {
           <span className="text-sm font-semibold tabular-nums">
             {tVideos('usageValue', {
               used: megabytes(used),
-              limit: format.number(USER_VIDEO_BYTES / 1024 ** 3, {
+              limit: format.number(USER_VIDEO_BYTES / GIB, {
                 style: 'unit',
                 unit: 'gigabyte',
               }),

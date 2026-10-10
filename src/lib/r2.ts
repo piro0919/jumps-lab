@@ -10,6 +10,10 @@ import {
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { env } from '@/env';
 
+/** 送るための署名 URL の期限（30分） */
+const UPLOAD_URL_MINUTES = 30;
+const UPLOAD_URL_SECONDS = UPLOAD_URL_MINUTES * 60;
+
 let client: S3Client | undefined;
 
 /**
@@ -48,7 +52,7 @@ export async function uploadUrl(key: string, sizeBytes: number, contentType: str
       ContentType: contentType,
     }),
     // SDK は既定で Content-Type を署名に入れないので、入れるよう指定する（入れないと別の種類で送れる）
-    { expiresIn: 60 * 30, signableHeaders: new Set(['content-type']) },
+    { expiresIn: UPLOAD_URL_SECONDS, signableHeaders: new Set(['content-type']) },
   );
 }
 

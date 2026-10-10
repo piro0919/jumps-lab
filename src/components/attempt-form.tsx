@@ -9,9 +9,10 @@ import { ActionForm } from '@/components/action-form';
 import { ErrorText, Field, FieldLabel, segmentClass, TextArea } from '@/components/layout-ui';
 import { MarkInput, WindInput } from '@/components/measure-inputs';
 import { FormActions } from '@/components/form-actions';
-import { cn } from 'cn';
+import { cn } from '@/lib/cn';
 import type { Attempt } from '@/lib/data';
 import { hasWind, type JumpEvent } from '@/lib/events';
+import { NOTE_MAX_LENGTH } from '@/lib/limits';
 import type { Units } from '@/lib/units';
 
 /** 2つ以上から1つを選ぶ、横並びの切り替え（練習・大会、種目） */
@@ -111,7 +112,7 @@ export function AttemptForm({
         </Field>
       )}
       <Field label={t('attemptNote')}>
-        <TextArea name="note" maxLength={500} defaultValue={initial?.note ?? ''} />
+        <TextArea name="note" maxLength={NOTE_MAX_LENGTH} defaultValue={initial?.note ?? ''} />
       </Field>
       <FormActions
         label={t('save')}

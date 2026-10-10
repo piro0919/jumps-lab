@@ -49,7 +49,7 @@ export default async function RootLayout({ children }: LayoutProps<'/'>) {
       className={`${display.variable} ${logo.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body className="min-h-full min-w-[375px] font-sans">
+      <body className="min-h-full min-w-page font-sans">
         <ThemeProvider>
           <NextIntlClientProvider>
             <Progress>{children}</Progress>

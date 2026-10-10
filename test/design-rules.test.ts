@@ -41,7 +41,7 @@ describe('見た目の決まり', () => {
       offenders(
         (l) =>
           /\brounded(?!-(full|xl|2xl|3xl|\[inherit\])\b)(-[\w[\]]+)?\b/.test(
-            l.replace(/'rounded-\[22%\]'/, '').replace(/\brounded-\[(2\.75|2\.25)rem\]/, ''),
+            l.replace(/'rounded-app-icon'/, '').replace(/\brounded-phone(-screen)?\b/, ''),
           ),
         // 規約の本文の英文（rounded to about 100 m）
         ['app/(legal)/en/privacy/page.tsx'],
@@ -58,12 +58,18 @@ describe('見た目の決まり', () => {
   });
 
   it('字の大きさを px で書くのは部品の中だけ（ほかは text-xs・sm・base・lg）', () => {
+    expect(offenders((l) => /\btext-\[\d+px\]/.test(l), [SYSTEM])).toEqual([]);
+  });
+
+  it('globals.css で部品に名前を付けた寸法（ページの題・透かしの字、アイコンとスマホの枠の角と大きさ）は部品の中だけ、規約の題の字は規約の文書の中だけ', () => {
     expect(
       offenders(
-        (l) => /\btext-\[\d+px\]/.test(l),
-        // 規約の文書の字組み、グラフの目盛りの字、下のタブの字（iPhone の標準の 10pt）は例外
-        [SYSTEM, 'app/(legal)/legal.tsx', 'components/trend-chart.tsx', 'components/tab-bar.tsx'],
-      ),
+        (l) =>
+          /\b(text-(page-title|watermark)|rounded-(app-icon|phone|phone-screen)|max-w-phone|h-phone)\b/.test(
+            l,
+          ),
+        [SYSTEM],
+      ).concat(offenders((l) => /\btext-legal-title\b/.test(l), ['app/(legal)/legal.tsx'])),
     ).toEqual([]);
   });
 
@@ -103,9 +109,7 @@ describe('見た目の決まり', () => {
   });
 
   it('PC の2列は MAIN_SIDE か HALVES で組む（画面ごとに列の幅を書かない）', () => {
-    expect(
-      offenders((l) => /\blg:grid-cols-\[/.test(l), [SYSTEM, 'components/site-header.tsx']),
-    ).toEqual([]);
+    expect(offenders((l) => /\blg:grid-cols-\[/.test(l), [SYSTEM])).toEqual([]);
   });
 
   it('入力の画面の幅は FORM_PAGE で決める（画面ごとに max-w を書かない）', () => {
@@ -128,5 +132,18 @@ describe('見た目の決まり', () => {
         ['app/sign-in/google-button.tsx', 'app/opengraph-image.tsx'],
       ),
     ).toEqual([]);
+  });
+
+  it('クラスをまとめる cn は src/lib/cn.ts から使い、globals.css の字の大きさの名前を全部知らせてある', () => {
+    // そのままの cn は名前を付けた字の大きさを字の色と取り違え、片方を消す（2026-10-11）
+    expect(
+      files
+        .filter(({ path, text }) => path !== 'lib/cn.ts' && /from 'cn'/.test(text))
+        .map((f) => f.path),
+    ).toEqual([]);
+    const css = readFileSync(join(ROOT, 'app/globals.css'), 'utf8');
+    const sizes = [...css.matchAll(/--text-([\w-]+):/g)].map((m) => m[1]);
+    const cn = readFileSync(join(ROOT, 'lib/cn.ts'), 'utf8');
+    expect(sizes.filter((name) => !cn.includes(`'${name}'`))).toEqual([]);
   });
 });

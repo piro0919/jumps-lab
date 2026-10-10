@@ -12,6 +12,10 @@ import {
   metersToFeetInches,
   type Units,
 } from '@/lib/units';
+import { WIND_LIMIT_MS } from '@/lib/limits';
+
+/** 体重の欄の刻み（kg のとき。lb は 1） */
+const WEIGHT_STEP_KG = 0.1;
 
 /**
  * 長さと重さの入力。表示の単位で受け、送るのは隠しの欄に入れたメートル・cm・kg だけ。
@@ -93,8 +97,8 @@ export function WindInput({
         type="number"
         inputMode="decimal"
         step={0.1}
-        min={-20}
-        max={20}
+        min={-WIND_LIMIT_MS}
+        max={WIND_LIMIT_MS}
         defaultValue={defaultValue ?? ''}
       />
       <Unit>{t('ms')}</Unit>
@@ -229,7 +233,7 @@ export function WeightInput({
           inputMode="decimal"
           type="number"
           min={0}
-          step={units === 'metric' ? 0.1 : 1}
+          step={units === 'metric' ? WEIGHT_STEP_KG : 1}
           value={shown}
           onChange={(e) => setShown(e.target.value)}
         />

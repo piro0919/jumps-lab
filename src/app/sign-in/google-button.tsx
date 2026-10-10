@@ -51,7 +51,7 @@ export function GoogleButton() {
       type="button"
       disabled={pending}
       onClick={signIn}
-      className={`${roboto.className} inline-flex h-11 w-full items-center justify-center gap-3 rounded-full border border-[#747775] bg-white px-4 text-sm text-[#1F1F1F] transition hover:bg-[#F7F8F8] disabled:opacity-40`}
+      className={`${roboto.className} inline-flex h-11 w-full items-center justify-center gap-3 rounded-full border border-google-border bg-white px-4 text-sm text-google-text transition hover:bg-google-hover disabled:opacity-40`}
     >
       <GoogleLogo />
       {t('google')}

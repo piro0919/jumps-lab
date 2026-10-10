@@ -50,7 +50,7 @@ export function Sheet({
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent className="mx-auto max-w-lg">
-        <div className="flex flex-col gap-4 overflow-y-auto p-5 pb-[calc(20px+env(safe-area-inset-bottom))]">
+        <div className="flex flex-col gap-4 overflow-y-auto p-5 pb-sheet-end">
           <DrawerTitle className="flex items-center gap-2 text-lg font-extrabold">
             {title}
           </DrawerTitle>

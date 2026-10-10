@@ -1,3 +1,4 @@
+import { ISO_MONTH_START, ISO_YEAR_END } from './dates';
 import { GRADES, type Grade } from './profile-options';
 
 /**
@@ -6,32 +7,38 @@ import { GRADES, type Grade } from './profile-options';
  * 浪人・留年・飛び級などで計算と合わない人は、ずれ（offset、年数）を持つ
  */
 
+/** 小学1年になる年の数え年の差（6歳で小学1年） */
+const SCHOOL_ENTRY_AGE = 6;
+/** 学年の数での中1（選択肢の最初）と大4（これより上は一般） */
+const JUNIOR_HIGH_FIRST = 7;
+const UNIVERSITY_LAST = 16;
+
 /** 今日を含む年度（4月始まり） */
 function schoolYear(day: string): number {
-  const year = Number(day.slice(0, 4));
-  return day.slice(5) >= '04-01' ? year : year - 1;
+  const year = Number(day.slice(0, ISO_YEAR_END));
+  return day.slice(ISO_MONTH_START) >= '04-01' ? year : year - 1;
 }
 
 /** 生まれた人の学年の基準の年。4月2日以降の生まれはその年、4月1日までは前の年 */
 function cohort(birthdate: string): number {
-  const year = Number(birthdate.slice(0, 4));
-  return birthdate.slice(5) >= '04-02' ? year : year - 1;
+  const year = Number(birthdate.slice(0, ISO_YEAR_END));
+  return birthdate.slice(ISO_MONTH_START) >= '04-02' ? year : year - 1;
 }
 
 /** 小学1年を 1 とした学年の数。中1 が 7、高1 が 10、大1 が 13 */
 export function gradeNumber(birthdate: string, today: string): number {
-  return schoolYear(today) - cohort(birthdate) - 6;
+  return schoolYear(today) - cohort(birthdate) - SCHOOL_ENTRY_AGE;
 }
 
 /** 学年の数を選択肢へ。中学より下は選択肢に無いので null、大4 より上は一般 */
 export function gradeFromNumber(n: number): Grade | null {
-  if (n < 7) return null;
-  if (n > 16) return 'adult';
-  return GRADES[n - 7] ?? null;
+  if (n < JUNIOR_HIGH_FIRST) return null;
+  if (n > UNIVERSITY_LAST) return 'adult';
+  return GRADES[n - JUNIOR_HIGH_FIRST] ?? null;
 }
 
 function numberOf(grade: Grade): number {
-  return GRADES.indexOf(grade) + 7;
+  return GRADES.indexOf(grade) + JUNIOR_HIGH_FIRST;
 }
 
 /**
@@ -65,6 +72,6 @@ export function currentGrade(
 /** 本人が選んだ学年を、計算とのずれに直す。一般を選んだときは、計算がすでに一般なら 0 */
 export function offsetFor(birthdate: string, chosen: Grade, today: string): number {
   const computed = gradeNumber(birthdate, today);
-  if (chosen === 'adult' && computed > 16) return 0;
+  if (chosen === 'adult' && computed > UNIVERSITY_LAST) return 0;
   return numberOf(chosen) - computed;
 }

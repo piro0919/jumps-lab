@@ -9,6 +9,12 @@ import { saveDayLogAction } from '@/app/actions/today';
 import { ErrorText, Field, LABEL, TextArea } from '@/components/layout-ui';
 import { FormActions } from '@/components/form-actions';
 import type { DayLog } from '@/lib/data';
+import { LONG_NOTE_MAX_LENGTH, NOTE_MAX_LENGTH, SCALE_MAX } from '@/lib/limits';
+
+/** まだ入れていない日に、つまみを置いておく位置（体調・疲れ・睡眠時間） */
+const DEFAULT_CONDITION = 7;
+const DEFAULT_FATIGUE = 4;
+const DEFAULT_SLEEP_HOURS = 7;
 
 function Slider({
   name,
@@ -83,18 +89,18 @@ export function DayLogForm({
         name="condition"
         label={t('physical')}
         min={1}
-        max={10}
+        max={SCALE_MAX}
         step={1}
-        initial={log?.condition ?? 7}
+        initial={log?.condition ?? DEFAULT_CONDITION}
         suffix="/10"
       />
       <Slider
         name="fatigue"
         label={t('fatigue')}
         min={1}
-        max={10}
+        max={SCALE_MAX}
         step={1}
-        initial={log?.fatigue ?? 4}
+        initial={log?.fatigue ?? DEFAULT_FATIGUE}
         suffix="/10"
       />
       <Slider
@@ -103,14 +109,14 @@ export function DayLogForm({
         min={0}
         max={12}
         step={0.5}
-        initial={log?.sleepHours ?? 7}
+        initial={log?.sleepHours ?? DEFAULT_SLEEP_HOURS}
         suffix={tUnits('hours')}
       />
       <Field label={t('injury')}>
-        <TextArea name="injury" defaultValue={log?.injury ?? ''} maxLength={500} />
+        <TextArea name="injury" defaultValue={log?.injury ?? ''} maxLength={NOTE_MAX_LENGTH} />
       </Field>
       <Field label={t('note')}>
-        <TextArea name="note" defaultValue={log?.note ?? ''} maxLength={2000} />
+        <TextArea name="note" defaultValue={log?.note ?? ''} maxLength={LONG_NOTE_MAX_LENGTH} />
       </Field>
       <FormActions
         label={t('save')}

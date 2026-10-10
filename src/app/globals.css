@@ -59,6 +59,53 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /*
+   * 寸法の名前。部品で [...] に値をじかに書かず、ここに名前を付けて使う
+   * （eslint-plugin-tailwindcss の no-arbitrary-value が落とす。vocafy と同じ）
+   */
+  /* 字の大きさ。ページの題（PageTitle）・カードに透かす英字（Watermark）・送信のボタンの字 */
+  --text-page-title: 32px;
+  --text-watermark: 160px;
+  --text-button: 15px;
+  /* 下のタブの字（iPhone の標準のタブの 10pt）と、グラフの目盛りの字 */
+  --text-tab-label: 10px;
+  --text-chart-axis: 10px;
+  /* 規約の文書の題・更新日・本文 */
+  --text-legal-title: 28px;
+  --text-legal-date: 13px;
+  --text-legal-body: 15px;
+  /* 画面の最小の幅（これより狭い端末は横に送る） */
+  --min-width-page: 375px;
+  /* 本文の最小の高さ。画面の高さから上のヘッダー（h-16）を引いたもの */
+  --min-height-page-body: calc(100dvh - 4rem);
+  /* iPhone のホームバーの分 */
+  --spacing-safe-bottom: env(safe-area-inset-bottom);
+  /* スマホの本文の下に空ける、下のタブの分（ホームバーの分を含む） */
+  --spacing-tab-bar: calc(68px + env(safe-area-inset-bottom));
+  /* 下から出る窓の中の下の余白（p-5 の 20px に、ホームバーの分を足す） */
+  --spacing-sheet-end: calc(20px + env(safe-area-inset-bottom));
+  /* 押せる範囲を -m-2 で左右に 0.5rem ずつ広げたときの幅 */
+  --width-bleed: calc(100% + 1rem);
+  /* 押したときに少し縮める大きさ（丸いボタンと種目の札） */
+  --scale-press: 0.98;
+  /* PC のヘッダーの並べ方。左（ロゴ）と右（ボタン）を同じ幅にして、メニューを真ん中に置く */
+  --grid-template-columns-header: 1fr auto 1fr;
+  /* アプリのアイコンの角（辺の 22%。iPhone のアイコンと同じ形） */
+  --radius-app-icon: 22%;
+  /* LP でアプリの画面を見せるスマホの枠。幅・高さ・外の角・画面の角 */
+  --max-width-phone: 380px;
+  --height-phone: 620px;
+  --radius-phone: 2.75rem;
+  --radius-phone-screen: 2.25rem;
+  /* LP の締めの写真の高さ（スマホと PC）と、選手の顔が切れない位置 */
+  --height-landing-photo: 420px;
+  --height-landing-photo-wide: 520px;
+  --object-position-landing-photo: 50% 20%;
+  /* Google のログインボタンの決まりの色。枠・字・指を乗せたときの地 */
+  --color-google-border: #747775;
+  --color-google-text: #1f1f1f;
+  --color-google-hover: #f7f8f8;
 }
 
 :root {

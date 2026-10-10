@@ -8,6 +8,16 @@ import { formatMark, type Units } from '@/lib/units';
 const WIDTH = 320;
 const HEIGHT = 160;
 const PAD = { top: 12, right: 12, bottom: 20, left: 12 };
+/** 全部同じ値のときの縦の幅（m）と、上下に空ける余白（幅に対する割合） */
+const FLAT_SPAN_M = 0.1;
+const SPAN_MARGIN = 0.15;
+/** 1本だけのときの横の位置（真ん中） */
+const SINGLE_X = 0.5;
+/** 点の半径（選んだ点と、ほかの点） */
+const ACTIVE_DOT_R = 5;
+const DOT_R = 4;
+/** 日付の字の下端を、絵の下端から上げる分 */
+const LABEL_LIFT = 4;
 
 /**
  * 直近の記録の推移。1系列なので凡例は置かず、題で名前を言う。
@@ -30,12 +40,13 @@ export function TrendChart({
   const min = Math.min(...marks);
   const max = Math.max(...marks);
   // 全部同じ値でも線を真ん中に置く
-  const span = max - min || 0.1;
-  const low = min - span * 0.15;
-  const high = max + span * 0.15;
+  const span = max - min || FLAT_SPAN_M;
+  const low = min - span * SPAN_MARGIN;
+  const high = max + span * SPAN_MARGIN;
 
   const x = (i: number) =>
-    PAD.left + (rows.length === 1 ? 0.5 : i / (rows.length - 1)) * (WIDTH - PAD.left - PAD.right);
+    PAD.left +
+    (rows.length === 1 ? SINGLE_X : i / (rows.length - 1)) * (WIDTH - PAD.left - PAD.right);
   const y = (m: number) =>
     PAD.top + (1 - (m - low) / (high - low)) * (HEIGHT - PAD.top - PAD.bottom);
   const path = rows.map((r, i) => `${i === 0 ? 'M' : 'L'}${x(i)},${y(r.markM)}`).join(' ');
@@ -80,20 +91,24 @@ export function TrendChart({
             <circle
               cx={x(i)}
               cy={y(r.markM)}
-              r={i === active ? 5 : 4}
+              r={i === active ? ACTIVE_DOT_R : DOT_R}
               className={i === active ? 'fill-current stroke-card' : 'fill-card stroke-current'}
               strokeWidth={2}
             />
           </g>
         ))}
-        <text x={PAD.left} y={HEIGHT - 4} className="fill-muted-foreground text-[10px]">
+        <text
+          x={PAD.left}
+          y={HEIGHT - LABEL_LIFT}
+          className="fill-muted-foreground text-chart-axis"
+        >
           {dayLabel(rows[0]!.day)}
         </text>
         <text
           x={WIDTH - PAD.right}
-          y={HEIGHT - 4}
+          y={HEIGHT - LABEL_LIFT}
           textAnchor="end"
-          className="fill-muted-foreground text-[10px]"
+          className="fill-muted-foreground text-chart-axis"
         >
           {dayLabel(rows.at(-1)!.day)}
         </text>

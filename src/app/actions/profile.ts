@@ -14,8 +14,20 @@ import { isTimeZone, todayIn } from '@/lib/dates';
 import { EVENTS } from '@/lib/events';
 import { type ActionResult, optionalNumber } from '@/lib/form';
 import { computesGrade, offsetFor, usesGrade } from '@/lib/grade';
+import {
+  HEIGHT_MAX_CM,
+  HEIGHT_MIN_CM,
+  MARK_MAX_M,
+  MARK_MIN_M,
+  MONTHS_PER_YEAR,
+  WEIGHT_MAX_KG,
+  WEIGHT_MIN_KG,
+} from '@/lib/limits';
 import { GRADES } from '@/lib/profile-options';
 import { requireViewer } from '@/lib/viewer';
+
+/** 学年の計算とのずれ（年数）の上限。下限はこの負の値 */
+const GRADE_OFFSET_LIMIT = 10;
 
 const timeZone = z.string().refine(isTimeZone).catch('UTC');
 
@@ -36,8 +48,8 @@ const detailsSchema = z.object({
     (v) => (v === '' ? null : v),
     z.enum(['male', 'female', 'other']).nullable(),
   ),
-  heightCm: optionalNumber(50, 250),
-  weightKg: optionalNumber(20, 300),
+  heightCm: optionalNumber(HEIGHT_MIN_CM, HEIGHT_MAX_CM),
+  weightKg: optionalNumber(WEIGHT_MIN_KG, WEIGHT_MAX_KG),
   timeZone,
 });
 
@@ -45,14 +57,14 @@ const detailsSchema = z.object({
 const recordsSchema = z.object({
   events: z.array(z.enum(EVENTS)).min(1, 'events'),
   units: z.enum(['metric', 'imperial']),
-  seasonStartMonth: z.coerce.number().int().min(1).max(12),
+  seasonStartMonth: z.coerce.number().int().min(1).max(MONTHS_PER_YEAR),
   weekStart: z.coerce.number().pipe(z.union([z.literal(0), z.literal(1)])),
   timeZone,
 });
 
 /** 初回はどちらも一度に入れ、先頭の種目の今季目標も入れられる */
 const fullSchema = detailsSchema.extend(recordsSchema.shape).extend({
-  goalM: optionalNumber(0.01, 29.99),
+  goalM: optionalNumber(MARK_MIN_M, MARK_MAX_M),
 });
 
 /** 入力の誤りを、画面に出す文言の鍵へ */
@@ -72,7 +84,10 @@ function gradeFields(details: z.infer<typeof detailsSchema>) {
     grade: computes || !usesGrade(timeZone) ? null : chosen,
     gradeOffset:
       computes && chosen
-        ? Math.max(-10, Math.min(10, offsetFor(birthdate, chosen, todayIn(timeZone))))
+        ? Math.max(
+            -GRADE_OFFSET_LIMIT,
+            Math.min(GRADE_OFFSET_LIMIT, offsetFor(birthdate, chosen, todayIn(timeZone))),
+          )
         : 0,
   };
 }
@@ -165,8 +180,11 @@ export async function repairTimeZoneAction(value: string): Promise<boolean> {
       ? {
           grade: null,
           gradeOffset: Math.max(
-            -10,
-            Math.min(10, offsetFor(profile.birthdate, profile.grade, todayIn(value))),
+            -GRADE_OFFSET_LIMIT,
+            Math.min(
+              GRADE_OFFSET_LIMIT,
+              offsetFor(profile.birthdate, profile.grade, todayIn(value)),
+            ),
           ),
         }
       : { grade: profile.grade, gradeOffset: profile.gradeOffset };

@@ -48,6 +48,37 @@ function attempt(
   return { id, day, event, kind, markM, windMs, note };
 }
 
+/** 見本の練習の日（走幅跳）。記録は m、風は m/s。最後の1本にメモを付ける */
+const SAMPLE_PRACTICE = [
+  { id: 'p1', markM: 6.72, windMs: 1.2, withNote: false },
+  { id: 'p2', markM: 6.88, windMs: 0.8, withNote: false },
+  { id: 'p3', markM: 7.05, windMs: 1.5, withNote: true },
+];
+/** 見本の試合の日（三段跳）。14.70 は追い風参考 */
+const SAMPLE_MEET = [
+  { id: 'c1', markM: 14.52, windMs: 1.1 },
+  { id: 'c2', markM: 14.7, windMs: 2.4 },
+  { id: 'c3', markM: 14.86, windMs: 1.4 },
+];
+/** 見本の試合の日は今日の16日前、次の大会は12日後 */
+const SAMPLE_MEET_DAYS_AGO = 16;
+const SAMPLE_NEXT_MEET_IN_DAYS = 12;
+/** 分析の見本は棒高跳の直近10本。1週ごとに1本跳んだことにする。平均の数字は見本の札だけのもの */
+const SAMPLE_VAULTS = [
+  { markM: 4.1 },
+  { markM: 4.2 },
+  { markM: 4.15 },
+  { markM: 4.3 },
+  { markM: 4.2 },
+  { markM: 4.35 },
+  { markM: 4.3 },
+  { markM: 4.4 },
+  { markM: 4.35 },
+  { markM: 4.5 },
+];
+const SAMPLE_VAULT_EVERY_DAYS = 7;
+const SAMPLE_VAULT_AVERAGE_M = 4.31;
+
 /** 機能の1節。スマホは文の下に画面、PC は2列で、節ごとに画面の左右を入れ替える */
 function Feature({
   title,
@@ -123,22 +154,18 @@ export async function Landing() {
   const noManual = { pbM: null, sbM: null, practiceBestM: null };
 
   // 1本ずつの記録の見本（練習の日）
-  const practiceDay = [
-    attempt('p1', today, 'long_jump', 'practice', 6.72, 1.2),
-    attempt('p2', today, 'long_jump', 'practice', 6.88, 0.8),
-    attempt('p3', today, 'long_jump', 'practice', 7.05, 1.5, t('sampleNote')),
-  ];
+  const practiceDay = SAMPLE_PRACTICE.map(({ id, markM, windMs, withNote }) =>
+    attempt(id, today, 'long_jump', 'practice', markM, windMs, withNote ? t('sampleNote') : null),
+  );
   // 試合の日。14.70 は追い風参考の印付き。いちばん遠い記録を参考にすると「ベスト」と札が2つ並び、
   // スマホの幅で記録が折り返した
-  const meetDay = addDays(today, -16);
-  const competitionDay = [
-    attempt('c1', meetDay, 'triple_jump', 'competition', 14.52, 1.1),
-    attempt('c2', meetDay, 'triple_jump', 'competition', 14.7, 2.4),
-    attempt('c3', meetDay, 'triple_jump', 'competition', 14.86, 1.4),
-  ];
+  const meetDay = addDays(today, -SAMPLE_MEET_DAYS_AGO);
+  const competitionDay = SAMPLE_MEET.map(({ id, markM, windMs }) =>
+    attempt(id, meetDay, 'triple_jump', 'competition', markM, windMs),
+  );
   // 分析の見本は棒高跳の直近10本
-  const vaults = [4.1, 4.2, 4.15, 4.3, 4.2, 4.35, 4.3, 4.4, 4.35, 4.5].map((markM, i) => ({
-    day: addDays(today, -7 * (10 - i)),
+  const vaults = SAMPLE_VAULTS.map(({ markM }, i) => ({
+    day: addDays(today, -SAMPLE_VAULT_EVERY_DAYS * (SAMPLE_VAULTS.length - i)),
     kind: 'practice' as const,
     markM,
   }));
@@ -267,7 +294,7 @@ export async function Landing() {
               competition={{
                 id: 'next',
                 name: t('sampleNextMeet'),
-                day: addDays(today, 12),
+                day: addDays(today, SAMPLE_NEXT_MEET_IN_DAYS),
                 venue: t('sampleVenue'),
                 callRoomPlace: null,
                 callRoomTime: '09:40',
@@ -313,7 +340,7 @@ export async function Landing() {
             <Stat
               size="hero"
               inverse
-              value={formatMarkParts(4.31, units)}
+              value={formatMarkParts(SAMPLE_VAULT_AVERAGE_M, units)}
               label={tAnalysis('average')}
             />
           </Card>
@@ -330,11 +357,11 @@ export async function Landing() {
 
         {/* 締め。走幅跳の写真に見出しを白で重ね、ボタンをもう一度。夜の写真はダークの地に溶けたので替えた */}
         <section className="flex flex-col items-center gap-4 px-4 pt-12 pb-16 text-center">
-          <div className="relative flex h-[420px] w-full items-end overflow-hidden rounded-3xl lg:h-[520px]">
+          <div className="relative flex h-landing-photo w-full items-end overflow-hidden rounded-3xl lg:h-landing-photo-wide">
             <Photo
               name="long-jump-flight"
               alt={t('photoFlight')}
-              className="absolute inset-0 size-full object-[50%_20%]"
+              className="absolute inset-0 size-full object-landing-photo"
             />
             <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/20 to-transparent" />
             <div className="relative flex w-full flex-col items-center gap-6 p-6 text-white lg:p-10">

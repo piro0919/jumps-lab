@@ -14,6 +14,7 @@ import {
 import { isDay, todayIn } from '@/lib/dates';
 import { EVENTS } from '@/lib/events';
 import { optionalText } from '@/lib/form';
+import { NOTE_MAX_LENGTH } from '@/lib/limits';
 import { deleteObject, objectSize, uploadUrl } from '@/lib/r2';
 import { MAX_VIDEO_BYTES, USER_VIDEO_BYTES, VIDEO_TYPES, videoKey } from '@/lib/videos';
 import { requireViewer } from '@/lib/viewer';
@@ -30,7 +31,7 @@ const startSchema = z.object({
   event: z.enum(EVENTS),
   kind: z.enum(['practice', 'competition']),
   attemptId: z.preprocess((v) => (v === '' ? null : v), z.uuid().nullable()),
-  note: optionalText(500),
+  note: optionalText(NOTE_MAX_LENGTH),
   sizeBytes: z.coerce.number().int().min(1).max(MAX_VIDEO_BYTES),
   contentType: z.enum(VIDEO_TYPES),
 });

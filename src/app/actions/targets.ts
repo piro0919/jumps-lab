@@ -6,13 +6,14 @@ import { getProfile, saveTargetField } from '@/lib/data';
 import { seasonOf, todayIn } from '@/lib/dates';
 import { EVENTS } from '@/lib/events';
 import { type ActionResult, optionalNumber } from '@/lib/form';
+import { MARK_MAX_M, MARK_MIN_M } from '@/lib/limits';
 import { requireViewer } from '@/lib/viewer';
 
 const schema = z.object({
   event: z.enum(EVENTS),
   field: z.enum(['seasonGoalM', 'manualPbM', 'manualSbM', 'manualPracticeBestM']),
   // 空で送ると消す
-  markM: optionalNumber(0.01, 29.99),
+  markM: optionalNumber(MARK_MIN_M, MARK_MAX_M),
 });
 
 /** 今季目標と、手で入れるベストのうち1つを書き換える。種目はカードのもの（本人の選んだ種目だけ） */

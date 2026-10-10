@@ -4,6 +4,7 @@ import { refresh } from 'next/cache';
 import { z } from 'zod';
 import { deleteCompetition, saveCompetition } from '@/lib/data';
 import { type ActionResult, optionalText } from '@/lib/form';
+import { LONG_NOTE_MAX_LENGTH } from '@/lib/limits';
 import { requireViewer } from '@/lib/viewer';
 
 const time = z.preprocess(
@@ -22,7 +23,7 @@ const schema = z.object({
   callRoomPlace: optionalText(200),
   callRoomTime: time,
   startTime: time,
-  notes: optionalText(2000),
+  notes: optionalText(LONG_NOTE_MAX_LENGTH),
 });
 
 /** 大会を足すか書き換える。id があれば書き換え（本人の大会だけ） */

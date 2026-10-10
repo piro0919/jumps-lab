@@ -14,11 +14,27 @@ import rain from '@meteocons/svg/fill/rain.svg';
 import snow from '@meteocons/svg/fill/snow.svg';
 import thunderstormsDay from '@meteocons/svg/fill/thunderstorms-day.svg';
 import thunderstormsNight from '@meteocons/svg/fill/thunderstorms-night.svg';
-import { cn } from 'cn';
+import { cn } from '@/lib/cn';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { Card, CardTitle, DisplayNumber, SectionTitle } from '@/components/layout-ui';
 import { Button } from '@/components/ui/button';
+
+/** 位置を送る桁（小数3桁、約100m に丸める） */
+const COORD_DIGITS = 3;
+/** 前に取った位置を使い回してよい時間（10分） */
+const POSITION_MAX_AGE_MINUTES = 10;
+
+/** WMO の天気の番号で、まとまりごとの最後の番号（曇り・霧・霧雨・雨・雪・にわか雨・にわか雪） */
+const WMO_LAST = {
+  cloudy: 3,
+  fog: 48,
+  drizzle: 57,
+  rain: 67,
+  snow: 77,
+  showers: 82,
+  snowShowers: 86,
+} as const;
 
 type Weather = { temperature: number; code: number; windMs: number; isDay: boolean };
 
@@ -32,13 +48,13 @@ type State =
 function weatherKey(code: number) {
   if (code === 0) return 'clear';
   if (code <= 2) return 'partlyCloudy';
-  if (code === 3) return 'cloudy';
-  if (code <= 48) return 'fog';
-  if (code <= 57) return 'drizzle';
-  if (code <= 67) return 'rain';
-  if (code <= 77) return 'snow';
-  if (code <= 82) return 'showers';
-  if (code <= 86) return 'snow';
+  if (code === WMO_LAST.cloudy) return 'cloudy';
+  if (code <= WMO_LAST.fog) return 'fog';
+  if (code <= WMO_LAST.drizzle) return 'drizzle';
+  if (code <= WMO_LAST.rain) return 'rain';
+  if (code <= WMO_LAST.snow) return 'snow';
+  if (code <= WMO_LAST.showers) return 'showers';
+  if (code <= WMO_LAST.snowShowers) return 'snow';
   return 'thunder';
 }
 
@@ -89,8 +105,8 @@ const SKIES: Record<WeatherKey, string> = {
 async function fetchWeather(latitude: number, longitude: number): Promise<Weather> {
   const url = new URL('https://api.open-meteo.com/v1/forecast');
   url.search = new URLSearchParams({
-    latitude: latitude.toFixed(3),
-    longitude: longitude.toFixed(3),
+    latitude: latitude.toFixed(COORD_DIGITS),
+    longitude: longitude.toFixed(COORD_DIGITS),
     current: 'temperature_2m,weather_code,wind_speed_10m,is_day',
     wind_speed_unit: 'ms',
   }).toString();
@@ -127,7 +143,7 @@ export function WeatherCard() {
         }
       },
       () => setState({ kind: 'denied' }),
-      { maximumAge: 10 * 60 * 1000 },
+      { maximumAge: POSITION_MAX_AGE_MINUTES * 60 * 1000 },
     );
   };
 

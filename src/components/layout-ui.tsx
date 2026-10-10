@@ -1,4 +1,4 @@
-import { cn } from 'cn';
+import { cn } from '@/lib/cn';
 import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import { buttonVariants } from '@/components/ui/button';
@@ -48,7 +48,7 @@ const APP_ICON_SIZE = { header: 'size-9', hero: 'size-20' } as const;
 export function AppIcon({ size }: { size: keyof typeof APP_ICON_SIZE }) {
   return (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src="/icon-192x192.png" alt="" className={cn('rounded-[22%]', APP_ICON_SIZE[size])} />
+    <img src="/icon-192x192.png" alt="" className={cn('rounded-app-icon', APP_ICON_SIZE[size])} />
   );
 }
 
@@ -118,7 +118,9 @@ export function PageTitle({
             <ChevronLeft aria-hidden className="size-6" />
           </Link>
         )}
-        <Tag className="text-[32px] leading-tight font-extrabold tracking-tight">{children}</Tag>
+        <Tag className="text-page-title leading-tight font-extrabold tracking-tight">
+          {children}
+        </Tag>
       </div>
       {action}
     </div>
@@ -256,7 +258,7 @@ export function Watermark({ children }: { children: ReactNode }) {
   return (
     <span
       aria-hidden
-      className="pointer-events-none absolute -right-3 -bottom-8 font-display text-[160px] leading-none font-extrabold text-white/10 italic select-none"
+      className="pointer-events-none absolute -right-3 -bottom-8 font-display text-watermark leading-none font-extrabold text-white/10 italic select-none"
     >
       {children}
     </span>
@@ -468,9 +470,9 @@ export function PhoneFrame({ children }: { children: ReactNode }) {
   return (
     <div
       inert
-      className="relative mx-auto w-full max-w-[380px] rounded-[2.75rem] bg-muted p-2.5 shadow-2xl select-none"
+      className="relative mx-auto w-full max-w-phone rounded-phone bg-muted p-2.5 shadow-2xl select-none"
     >
-      <div className="relative h-[620px] overflow-hidden rounded-[2.25rem] bg-background">
+      <div className="relative h-phone overflow-hidden rounded-phone-screen bg-background">
         <div className="flex flex-col gap-3 pt-4">{children}</div>
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-linear-to-t from-background to-transparent" />
       </div>

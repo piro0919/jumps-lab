@@ -4,7 +4,7 @@ import { Monitor, Moon, Sun } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useSyncExternalStore } from 'react';
-import { cn } from 'cn';
+import { cn } from '@/lib/cn';
 import { SEGMENTS, segmentClass } from '@/components/layout-ui';
 
 const OPTIONS = [

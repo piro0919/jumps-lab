@@ -13,6 +13,14 @@ import {
 import { isDay, todayIn } from '@/lib/dates';
 import { EVENTS, hasWind } from '@/lib/events';
 import { type ActionResult, optionalNumber, optionalText } from '@/lib/form';
+import {
+  LONG_NOTE_MAX_LENGTH,
+  MARK_MAX_M,
+  MARK_MIN_M,
+  NOTE_MAX_LENGTH,
+  SCALE_MAX,
+  WIND_LIMIT_MS,
+} from '@/lib/limits';
 import { requireViewer } from '@/lib/viewer';
 
 // 実在する日付だけ。先の日は画面で開けないので、本人の時間帯の今日と比べて弾く（openDay）
@@ -25,11 +33,11 @@ function openDay(date: string, timeZone: string): boolean {
 
 const dayLogSchema = z.object({
   day,
-  condition: optionalNumber(1, 10),
-  fatigue: optionalNumber(1, 10),
+  condition: optionalNumber(1, SCALE_MAX),
+  fatigue: optionalNumber(1, SCALE_MAX),
   sleepHours: optionalNumber(0, 24),
-  injury: optionalText(500),
-  note: optionalText(2000),
+  injury: optionalText(NOTE_MAX_LENGTH),
+  note: optionalText(LONG_NOTE_MAX_LENGTH),
 });
 
 /** その日の体調と練習メモ。欄ごとではなく、この塊を1つのボタンで保存する */
@@ -59,9 +67,9 @@ const attemptSchema = z.object({
   day,
   event: z.enum(EVENTS),
   kind: z.enum(['practice', 'competition']),
-  markM: z.coerce.number({ message: 'mark' }).min(0.01, 'mark').max(29.99, 'mark'),
-  windMs: optionalNumber(-20, 20),
-  note: optionalText(500),
+  markM: z.coerce.number({ message: 'mark' }).min(MARK_MIN_M, 'mark').max(MARK_MAX_M, 'mark'),
+  windMs: optionalNumber(-WIND_LIMIT_MS, WIND_LIMIT_MS),
+  note: optionalText(NOTE_MAX_LENGTH),
 });
 
 /** 試技を1本足すか書き換える。種目は本人の選んだ種目だけ（書き換えは元の種目のままでもよい）。風は走幅跳と三段跳だけ残す */

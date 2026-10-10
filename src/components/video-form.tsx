@@ -16,8 +16,16 @@ import { ErrorText, Field, FieldLabel, Select, TextArea } from '@/components/lay
 import { buttonVariants } from '@/components/ui/button';
 import type { Attempt } from '@/lib/data';
 import type { JumpEvent } from '@/lib/events';
+import { NOTE_MAX_LENGTH } from '@/lib/limits';
 import { formatMark, type Units } from '@/lib/units';
 import { isVideoType, MAX_VIDEO_BYTES, MAX_VIDEO_SECONDS, type VideoType } from '@/lib/videos';
+
+/** 動画の長さを読むのを待つ時間（5秒） */
+const DURATION_TIMEOUT_MS = 5000;
+/** 長さの上限に許す端数（秒） */
+const DURATION_SLACK_SECONDS = 0.5;
+/** 成功の応答（2xx）の上の境 */
+const SUCCESS_STATUS_END = 300;
 
 /** ファイルの種類。空で来るブラウザがあるので、そのときは拡張子で決める */
 function videoType(file: File): VideoType | null {
@@ -37,7 +45,7 @@ function videoType(file: File): VideoType | null {
 function readDuration(url: string): Promise<number | null> {
   return new Promise((resolve) => {
     const video = document.createElement('video');
-    const timer = setTimeout(() => resolve(null), 5000);
+    const timer = setTimeout(() => resolve(null), DURATION_TIMEOUT_MS);
     video.preload = 'metadata';
     video.onloadedmetadata = () => {
       clearTimeout(timer);
@@ -60,7 +68,7 @@ function put(url: string, file: File, type: string, onProgress: (percent: number
     request.upload.onprogress = (event) => {
       if (event.lengthComputable) onProgress(Math.round((event.loaded / event.total) * 100));
     };
-    request.onload = () => resolve(request.status >= 200 && request.status < 300);
+    request.onload = () => resolve(request.status >= 200 && request.status < SUCCESS_STATUS_END);
     request.onerror = () => resolve(false);
     request.send(file);
   });
@@ -114,7 +122,7 @@ export function VideoForm({
     if (
       !type ||
       file.size > MAX_VIDEO_BYTES ||
-      (duration !== null && duration > MAX_VIDEO_SECONDS + 0.5)
+      (duration !== null && duration > MAX_VIDEO_SECONDS + DURATION_SLACK_SECONDS)
     ) {
       URL.revokeObjectURL(preview);
       setChosen(null);
@@ -215,7 +223,7 @@ export function VideoForm({
         </Field>
       )}
       <Field label={t('note')}>
-        <TextArea name="note" maxLength={500} />
+        <TextArea name="note" maxLength={NOTE_MAX_LENGTH} />
       </Field>
       <FormActions
         label={tToday('save')}

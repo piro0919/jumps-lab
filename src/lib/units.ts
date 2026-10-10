@@ -5,8 +5,19 @@
 export type Units = 'metric' | 'imperial';
 
 const INCH_M = 0.0254;
+const CM_PER_INCH = 2.54;
 const INCHES_PER_FOOT = 12;
 const POUND_KG = 0.45359237;
+/** 記録のインチの刻み（4分の1インチ） */
+const QUARTERS_PER_INCH = 4;
+/** 4分の1インチの 1%。切り捨ての前に足して、入れた値に戻す */
+const QUARTER_SLACK = 0.01;
+/** メートルを 0.1mm で丸めるときの倍率（DB の列と同じ桁） */
+export const TENTH_MM_PER_M = 10000;
+/** センチで切り捨てる前に足す、小数の誤差の分 */
+const FLOAT_SLACK = 1e-6;
+/** 身長と体重を小数1桁で丸めるときの倍率 */
+const ONE_DECIMAL = 10;
 
 export type FeetInches = { feet: number; inches: number };
 
@@ -17,25 +28,25 @@ export type FeetInches = { feet: number; inches: number };
 export function metersToFeetInches(meters: number): FeetInches {
   // 0.1mm で丸めて持つので、フィート・インチで入れた値はインチに戻すと境目のわずかに下になることがある。
   // 4分の1インチの 1% （約 0.06mm）だけ足してから切り、入れた値に戻す
-  const quarters = Math.floor((meters / INCH_M) * 4 + 0.01);
-  const totalInches = quarters / 4;
+  const quarters = Math.floor((meters / INCH_M) * QUARTERS_PER_INCH + QUARTER_SLACK);
+  const totalInches = quarters / QUARTERS_PER_INCH;
   const feet = Math.floor(totalInches / INCHES_PER_FOOT);
   return { feet, inches: totalInches - feet * INCHES_PER_FOOT };
 }
 
 /** フィートとインチをメートルへ。0.1mm で丸める（DB の列と同じ。センチで丸めると戻らない） */
 export function feetInchesToMeters({ feet, inches }: FeetInches): number {
-  return Math.round((feet * INCHES_PER_FOOT + inches) * INCH_M * 10000) / 10000;
+  return Math.round((feet * INCHES_PER_FOOT + inches) * INCH_M * TENTH_MM_PER_M) / TENTH_MM_PER_M;
 }
 
 /**
  * 記録の表示。metric は「1.85 m」（センチで切り捨て。陸上の計測と同じ向き）、imperial は「6' 0¾"」
  */
 export function formatMark(meters: number, units: Units): string {
-  if (units === 'metric') return `${(Math.floor(meters * 100 + 1e-6) / 100).toFixed(2)} m`;
+  if (units === 'metric') return `${(Math.floor(meters * 100 + FLOAT_SLACK) / 100).toFixed(2)} m`;
   const { feet, inches } = metersToFeetInches(meters);
   const whole = Math.floor(inches);
-  const fraction = ['', '¼', '½', '¾'][Math.round((inches - whole) * 4)];
+  const fraction = ['', '¼', '½', '¾'][Math.round((inches - whole) * QUARTERS_PER_INCH)];
   // 目標までの差のような1フィート未満の長さは、インチだけで書く
   return feet === 0 ? `${whole}${fraction}"` : `${feet}' ${whole}${fraction}"`;
 }
@@ -50,12 +61,15 @@ export function formatMarkParts(meters: number, units: Units): { value: string; 
 }
 
 export function cmToFeetInches(cm: number): FeetInches {
-  const totalInches = Math.round(cm / 2.54);
-  return { feet: Math.floor(totalInches / 12), inches: totalInches % 12 };
+  const totalInches = Math.round(cm / CM_PER_INCH);
+  return {
+    feet: Math.floor(totalInches / INCHES_PER_FOOT),
+    inches: totalInches % INCHES_PER_FOOT,
+  };
 }
 
 export function feetInchesToCm({ feet, inches }: FeetInches): number {
-  return Math.round((feet * 12 + inches) * 2.54 * 10) / 10;
+  return Math.round((feet * INCHES_PER_FOOT + inches) * CM_PER_INCH * ONE_DECIMAL) / ONE_DECIMAL;
 }
 
 export function kgToLb(kg: number): number {
@@ -63,5 +77,5 @@ export function kgToLb(kg: number): number {
 }
 
 export function lbToKg(lb: number): number {
-  return Math.round(lb * POUND_KG * 10) / 10;
+  return Math.round(lb * POUND_KG * ONE_DECIMAL) / ONE_DECIMAL;
 }

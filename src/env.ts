@@ -1,6 +1,9 @@
 import { createEnv } from '@t3-oss/env-nextjs';
 import { z } from 'zod';
 
+/** Better Auth の鍵の最短の長さ（Better Auth が求める 32 文字） */
+const AUTH_SECRET_MIN_LENGTH = 32;
+
 /**
  * サイトが読む環境変数の検査。next.config.ts が読み込むので、欠けていればビルドの頭で止まる。
  * scripts/ の鍵は手元でしか使わないので、ここではなく scripts/lib/env.ts で確かめる
@@ -11,7 +14,7 @@ export const env = createEnv({
     DATABASE_URL: z.string().min(1),
     // ログイン（Better Auth）。鍵を持たないビルドや CI も通すため、ここでは任意にしておく。
     // 欠けたままログインの受け口に来たら、そこで名前を挙げて止まる（src/lib/auth.ts）
-    BETTER_AUTH_SECRET: z.string().min(32).optional(),
+    BETTER_AUTH_SECRET: z.string().min(AUTH_SECRET_MIN_LENGTH).optional(),
     BETTER_AUTH_URL: z.url().optional(),
     GOOGLE_CLIENT_ID: z.string().min(1).optional(),
     GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),

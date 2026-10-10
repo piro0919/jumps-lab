@@ -5,7 +5,7 @@ import { Card, PageTitle, SEGMENTS, Stat, segmentClass, EmptyState } from '@/com
 import { LogCalendar } from '@/components/log-calendar';
 import { listAllAttempts, listDayLogs } from '@/lib/data';
 import { EVENT_TEXT } from '@/lib/events';
-import { isMonth, todayIn } from '@/lib/dates';
+import { ISO_MONTH_END, isMonth, todayIn } from '@/lib/dates';
 import { buildLogDays } from '@/lib/log-days';
 import { formatMarkParts } from '@/lib/units';
 import { requireProfile, requireViewer } from '@/lib/viewer';
@@ -21,7 +21,9 @@ export default async function Log({ searchParams }: PageProps<'/log'>) {
   const params = await searchParams;
   const calendar = params.view === 'calendar';
   const month =
-    typeof params.month === 'string' && isMonth(params.month) ? params.month : today.slice(0, 7);
+    typeof params.month === 'string' && isMonth(params.month)
+      ? params.month
+      : today.slice(0, ISO_MONTH_END);
 
   const [attempts, logs] = await Promise.all([
     listAllAttempts(viewer.userId),

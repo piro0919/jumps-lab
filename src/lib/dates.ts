@@ -3,6 +3,19 @@
  * 「今日」は本人の時間帯で数える（Vercel の時計は UTC なので、サーバーの日付をそのまま使わない）
  */
 
+/**
+ * 'YYYY-MM-DD' の中の位置（slice に渡す）。年は 0〜4、月は 5〜7、日は 8〜10。
+ * 先頭から ISO_MONTH_END までが 'YYYY-MM'、ISO_DAY_END までが 'YYYY-MM-DD'（toISOString の日付の部分）
+ */
+export const ISO_YEAR_END = 4;
+export const ISO_MONTH_START = 5;
+export const ISO_MONTH_END = 7;
+export const ISO_DATE_START = 8;
+export const ISO_DAY_END = 10;
+
+/** 1日のミリ秒 */
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 /** その時間帯での今日。呼ぶたびに数える（モジュールの読み込み時に固定しない） */
 export function todayIn(timeZone: string, now: Date = new Date()): string {
   // en-CA は YYYY-MM-DD の並びで出す
@@ -18,7 +31,7 @@ export function todayIn(timeZone: string, now: Date = new Date()): string {
 export function isDay(value: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const date = new Date(`${value}T00:00:00Z`);
-  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, ISO_DAY_END) === value;
 }
 
 /** 'YYYY-MM' の形で、月が 01〜12 か */
@@ -40,12 +53,12 @@ export function isTimeZone(value: string): boolean {
 export function addDays(day: string, n: number): string {
   const date = new Date(`${day}T00:00:00Z`);
   date.setUTCDate(date.getUTCDate() + n);
-  return date.toISOString().slice(0, 10);
+  return date.toISOString().slice(0, ISO_DAY_END);
 }
 
 /** 2つの日付の差（日数）。b が a より後なら正 */
 export function daysBetween(a: string, b: string): number {
-  return Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 86_400_000);
+  return Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / DAY_MS);
 }
 
 /**
@@ -53,8 +66,8 @@ export function daysBetween(a: string, b: string): number {
  * 例: 4月始まりなら 2026-03-31 は 2025 年のシーズン、2026-04-01 は 2026 年のシーズン
  */
 export function seasonOf(day: string, startMonth: number): number {
-  const year = Number(day.slice(0, 4));
-  const month = Number(day.slice(5, 7));
+  const year = Number(day.slice(0, ISO_YEAR_END));
+  const month = Number(day.slice(ISO_MONTH_START, ISO_MONTH_END));
   return month >= startMonth ? year : year - 1;
 }
 

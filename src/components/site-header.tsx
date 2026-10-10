@@ -34,7 +34,7 @@ export async function SiteHeader({
   const tLog = await getTranslations('log');
 
   return (
-    <header className="sticky top-0 z-40 flex h-16 items-center gap-6 bg-background/70 px-4 backdrop-blur-xl backdrop-saturate-150 lg:grid lg:grid-cols-[1fr_auto_1fr]">
+    <header className="sticky top-0 z-40 flex h-16 items-center gap-6 bg-background/70 px-4 backdrop-blur-xl backdrop-saturate-150 lg:grid lg:grid-cols-header">
       <Link href="/" className="flex w-fit items-center gap-2.5">
         <AppIcon size="header" />
         <Wordmark size="header">{tMeta('title')}</Wordmark>

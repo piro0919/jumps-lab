@@ -3,13 +3,24 @@ import Link from 'next/link';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import { Card } from '@/components/layout-ui';
 import { buttonVariants } from '@/components/ui/button';
-import { cn } from 'cn';
+import { cn } from '@/lib/cn';
+import {
+  ISO_DATE_START,
+  ISO_DAY_END,
+  ISO_MONTH_END,
+  ISO_MONTH_START,
+  ISO_YEAR_END,
+} from '@/lib/dates';
+
+const DAYS_PER_WEEK = 7;
+/** 曜日の頭文字を出すための基準の週の日曜（2026-10-11）の日 */
+const REFERENCE_SUNDAY = 11;
 
 /** YYYY-MM の月を n か月ずらす */
 function shiftMonth(month: string, n: number): string {
   const date = new Date(`${month}-01T00:00:00Z`);
   date.setUTCMonth(date.getUTCMonth() + n);
-  return date.toISOString().slice(0, 7);
+  return date.toISOString().slice(0, ISO_MONTH_END);
 }
 
 /**
@@ -39,23 +50,27 @@ export async function LogCalendar({
 
   const first = `${month}-01`;
   const daysInMonth = new Date(
-    Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0),
+    Date.UTC(
+      Number(month.slice(0, ISO_YEAR_END)),
+      Number(month.slice(ISO_MONTH_START, ISO_MONTH_END)),
+      0,
+    ),
   ).getUTCDate();
   // 月の1日より前に並べる前の月の日の数
-  const leading = (utc(first).getUTCDay() - weekStart + 7) % 7;
+  const leading = (utc(first).getUTCDay() - weekStart + DAYS_PER_WEEK) % DAYS_PER_WEEK;
   // 2026-10-11 は日曜、12 は月曜。曜日の頭文字を言語に合わせて出すための基準の週
-  const weekdays = Array.from({ length: 7 }, (_, i) =>
-    format.dateTime(utc(`2026-10-${String(11 + weekStart + i).padStart(2, '0')}`), {
+  const weekdays = Array.from({ length: DAYS_PER_WEEK }, (_, i) =>
+    format.dateTime(utc(`2026-10-${String(REFERENCE_SUNDAY + weekStart + i).padStart(2, '0')}`), {
       weekday: 'narrow',
       timeZone: 'UTC',
     }),
   );
   // 月の1日がある週の頭から、月の末日がある週の終わりまで
-  const weeks = Math.ceil((leading + daysInMonth) / 7);
-  const cells = Array.from({ length: weeks * 7 }, (_, i) => {
+  const weeks = Math.ceil((leading + daysInMonth) / DAYS_PER_WEEK);
+  const cells = Array.from({ length: weeks * DAYS_PER_WEEK }, (_, i) => {
     const date = utc(first);
     date.setUTCDate(1 - leading + i);
-    const day = date.toISOString().slice(0, 10);
+    const day = date.toISOString().slice(0, ISO_DAY_END);
     return { day, inMonth: day.startsWith(month) };
   });
   const monthLink = (m: string) => `/log?view=calendar&month=${m}`;
@@ -92,7 +107,7 @@ export async function LogCalendar({
         {cells.map(({ day: cell, inMonth }) => {
           const label = (
             <>
-              {Number(cell.slice(8))}
+              {Number(cell.slice(ISO_DATE_START))}
               <span className="flex h-2">
                 {recorded.has(cell) && <span className="size-2 rounded-full bg-primary" />}
               </span>
