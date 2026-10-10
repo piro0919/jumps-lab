@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import { Card } from '@/components/layout-ui';
 import { buttonVariants } from '@/components/ui/button';
+import { cn } from 'cn';
 
 /** YYYY-MM の月を n か月ずらす */
 function shiftMonth(month: string, n: number): string {
@@ -13,6 +14,7 @@ function shiftMonth(month: string, n: number): string {
 
 /**
  * 記録をカレンダーの形で見る。記録か体調のある日に点を付け、押すとその日を開く（先の日は開かない）。
+ * 週の頭と終わりの空きには、前の月と次の月の日を薄く出す（本人、2026-10-11）。押せば同じように開く。
  * 週は日曜から（全員。国ごとの週の始まりはまだ合わせていない。CLAUDE.md）。
  * パソコンでは画面の幅いっぱいに広げ、マスを高くして日付を左上に置く（壁掛けのカレンダーの形）。
  * 最初は幅 448px に収めていて、小さいと言われた（本人、2026-10-11）
@@ -44,10 +46,14 @@ export async function LogCalendar({
       timeZone: 'UTC',
     }),
   );
-  const cells = [
-    ...Array.from({ length: leading }, () => null),
-    ...Array.from({ length: daysInMonth }, (_, i) => `${month}-${String(i + 1).padStart(2, '0')}`),
-  ];
+  // 月の1日がある週の日曜から、月の末日がある週の土曜まで
+  const weeks = Math.ceil((leading + daysInMonth) / 7);
+  const cells = Array.from({ length: weeks * 7 }, (_, i) => {
+    const date = utc(first);
+    date.setUTCDate(1 - leading + i);
+    const day = date.toISOString().slice(0, 10);
+    return { day, inMonth: day.startsWith(month) };
+  });
   const monthLink = (m: string) => `/log?view=calendar&month=${m}`;
 
   return (
@@ -79,8 +85,7 @@ export async function LogCalendar({
         ))}
       </div>
       <div className="grid grid-cols-7 gap-1">
-        {cells.map((cell, i) => {
-          if (cell === null) return <span key={`blank-${i}`} />;
+        {cells.map(({ day: cell, inMonth }) => {
           const label = (
             <>
               {Number(cell.slice(8))}
@@ -89,15 +94,17 @@ export async function LogCalendar({
               </span>
             </>
           );
-          const className = `flex h-14 flex-col items-center justify-center gap-1.5 rounded-xl text-lg font-semibold tabular-nums lg:h-24 lg:items-start lg:justify-between lg:p-3 ${
-            cell === today ? 'font-bold text-primary' : ''
-          }`;
+          const className = cn(
+            'flex h-14 flex-col items-center justify-center gap-1.5 rounded-xl text-lg font-semibold tabular-nums lg:h-24 lg:items-start lg:justify-between lg:p-3',
+            cell === today && 'font-bold text-primary',
+            !inMonth && 'text-muted-foreground',
+          );
           return cell > today ? (
-            <span key={cell} className={`${className} text-muted-foreground/50`}>
+            <span key={cell} className={cn(className, 'text-muted-foreground/50')}>
               {label}
             </span>
           ) : (
-            <Link key={cell} href={`/log/${cell}`} className={`${className} hover:bg-accent`}>
+            <Link key={cell} href={`/log/${cell}`} className={cn(className, 'hover:bg-accent')}>
               {label}
             </Link>
           );
