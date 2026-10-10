@@ -62,83 +62,87 @@ export default async function Calendar({ searchParams }: PageProps<'/calendar'>)
     <main className="flex flex-col gap-3">
       <PageTitle>{tNav('calendar')}</PageTitle>
 
-      <Card>
-        <div className="mb-3 flex items-center justify-between">
-          <Link
-            href={`/calendar?day=${shiftMonth(month, -1)}-01`}
-            aria-label={t('previous')}
-            className="flex size-9 items-center justify-center rounded-full bg-field"
-          >
-            <ChevronLeft aria-hidden className="size-5" />
-          </Link>
-          <span className="text-[17px] font-bold">
-            {format.dateTime(utc(first), { year: 'numeric', month: 'long', timeZone: 'UTC' })}
-          </span>
-          <Link
-            href={`/calendar?day=${shiftMonth(month, 1)}-01`}
-            aria-label={t('next')}
-            className="flex size-9 items-center justify-center rounded-full bg-field"
-          >
-            <ChevronRight aria-hidden className="size-5" />
-          </Link>
-        </div>
-        <div className="grid grid-cols-7 text-center text-xs font-medium text-sub">
-          {weekdays.map((weekday, i) => (
-            <span key={i} className="py-1">
-              {weekday}
+      <div className="flex flex-col gap-3 lg:grid lg:grid-cols-2 lg:items-start">
+        <Card>
+          <div className="mb-3 flex items-center justify-between">
+            <Link
+              href={`/calendar?day=${shiftMonth(month, -1)}-01`}
+              aria-label={t('previous')}
+              className="flex size-9 items-center justify-center rounded-full bg-field"
+            >
+              <ChevronLeft aria-hidden className="size-5" />
+            </Link>
+            <span className="text-[17px] font-bold">
+              {format.dateTime(utc(first), { year: 'numeric', month: 'long', timeZone: 'UTC' })}
             </span>
-          ))}
-        </div>
-        <div className="grid grid-cols-7">
-          {cells.map((cell, i) =>
-            cell === null ? (
-              <span key={`blank-${i}`} />
-            ) : (
-              <Link
-                key={cell}
-                href={`/calendar?day=${cell}`}
-                aria-current={cell === day ? 'date' : undefined}
-                className={`flex h-12 flex-col items-center justify-center gap-1 rounded-xl text-[15px] tabular-nums ${
-                  cell === day
-                    ? 'bg-accent font-bold text-white'
-                    : cell === today
-                      ? 'font-bold text-accent'
-                      : ''
-                }`}
-              >
-                {Number(cell.slice(8))}
-                <span className="flex h-1.5 gap-0.5">
-                  {withCompetitions.has(cell) && (
-                    <span
-                      className={`size-1.5 rounded-full ${cell === day ? 'bg-white' : 'bg-danger'}`}
-                    />
-                  )}
-                  {withAttempts.has(cell) && (
-                    <span
-                      className={`size-1.5 rounded-full ${cell === day ? 'bg-white' : 'bg-accent'}`}
-                    />
-                  )}
-                </span>
-              </Link>
-            ),
-          )}
-        </div>
-      </Card>
+            <Link
+              href={`/calendar?day=${shiftMonth(month, 1)}-01`}
+              aria-label={t('next')}
+              className="flex size-9 items-center justify-center rounded-full bg-field"
+            >
+              <ChevronRight aria-hidden className="size-5" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-7 text-center text-xs font-medium text-sub">
+            {weekdays.map((weekday, i) => (
+              <span key={i} className="py-1">
+                {weekday}
+              </span>
+            ))}
+          </div>
+          <div className="grid grid-cols-7">
+            {cells.map((cell, i) =>
+              cell === null ? (
+                <span key={`blank-${i}`} />
+              ) : (
+                <Link
+                  key={cell}
+                  href={`/calendar?day=${cell}`}
+                  aria-current={cell === day ? 'date' : undefined}
+                  className={`flex h-12 flex-col items-center justify-center gap-1 rounded-xl text-[15px] tabular-nums ${
+                    cell === day
+                      ? 'bg-accent font-bold text-white'
+                      : cell === today
+                        ? 'font-bold text-accent'
+                        : ''
+                  }`}
+                >
+                  {Number(cell.slice(8))}
+                  <span className="flex h-1.5 gap-0.5">
+                    {withCompetitions.has(cell) && (
+                      <span
+                        className={`size-1.5 rounded-full ${cell === day ? 'bg-white' : 'bg-danger'}`}
+                      />
+                    )}
+                    {withAttempts.has(cell) && (
+                      <span
+                        className={`size-1.5 rounded-full ${cell === day ? 'bg-white' : 'bg-accent'}`}
+                      />
+                    )}
+                  </span>
+                </Link>
+              ),
+            )}
+          </div>
+        </Card>
 
-      <DayPanel
-        key={day}
-        day={day}
-        title={format.dateTime(utc(day), {
-          month: 'long',
-          day: 'numeric',
-          weekday: 'short',
-          timeZone: 'UTC',
-        })}
-        canOpenDay={day <= today}
-        attempts={attempts.filter((a) => a.day === day)}
-        competitions={competitions.filter((c) => c.day === day)}
-        units={profile.units}
-      />
+        <div className="flex flex-col gap-3">
+          <DayPanel
+            key={day}
+            day={day}
+            title={format.dateTime(utc(day), {
+              month: 'long',
+              day: 'numeric',
+              weekday: 'short',
+              timeZone: 'UTC',
+            })}
+            canOpenDay={day <= today}
+            attempts={attempts.filter((a) => a.day === day)}
+            competitions={competitions.filter((c) => c.day === day)}
+            units={profile.units}
+          />
+        </div>
+      </div>
     </main>
   );
 }

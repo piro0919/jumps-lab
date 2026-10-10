@@ -38,13 +38,15 @@ export default async function Today({ searchParams }: PageProps<'/today'>) {
               timeZone: 'UTC',
             })}
       </PageTitle>
-      <AttemptsCard
-        day={day}
-        event={profile.currentEvent}
-        units={profile.units}
-        attempts={attempts.filter((a) => a.event === profile.currentEvent)}
-      />
-      <DayLogForm day={day} log={log} />
+      <div className="flex flex-col gap-3 lg:grid lg:grid-cols-2 lg:items-start">
+        <AttemptsCard
+          day={day}
+          event={profile.currentEvent}
+          units={profile.units}
+          attempts={attempts.filter((a) => a.event === profile.currentEvent)}
+        />
+        <DayLogForm day={day} log={log} />
+      </div>
     </main>
   );
 }

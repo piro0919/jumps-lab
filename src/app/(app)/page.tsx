@@ -43,65 +43,70 @@ export default async function Home() {
         {tNav('home')}
       </PageTitle>
 
-      <Card className="flex flex-col gap-2">
-        <MarkEditor
-          field="seasonGoalM"
-          label={t('goal')}
-          shown={target.seasonGoalM}
-          manual={target.seasonGoalM}
-          units={profile.units}
-          large
-        />
-        {gap !== null && (
-          <p className={`text-sm font-semibold ${gap <= 0 ? 'text-good' : 'text-sub'}`}>
-            {gap <= 0
-              ? t('goalReached')
-              : t('toGoal', { distance: formatMark(gap, profile.units) })}
-          </p>
-        )}
-      </Card>
+      <div className="flex flex-col gap-3 lg:grid lg:grid-cols-2 lg:items-start">
+        <div className="flex flex-col gap-3">
+          <Card className="flex flex-col gap-2">
+            <MarkEditor
+              field="seasonGoalM"
+              label={t('goal')}
+              shown={target.seasonGoalM}
+              manual={target.seasonGoalM}
+              units={profile.units}
+              large
+            />
+            {gap !== null && (
+              <p className={`text-sm font-semibold ${gap <= 0 ? 'text-good' : 'text-sub'}`}>
+                {gap <= 0
+                  ? t('goalReached')
+                  : t('toGoal', { distance: formatMark(gap, profile.units) })}
+              </p>
+            )}
+          </Card>
 
-      <Card className="flex flex-col divide-y divide-line [&>*]:py-3 [&>*:first-child]:pt-0 [&>*:last-child]:pb-0">
-        <MarkEditor
-          field="manualPbM"
-          label={t('pb')}
-          shown={bests.pbM}
-          manual={target.manualPbM}
-          units={profile.units}
-        />
-        <MarkEditor
-          field="manualSbM"
-          label={t('sb')}
-          shown={bests.sbM}
-          manual={target.manualSbSeason === null ? null : target.manualSbM}
-          units={profile.units}
-        />
-        <MarkEditor
-          field="manualPracticeBestM"
-          label={t('practiceBest')}
-          shown={bests.practiceBestM}
-          manual={target.manualPracticeBestM}
-          units={profile.units}
-        />
-      </Card>
+          <Card className="flex flex-col divide-y divide-line [&>*]:py-3 [&>*:first-child]:pt-0 [&>*:last-child]:pb-0">
+            <MarkEditor
+              field="manualPbM"
+              label={t('pb')}
+              shown={bests.pbM}
+              manual={target.manualPbM}
+              units={profile.units}
+            />
+            <MarkEditor
+              field="manualSbM"
+              label={t('sb')}
+              shown={bests.sbM}
+              manual={target.manualSbSeason === null ? null : target.manualSbM}
+              units={profile.units}
+            />
+            <MarkEditor
+              field="manualPracticeBestM"
+              label={t('practiceBest')}
+              shown={bests.practiceBestM}
+              manual={target.manualPracticeBestM}
+              units={profile.units}
+            />
+          </Card>
+        </div>
+        <div className="flex flex-col gap-3">
+          <Link href={competition ? `/calendar?day=${competition.day}` : '/calendar'}>
+            <Card>
+              <CardTitle>{t('nextCompetition')}</CardTitle>
+              {competition ? (
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className="min-w-0 truncate text-lg font-bold">{competition.name}</span>
+                  <span className="shrink-0 text-lg font-bold text-accent tabular-nums">
+                    {t('daysLeft', { days: daysBetween(today, competition.day) })}
+                  </span>
+                </div>
+              ) : (
+                <p className="text-sm text-sub">{t('noCompetition')}</p>
+              )}
+            </Card>
+          </Link>
 
-      <Link href={competition ? `/calendar?day=${competition.day}` : '/calendar'}>
-        <Card>
-          <CardTitle>{t('nextCompetition')}</CardTitle>
-          {competition ? (
-            <div className="flex items-baseline justify-between gap-3">
-              <span className="min-w-0 truncate text-lg font-bold">{competition.name}</span>
-              <span className="shrink-0 text-lg font-bold text-accent tabular-nums">
-                {t('daysLeft', { days: daysBetween(today, competition.day) })}
-              </span>
-            </div>
-          ) : (
-            <p className="text-sm text-sub">{t('noCompetition')}</p>
-          )}
-        </Card>
-      </Link>
-
-      <WeatherCard />
+          <WeatherCard />
+        </div>
+      </div>
     </main>
   );
 }
