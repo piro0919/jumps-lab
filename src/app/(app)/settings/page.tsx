@@ -19,14 +19,17 @@ import { requireProfile, requireViewer } from '@/lib/viewer';
  */
 export default async function Settings() {
   const viewer = await requireViewer();
-  const profile = await requireProfile(viewer.userId);
+  // 動画に使った量は、プロフィールと並べて読む（1往復ぶん待ちを減らす）
+  const [profile, used] = await Promise.all([
+    requireProfile(viewer.userId),
+    videoUsage(viewer.userId),
+  ]);
   const t = await getTranslations('nav');
   const tProfile = await getTranslations('profile');
   const tVideos = await getTranslations('videos');
   const chosenLocale = (await cookies()).get(LOCALE_COOKIE)?.value;
   const format = await getFormatter();
   // 動画に使った量。1人 1GB まで（src/lib/videos.ts）。MB は 1024 の倍で数える
-  const used = await videoUsage(viewer.userId);
   const megabytes = (bytes: number) =>
     format.number(bytes / 1024 / 1024, {
       style: 'unit',

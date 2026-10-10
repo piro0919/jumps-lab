@@ -437,7 +437,7 @@ const videoColumns = `id, to_char(day, 'YYYY-MM-DD') as day, event, kind, "attem
 
 /**
  * 送る前に1本分の枠を取る（pending の行）。入力の中身もここで入れ、届いたら ready にするだけにする。
- * 合計が上限を超えるなら取らずに false。合計は届いていない pending も数える（同時に何本も送って上限を抜けないように）。
+ * 合計が上限を超えるなら取らずに false。合計は届いていない pending も数える。
  * 結び付ける試技は、本人のその日の試技だけ（違えば結び付けない）
  */
 export async function reserveVideo(
@@ -455,28 +455,40 @@ export async function reserveVideo(
   },
   limitBytes: number,
 ): Promise<boolean> {
-  const { rowCount } = await db().query(
-    `insert into video (id, "userId", day, event, kind, "attemptId", note, "objectKey", "contentType", "sizeBytes")
-     select $1, $2, $3, $4, $5,
-            (select a.id from attempt a where a.id = $6 and a."userId" = $2 and a.day = $3),
-            $7, $8, $9, $10::integer
-      where (select coalesce(sum("sizeBytes"), 0) from video where "userId" = $2) + $10::bigint
-            <= $11::bigint`,
-    [
-      video.id,
-      userId,
-      video.day,
-      video.event,
-      video.kind,
-      video.attemptId,
-      video.note,
-      video.objectKey,
-      video.contentType,
-      video.sizeBytes,
-      limitBytes,
-    ],
-  );
-  return rowCount === 1;
+  // 人ごとのロックを取ってから数える。取らずに数えると、同時に送った2本がどちらも古い合計を見て上限を抜ける
+  const client = await db().connect();
+  try {
+    await client.query('begin');
+    await client.query(`select pg_advisory_xact_lock(hashtext('video:' || $1))`, [userId]);
+    const { rowCount } = await client.query(
+      `insert into video (id, "userId", day, event, kind, "attemptId", note, "objectKey", "contentType", "sizeBytes")
+       select $1, $2, $3, $4, $5,
+              (select a.id from attempt a where a.id = $6 and a."userId" = $2 and a.day = $3),
+              $7, $8, $9, $10::integer
+        where (select coalesce(sum("sizeBytes"), 0) from video where "userId" = $2) + $10::bigint
+              <= $11::bigint`,
+      [
+        video.id,
+        userId,
+        video.day,
+        video.event,
+        video.kind,
+        video.attemptId,
+        video.note,
+        video.objectKey,
+        video.contentType,
+        video.sizeBytes,
+        limitBytes,
+      ],
+    );
+    await client.query('commit');
+    return rowCount === 1;
+  } catch (error) {
+    await client.query('rollback');
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 /** 届いたのを確かめた1本を、見せる状態にする */
@@ -500,11 +512,14 @@ export async function getPendingVideo(
   return rows[0] ?? null;
 }
 
-/** 送りかけて1時間たっても届かなかった枠を外し、その置き場所を返す（R2 に途中まで残っていれば消すため） */
+/**
+ * 送りかけて3時間たっても届かなかった枠を外し、その置き場所を返す（R2 に残っていれば消すため）。
+ * 送るための URL は30分で切れるが、遅い回線では 100MB の送信がその先まで続くので、間を空ける
+ */
 export async function releaseStaleVideos(userId: string): Promise<string[]> {
   const { rows } = await db().query<{ objectKey: string }>(
     `delete from video where "userId" = $1 and status = 'pending'
-        and "createdAt" < now() - interval '1 hour'
+        and "createdAt" < now() - interval '3 hours'
       returning "objectKey"`,
     [userId],
   );
@@ -520,6 +535,15 @@ export async function listVideosOnDay(userId: string, day: string): Promise<Vide
     [userId, day],
   );
   return rows;
+}
+
+/** 送れなかった枠を外し、R2 から消すための置き場所を返す */
+export async function releaseVideo(userId: string, id: string): Promise<string | null> {
+  const { rows } = await db().query<{ objectKey: string }>(
+    `delete from video where "userId" = $1 and id = $2 and status = 'pending' returning "objectKey"`,
+    [userId, id],
+  );
+  return rows[0]?.objectKey ?? null;
 }
 
 /** 1本を消し、R2 から消すための置き場所を返す */

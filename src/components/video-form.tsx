@@ -4,7 +4,11 @@
 import { useRouter } from '@bprogress/next/app';
 import { useTranslations } from 'next-intl';
 import { useActionState, useEffect, useRef, useState } from 'react';
-import { finishVideoUploadAction, startVideoUploadAction } from '@/app/actions/videos';
+import {
+  cancelVideoUploadAction,
+  finishVideoUploadAction,
+  startVideoUploadAction,
+} from '@/app/actions/videos';
 import { ActionForm } from '@/components/action-form';
 import { Segmented } from '@/components/attempt-form';
 import { FormActions } from '@/components/form-actions';
@@ -25,13 +29,24 @@ function videoType(file: File): VideoType | null {
   return null;
 }
 
-/** 動画の長さ（秒）。読めなければ null */
+/**
+ * 動画の長さ（秒）。読めなければ null。PC の録画の webm は長さが入っておらず（Infinity）、
+ * iPhone の HEVC の mov は PC のブラウザでは開けないことがある。どちらも正しい動画なので、
+ * 読めないときは長さを確かめずに通す（大きさの上限は R2 の署名で守る）。5秒待っても返らなければ読めない扱い
+ */
 function readDuration(url: string): Promise<number | null> {
   return new Promise((resolve) => {
     const video = document.createElement('video');
+    const timer = setTimeout(() => resolve(null), 5000);
     video.preload = 'metadata';
-    video.onloadedmetadata = () => resolve(Number.isFinite(video.duration) ? video.duration : null);
-    video.onerror = () => resolve(null);
+    video.onloadedmetadata = () => {
+      clearTimeout(timer);
+      resolve(Number.isFinite(video.duration) ? video.duration : null);
+    };
+    video.onerror = () => {
+      clearTimeout(timer);
+      resolve(null);
+    };
     video.src = url;
   });
 }
@@ -95,8 +110,12 @@ export function VideoForm({
     const type = videoType(file);
     const preview = URL.createObjectURL(file);
     const duration = type && file.size <= MAX_VIDEO_BYTES ? await readDuration(preview) : null;
-    // 長さは少しの端数を許す（60.02 秒のような記録が混ざる）
-    if (!type || duration === null || duration > MAX_VIDEO_SECONDS + 0.5) {
+    // 長さは少しの端数を許す（60.02 秒のような記録が混ざる）。読めない長さは確かめない
+    if (
+      !type ||
+      file.size > MAX_VIDEO_BYTES ||
+      (duration !== null && duration > MAX_VIDEO_SECONDS + 0.5)
+    ) {
       URL.revokeObjectURL(preview);
       setChosen(null);
       setFileError(true);
@@ -123,7 +142,11 @@ export function VideoForm({
       const sent = await put(started.url, chosen.file, started.contentType, setProgress);
       const finished = sent ? await finishVideoUploadAction(started.id) : { ok: false };
       setProgress(null);
-      if (!finished.ok) return { ok: false as const, error: 'videoUpload' };
+      if (!finished.ok) {
+        // 取った枠をすぐ外す（残すと合計を食い、やり直すたびに1本分ずつ減っていく）
+        await cancelVideoUploadAction(started.id);
+        return { ok: false as const, error: 'videoUpload' };
+      }
       router.push(backHref);
       return { ok: true as const };
     },

@@ -8,6 +8,7 @@ import {
   getPendingVideo,
   getProfile,
   releaseStaleVideos,
+  releaseVideo,
   reserveVideo,
 } from '@/lib/data';
 import { isDay, todayIn } from '@/lib/dates';
@@ -103,6 +104,14 @@ export async function finishVideoUploadAction(id: string): Promise<{ ok: boolean
     console.error(error);
     return { ok: false };
   }
+}
+
+/** 送れなかったときに、取った枠をすぐ外す（外さないと、3時間のあいだ合計を食う） */
+export async function cancelVideoUploadAction(id: string): Promise<void> {
+  const viewer = await requireViewer();
+  if (!z.uuid().safeParse(id).success) return;
+  const key = await releaseVideo(viewer.userId, id);
+  if (key) await deleteObject(key).catch((error) => console.error(error));
 }
 
 export async function deleteVideoAction(id: string): Promise<void> {

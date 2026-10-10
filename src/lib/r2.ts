@@ -1,6 +1,7 @@
 import 'server-only';
 import {
   DeleteObjectCommand,
+  NotFound,
   GetObjectCommand,
   HeadObjectCommand,
   PutObjectCommand,
@@ -46,7 +47,8 @@ export async function uploadUrl(key: string, sizeBytes: number, contentType: str
       ContentLength: sizeBytes,
       ContentType: contentType,
     }),
-    { expiresIn: 60 * 30 },
+    // SDK は既定で Content-Type を署名に入れないので、入れるよう指定する（入れないと別の種類で送れる）
+    { expiresIn: 60 * 30, signableHeaders: new Set(['content-type']) },
   );
 }
 
@@ -58,14 +60,15 @@ export async function viewUrl(key: string): Promise<string> {
   });
 }
 
-/** 届いたファイルの大きさ。無ければ null */
+/** 届いたファイルの大きさ。無ければ null。通信の失敗などは投げる（「無い」と取り違えて、届いた分を置き去りにしないように） */
 export async function objectSize(key: string): Promise<number | null> {
   const { client, bucket } = r2();
   try {
     const head = await client.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
     return head.ContentLength ?? null;
-  } catch {
-    return null;
+  } catch (error) {
+    if (error instanceof NotFound) return null;
+    throw error;
   }
 }
 
