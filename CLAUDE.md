@@ -106,3 +106,9 @@ Copy the shape of `~/Repository/onigiri` (which itself copies vocafy). Read its 
 - Web Analytics is enabled by the owner in the dashboard, then redeploy
 - Add a row to the Notion portfolio DB (English and Japanese descriptions), run `pnpm portfolio:export` in kk-web and commit
 - Show the owner the real screens before release
+
+## Current state
+
+- Google Cloud project `jumps-lab-kkweb` (billing account kk-web). OAuth client "Jumps Lab web", redirect URIs `http://localhost:3110/api/auth/callback/google` and `https://jumpslab.kkweb.io/api/auth/callback/google`. Consent screen is External and still in Testing; `piro.haniwa@gmail.com` is the only test user
+- Dev server runs on port 3110 (`pnpm dev`); local Postgres on 5436 (`pnpm db:up`, then `pnpm migrate`)
+- Google sign-in works locally end to end
