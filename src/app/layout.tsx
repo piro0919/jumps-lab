@@ -4,6 +4,7 @@ import { getLocale, getTranslations } from 'next-intl/server';
 import { Barlow_Condensed, Kanit } from 'next/font/google';
 import { Progress } from '@/components/progress';
 import { ThemeProvider } from '@/components/theme-provider';
+import { WindowSize } from '@/components/window-size';
 import './globals.css';
 
 // 記録の数字と英字の見出しの字（手本の Nike Run Club の、細長く太い斜体の数字）。
@@ -51,6 +52,7 @@ export default async function RootLayout({ children }: LayoutProps<'/'>) {
         <ThemeProvider>
           <NextIntlClientProvider>
             <Progress>{children}</Progress>
+            <WindowSize />
           </NextIntlClientProvider>
         </ThemeProvider>
       </body>

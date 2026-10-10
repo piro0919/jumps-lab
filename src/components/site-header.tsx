@@ -2,6 +2,7 @@ import { Plus } from 'lucide-react';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { AccountMenu, type AccountSummary } from '@/components/account-menu';
+import { InstallButton } from '@/components/install-button';
 import { HeaderNav, RECORD_HREF } from '@/components/tab-bar';
 import { buttonVariants } from '@/components/ui/button';
 import { AppIcon, Wordmark } from '@/components/layout-ui';
@@ -49,6 +50,7 @@ export async function SiteHeader({
             {tLog('recordToday')}
           </Link>
         )}
+        <InstallButton />
         <AccountMenu name={name} email={email} image={image} summary={profile} />
       </div>
     </header>
