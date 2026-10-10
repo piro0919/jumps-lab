@@ -42,6 +42,21 @@ describe('computeBests', () => {
     });
   });
 
+  // 走幅跳で追い風 2.1 m/s の 6.50 は公認されない。2.0 ちょうどと、風速の無い記録は数える
+  it('追い風参考の試合の記録は PB と SB に数えない', () => {
+    const jumps: MarkRow[] = [
+      { day: '2026-06-01', kind: 'competition', markM: 6.5, windMs: 2.1 },
+      { day: '2026-06-01', kind: 'competition', markM: 6.3, windMs: 2.0 },
+      { day: '2026-06-02', kind: 'competition', markM: 6.1, windMs: null },
+      { day: '2026-06-03', kind: 'practice', markM: 6.6, windMs: 3.0 },
+    ];
+    expect(computeBests(jumps, none, '2026-10-11', 1)).toEqual({
+      pbM: 6.3,
+      sbM: 6.3,
+      practiceBestM: 6.6,
+    });
+  });
+
   it('手で入れた SB は、シーズンが変わったら数えない', () => {
     const manual = { ...none, sbM: 2.1, sbSeason: 2025 };
     expect(computeBests(rows, manual, '2026-10-11', 1).sbM).toBe(1.8);

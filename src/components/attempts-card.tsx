@@ -18,7 +18,7 @@ import {
 import { MarkInput } from '@/components/measure-inputs';
 import { Drawer, DrawerContent, DrawerTitle } from '@/components/ui/drawer';
 import type { Attempt } from '@/lib/data';
-import { hasWind, type JumpEvent } from '@/lib/events';
+import { hasWind, isWindAided, type JumpEvent } from '@/lib/events';
 import { formatMark, type Units } from '@/lib/units';
 
 /** 2つ以上から1つを選ぶ、横並びの切り替え（練習・大会、種目） */
@@ -198,6 +198,12 @@ export function AttemptsCard({
                           {attempt.markM === best && (
                             <span className="rounded-full bg-secondary px-2 text-xs font-semibold text-primary">
                               {t('best')}
+                            </span>
+                          )}
+                          {/* 追い風 2.0 m/s 超え。PB・SB には数えていない */}
+                          {isWindAided(attempt.windMs) && (
+                            <span className="rounded-full bg-muted px-2 text-xs font-semibold text-muted-foreground">
+                              {t('windAided')}
                             </span>
                           )}
                         </span>

@@ -143,7 +143,8 @@
     "cancel": "キャンセル",
     "ok": "OK",
     "deleteConfirm": "この記録を削除しますか？",
-    "best": "ベスト"
+    "best": "ベスト",
+    "windAided": "追い風参考"
   },
   "calendar": {
     "addCompetition": "大会を追加",

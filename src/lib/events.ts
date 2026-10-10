@@ -14,3 +14,11 @@ export function isJumpEvent(value: unknown): value is JumpEvent {
 export function hasWind(event: JumpEvent): boolean {
   return event === 'long_jump' || event === 'triple_jump';
 }
+
+/**
+ * 追い風参考か。追い風が 2.0 m/s を超えた記録は公認されない（陸上の規則。走幅跳・三段跳）。
+ * 風速を入れていない記録は判定できないので、参考にしない
+ */
+export function isWindAided(windMs: number | null): boolean {
+  return windMs !== null && windMs > 2.0;
+}

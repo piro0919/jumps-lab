@@ -40,6 +40,7 @@ The owner will make this app usable worldwide (said 2026-10-11). Do not design a
   - Analysis: total count, average, monthly best, trend of the last 10
 - PB / SB / practice best: show the higher of the value computed from attempts and the manually entered value
   - PB and SB count competition marks only; practice marks go to practice best
+  - Wind-aided competition marks (tailwind over +2.0 m/s, long and triple jump) do not count for PB or SB; they show a "wind-aided" badge. Marks without a wind reading count (agreed 2026-10-11)
   - Season: January to December by default; the start month is a user setting
 - Deferred:
   - Videos (a main feature for the friend). Design the attempts table so videos can be attached later.
