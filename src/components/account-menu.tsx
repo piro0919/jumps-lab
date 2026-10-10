@@ -1,6 +1,6 @@
 'use client';
 
-import { LogOut } from 'lucide-react';
+import { LogOut, Settings } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { authClient } from '@/lib/auth-client';
@@ -16,11 +16,13 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 /**
- * ヘッダーの右端の、自分のアイコン（Google の顔写真）。押すと名前とログアウトのメニューが開く。
+ * ヘッダーの右端の、自分のアイコン（Google の顔写真）。押すと名前・設定・ログアウトのメニューが開く。
+ * スマホではここだけが設定への入口（パソコンはサイドメニューの下にもある）。
  * 写真が無い・読めないときは名前の頭文字を出す
  */
 export function AccountMenu({ name, image }: { name: string; image: string | null }) {
   const t = useTranslations('profile');
+  const tNav = useTranslations('nav');
   const router = useRouter();
 
   return (
@@ -39,6 +41,10 @@ export function AccountMenu({ name, image }: { name: string; image: string | nul
           <DropdownMenuLabel className="truncate">{name}</DropdownMenuLabel>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => router.push('/settings')}>
+          <Settings aria-hidden />
+          {tNav('settings')}
+        </DropdownMenuItem>
         <DropdownMenuItem
           variant="destructive"
           onClick={async () => {

@@ -32,7 +32,7 @@ The owner will make this app usable worldwide (said 2026-10-11). Do not design a
 - Features in v1 (same as the prototype):
   - Profile: name, grade, date of birth (replaced age, agreed 2026-10-11), gender, height, weight, events, goal
   - Home: season goal, PB / SB / practice best, weather (Open-Meteo, location permission), days until next competition
-  - Menu (agreed 2026-10-11): Home, Log, Competitions, Analysis. Settings from the header gear
+  - Menu (agreed 2026-10-11): Home, Log, Competitions, Analysis. Settings from the avatar menu and the bottom of the side menu
   - Log: days with marks or a condition, newest first, with a calendar view; a day (`/log/YYYY-MM-DD`, `/log/today`) holds its attempts, condition (physical condition 1–10, fatigue 1–10, sleep hours, injury note) and practice note
   - Attempt: one at a time, with type (practice / competition), mark, wind (optional), note
   - Competitions: upcoming and past lists, add/edit/delete (venue, call room place and time, start time, notes)
@@ -104,7 +104,7 @@ Copy the shape of `~/Repository/onigiri` (which itself copies vocafy). Read its 
 
 ### Screens
 
-- Frame (koidamashii and spatto): a sticky full-width header (icon and name left, settings gear and the account avatar menu right), the menu under it on the left from 1024px, a bottom tab bar on phones. Settings is reached from the header, not the tabs
+- Frame (koidamashii and spatto): a sticky full-width header (icon and name left, the account avatar menu right), the menu under it on the left from 1024px, a bottom tab bar on phones. Settings sits in the avatar menu (name, settings, sign out) and at the bottom of the side menu, not in the tabs (agreed 2026-10-11)
 - System Japanese font stack; shadcn's Geist (Latin only) was removed
 - Minimum width 375px, `viewportFit: 'cover'` with safe-area insets for the bottom tabs
 - No explanatory text or notes on screens
