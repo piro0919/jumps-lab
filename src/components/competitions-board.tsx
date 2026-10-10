@@ -34,6 +34,7 @@ export function CompetitionItem({
   units,
   today,
   onDelete,
+  sample = false,
 }: {
   competition: Competition;
   /** その日に大会として入れた記録の、種目ごとの最高 */
@@ -42,6 +43,8 @@ export function CompetitionItem({
   today: string;
   /** LP の見本では渡さない（押せない枠の中に置く） */
   onDelete?: () => void;
+  /** LP の見本。リンクの先読みをしない（押せない枠の中でも、Next は画面に入ったリンクを先読みする） */
+  sample?: boolean;
 }) {
   const t = useTranslations('calendar');
   const tHome = useTranslations('home');
@@ -119,6 +122,7 @@ export function CompetitionItem({
       </div>
       <Link
         href={`/competitions/${competition.id}/edit`}
+        prefetch={sample ? false : undefined}
         aria-label={t('editCompetition')}
         className={buttonVariants({ variant: 'ghost', size: 'icon' })}
       >

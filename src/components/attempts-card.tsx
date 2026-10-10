@@ -22,6 +22,7 @@ export function AttemptsCard({
   events,
   units,
   attempts,
+  sample = false,
 }: {
   day: string;
   /** 本人の選んだ種目 */
@@ -29,6 +30,8 @@ export function AttemptsCard({
   units: Units;
   /** その日の記録（全種目）。古い順 */
   attempts: Attempt[];
+  /** LP の見本。リンクの先読みをしない（押せない枠の中でも、Next は画面に入ったリンクを先読みする） */
+  sample?: boolean;
 }) {
   const t = useTranslations('today');
   const tEvents = useTranslations('events');
@@ -50,7 +53,11 @@ export function AttemptsCard({
       <CardTitle
         action={
           groups.length === 0 ? undefined : (
-            <Link href={`/log/${day}/new`} className={buttonVariants({ size: 'sm' })}>
+            <Link
+              href={`/log/${day}/new`}
+              prefetch={sample ? false : undefined}
+              className={buttonVariants({ size: 'sm' })}
+            >
               <Plus aria-hidden className="size-4" />
               {t('add')}
             </Link>
@@ -111,6 +118,7 @@ export function AttemptsCard({
                       {/* 行の操作はアイコンだけのボタン（大会の一覧と同じ）。直すのは別の画面 */}
                       <Link
                         href={`/attempts/${attempt.id}/edit`}
+                        prefetch={sample ? false : undefined}
                         aria-label={t('editAttempt')}
                         className={buttonVariants({ variant: 'ghost', size: 'icon' })}
                       >

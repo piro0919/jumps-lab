@@ -14,32 +14,40 @@ import { PAGE_LOCALE_HEADER } from '@/i18n/locales';
 // 規約とポリシー。ログインの画面と Google の同意画面の審査から踏まれるので、誰でも開ける
 const PUBLIC = new Set(['/privacy', '/terms', '/en/privacy', '/en/terms']);
 
-/** LP をその言語で描かせる。言語は src/i18n/request.ts が要求のヘッダーから読む */
-function withLocale(request: NextRequest, locale: 'en' | 'ja') {
-  const headers = new Headers(request.headers);
-  headers.set(PAGE_LOCALE_HEADER, locale);
-  return { request: { headers } };
+/** トップ（/）へ送る。?utm_source などのクエリは残す */
+function toTop(request: NextRequest) {
+  const url = request.nextUrl.clone();
+  url.pathname = '/';
+  return NextResponse.redirect(url);
 }
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  if (PUBLIC.has(pathname)) return NextResponse.next();
+  // 言語のヘッダー（src/i18n/request.ts が読む）は LP にだけ付ける。ブラウザから同じ名前で送られてきたものは
+  // どのページでも外し、LP ではこちらで付け直す
+  const headers = new Headers(request.headers);
+  headers.delete(PAGE_LOCALE_HEADER);
+  const pass = () => NextResponse.next({ request: { headers } });
+
+  if (PUBLIC.has(pathname)) return pass();
 
   const signedIn = getSessionCookie(request) !== null;
 
   // 英語の LP の正しい URL は / なので、/en を直に開いたら / へ
-  if (pathname === '/en') return NextResponse.redirect(new URL('/', request.url));
+  if (pathname === '/en') return toTop(request);
   if (pathname === '/ja') {
-    if (signedIn) return NextResponse.redirect(new URL('/', request.url));
-    return NextResponse.next(withLocale(request, 'ja'));
+    if (signedIn) return toTop(request);
+    headers.set(PAGE_LOCALE_HEADER, 'ja');
+    return pass();
   }
   if (pathname === '/' && !signedIn) {
-    return NextResponse.rewrite(new URL('/en', request.url), withLocale(request, 'en'));
+    headers.set(PAGE_LOCALE_HEADER, 'en');
+    return NextResponse.rewrite(new URL('/en', request.url), { request: { headers } });
   }
 
   const onSignIn = pathname === '/sign-in';
   if (!signedIn && !onSignIn) return NextResponse.redirect(new URL('/sign-in', request.url));
-  return NextResponse.next();
+  return pass();
 }
 
 // ログインの受け口、Next の配信物、アイコンや OG 画像、LP の写真（public/landing）などは通す

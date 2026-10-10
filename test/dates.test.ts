@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  addDays,
   daysBetween,
   isDay,
   isMonth,
@@ -66,5 +67,14 @@ describe('isMonth', () => {
     expect(isMonth('2026-10')).toBe(true);
     expect(isMonth('2026-13')).toBe(false);
     expect(isMonth('2026-00')).toBe(false);
+  });
+});
+
+describe('addDays', () => {
+  it('月と年をまたいでずらす', () => {
+    expect(addDays('2026-10-11', 12)).toBe('2026-10-23');
+    expect(addDays('2026-03-01', -1)).toBe('2026-02-28');
+    expect(addDays('2026-12-31', 1)).toBe('2027-01-01');
+    expect(addDays('2028-02-28', 1)).toBe('2028-02-29');
   });
 });

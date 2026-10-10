@@ -10,7 +10,7 @@ export const LOCALE_COOKIE = 'locale';
 
 /**
  * 言語が URL で決まるページ（LP の / と /ja）の言語。src/proxy.ts が要求に付け、Cookie とブラウザの言語より先に効く。
- * ブラウザから同じ名前で送られても、変わるのは画面の言語だけ
+ * ブラウザから同じ名前で送られてきたものは src/proxy.ts が外す
  */
 export const PAGE_LOCALE_HEADER = 'x-page-locale';
 

@@ -414,6 +414,9 @@ export function segmentClass(active: boolean) {
 
 export const SEGMENTS = 'flex w-fit gap-1 rounded-full bg-muted p-1';
 
+/** LP の見出しの下の文。LP は読ませる文が主役なので、アプリの本文（text-sm）より1段大きい */
+export const LEAD = 'max-w-md text-base leading-relaxed text-muted-foreground';
+
 /**
  * LP の大きな見出し。英字はロゴと同じ Kanit の極太の斜体・大文字で組む（Strong の「Think less. Lift more.」の型）。
  * 日本語は Kanit に字が無いので、端末の字の極太で、斜体にしない（日本語を斜めにすると崩れる）。

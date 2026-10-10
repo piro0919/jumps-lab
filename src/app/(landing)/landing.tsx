@@ -17,11 +17,12 @@ import {
   Watermark,
   Wordmark,
   HALVES,
+  LEAD,
   segmentClass,
 } from '@/components/layout-ui';
 import { TrendChart } from '@/components/trend-chart';
 import type { Attempt } from '@/lib/data';
-import { todayIn } from '@/lib/dates';
+import { addDays, todayIn } from '@/lib/dates';
 import { EVENT_BG, EVENT_MARK, EVENT_TEXT } from '@/lib/events';
 import { formatMarkParts } from '@/lib/units';
 import { Consent } from '../sign-in/consent';
@@ -34,13 +35,6 @@ import { GoogleButton } from '../sign-in/google-button';
  * 見本の選手は走幅跳と三段跳。分析だけ棒高跳にして、高跳と棒高跳の人にも自分の画面だと伝える。
  * DB には触らない（ログインしていない人の表示で DB を起こさない）
  */
-
-/** day から n 日ずらした日（YYYY-MM-DD）。見本の日付を今日からの距離で置き、残りの日数が古びないようにする */
-function shift(day: string, n: number): string {
-  const date = new Date(`${day}T00:00:00Z`);
-  date.setUTCDate(date.getUTCDate() + n);
-  return date.toISOString().slice(0, 10);
-}
 
 function attempt(
   id: string,
@@ -74,7 +68,7 @@ function Feature({
         <Headline size="section" script={script}>
           {title}
         </Headline>
-        <p className="max-w-md text-base leading-relaxed text-muted-foreground">{body}</p>
+        <p className={LEAD}>{body}</p>
       </div>
       <PhoneFrame>{children}</PhoneFrame>
     </section>
@@ -119,7 +113,8 @@ export async function Landing() {
   const tLog = await getTranslations('log');
   const tAnalysis = await getTranslations('analysis');
   const tCompetitions = await getTranslations('competitions');
-  const today = todayIn('UTC');
+  // 見本の日付の「今日」。訪れた人の時間帯は分からないので、日本語は日本、英語は UTC で数える
+  const today = todayIn(locale === 'ja' ? 'Asia/Tokyo' : 'UTC');
   const units = 'metric';
 
   // ホームの見本。走幅跳と三段跳の高校の上位くらいの選手
@@ -135,7 +130,7 @@ export async function Landing() {
   ];
   // 試合の日。14.70 は追い風参考の印付き。いちばん遠い記録を参考にすると「ベスト」と札が2つ並び、
   // スマホの幅で記録が折り返した
-  const meetDay = shift(today, -16);
+  const meetDay = addDays(today, -16);
   const competitionDay = [
     attempt('c1', meetDay, 'triple_jump', 'competition', 14.52, 1.1),
     attempt('c2', meetDay, 'triple_jump', 'competition', 14.7, 2.4),
@@ -143,7 +138,7 @@ export async function Landing() {
   ];
   // 分析の見本は棒高跳の直近10本
   const vaults = [4.1, 4.2, 4.15, 4.3, 4.2, 4.35, 4.3, 4.4, 4.35, 4.5].map((markM, i) => ({
-    day: shift(today, -7 * (10 - i)),
+    day: addDays(today, -7 * (10 - i)),
     kind: 'practice' as const,
     markM,
   }));
@@ -179,7 +174,7 @@ export async function Landing() {
             <Headline as="h1" size="hero" script={script}>
               {t('title')}
             </Headline>
-            <p className="max-w-md text-base leading-relaxed text-muted-foreground">{t('lead')}</p>
+            <p className={LEAD}>{t('lead')}</p>
             <SignInBlock />
           </div>
           <PhoneFrame>
@@ -226,8 +221,15 @@ export async function Landing() {
 
         <Feature title={t('logTitle')} body={t('logBody')} script={script}>
           <PageTitle as="p">{tLog('today')}</PageTitle>
-          <AttemptsCard day={today} events={['long_jump']} units={units} attempts={practiceDay} />
+          <AttemptsCard
+            sample
+            day={today}
+            events={['long_jump']}
+            units={units}
+            attempts={practiceDay}
+          />
           <ConditionCard
+            sample
             log={{
               condition: 8,
               fatigue: 3,
@@ -241,6 +243,7 @@ export async function Landing() {
 
         <Feature title={t('bestsTitle')} body={t('bestsBody')} script={script} flip>
           <AttemptsCard
+            sample
             day={meetDay}
             events={['triple_jump']}
             units={units}
@@ -260,10 +263,11 @@ export async function Landing() {
           <Card>
             <CardTitle>{tCompetitions('upcoming')}</CardTitle>
             <CompetitionItem
+              sample
               competition={{
                 id: 'next',
                 name: t('sampleNextMeet'),
-                day: shift(today, 12),
+                day: addDays(today, 12),
                 venue: t('sampleVenue'),
                 callRoomPlace: null,
                 callRoomTime: '09:40',
@@ -278,6 +282,7 @@ export async function Landing() {
           <Card>
             <CardTitle>{tCompetitions('past')}</CardTitle>
             <CompetitionItem
+              sample
               competition={{
                 id: 'past',
                 name: t('samplePastMeet'),

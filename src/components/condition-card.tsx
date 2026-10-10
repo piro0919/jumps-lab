@@ -14,11 +14,14 @@ export async function ConditionCard({
   log,
   editHref,
   title,
+  sample = false,
 }: {
   log: DayLog | null;
   editHref: string;
   /** 題。無ければ「コンディション」 */
   title?: string;
+  /** LP の見本。リンクの先読みをしない（押せない枠の中でも、Next は画面に入ったリンクを先読みする） */
+  sample?: boolean;
 }) {
   const t = await getTranslations('today');
   const tUnits = await getTranslations('units');
@@ -39,7 +42,11 @@ export async function ConditionCard({
       <CardTitle
         action={
           empty ? undefined : (
-            <Link href={editHref} className={buttonVariants({ variant: 'secondary', size: 'sm' })}>
+            <Link
+              href={editHref}
+              prefetch={sample ? false : undefined}
+              className={buttonVariants({ variant: 'secondary', size: 'sm' })}
+            >
               <Pencil aria-hidden className="size-4" />
               {t('edit')}
             </Link>

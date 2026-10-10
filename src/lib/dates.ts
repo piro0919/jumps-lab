@@ -36,6 +36,13 @@ export function isTimeZone(value: string): boolean {
   }
 }
 
+/** day から n 日ずらした日（YYYY-MM-DD）。n が負なら前の日 */
+export function addDays(day: string, n: number): string {
+  const date = new Date(`${day}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + n);
+  return date.toISOString().slice(0, 10);
+}
+
 /** 2つの日付の差（日数）。b が a より後なら正 */
 export function daysBetween(a: string, b: string): number {
   return Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 86_400_000);
