@@ -48,6 +48,8 @@ The owner will make this app usable worldwide (said 2026-10-11). Do not design a
   - AI advice (practice menu, form feedback)
   - Questions to a coach (the prototype's hidden "coach mode")
 - Not in scope for now: per-height ○×– tracking for high jump and pole vault
+- Landing page (agreed 2026-10-11 after researching jump apps and sports app LPs): signed-out `/` shows the English LP (the proxy rewrites to `/en`, and `/en` itself redirects to `/`), `/ja` the Japanese one; signed-in people get home at `/` and are sent from `/ja` to `/`. The LP language comes from the URL (`x-page-locale` set by the proxy), not the browser, so both get indexed (hreflang en / ja / x-default). Layout: header with wordmark and a language switch only; hero "Built for every jump." / 「跳躍の、一本一本のために。」 with Google's button right there (Strava); a spec band (4 events, +2.0 m/s, m / ft, EN / JA, free); two photos; four feature sections (attempts, wind-legal bests, meets, analysis); a closing photo with the title and the button again; footer with the legal links. Screens are the app's own components fed sample data inside `PhoneFrame` (inert), never screenshots. Sample athlete: long and triple jump; the analysis sample is pole vault. Left out: user counts, reviews, store badges, a how-it-works strip, the origin story (needs the friend's consent), signed-out tools
+  - Photos are free Unsplash photos (credits in `landing.tsx`), resized to 800/1600 WebP in `public/landing` (no Vercel image optimization). The proxy matcher skips `landing/`. A dark night photo melted into the dark theme, so pick bright ones
 
 ## How this repo is built
 
@@ -69,6 +71,7 @@ Copy the shape of `~/Repository/onigiri` (which itself copies vocafy). Read its 
   - Desktop columns: `MAIN_SIDE` (main column plus a 20rem side column: home, analysis) or `HALVES` (two equal columns: the day page, competitions). Never write column widths per page; home and analysis drifted apart that way (owner, 2026-10-11)
   - Colors (owner, 2026-10-11): the app has one color, blue (`primary`), for buttons you press, what is selected, and the next-competition card. Nothing is filled black: black buttons, tabs and cards felt scary to the owner. Links stay ink. Other color only comes from the four event colors, the neon `brand` on "Log today", and red `destructive` for delete confirmations. No Tailwind palette classes (blue-600 etc.) outside the weather card's skies
   - No hex colors outside Google's button and the OG image
+  - The LP has its own parts in layout-ui: `Headline` (Kanit italic upper case for Latin, system extrabold for Japanese) and `PhoneFrame` (its device corners are the one radius outside the scale, allowed only inside layout-ui). `PageTitle as="p"` inside frames keeps one h1 per page
   - Header buttons beside a page title must fit at 375px in English: a short verb ("Add"), the title says what
 - No ORM (decided 2026-10-11): the data layer is one file of raw SQL in `src/lib/data.ts`; catch mistakes with tests instead of code generation
 - `pnpm-workspace.yaml`: `allowBuilds` and `minimumReleaseAge: 4320`

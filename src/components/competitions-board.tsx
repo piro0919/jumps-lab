@@ -24,8 +24,11 @@ import { daysBetween } from '@/lib/dates';
 import { EVENT_TEXT } from '@/lib/events';
 import { formatMarkParts, type Units } from '@/lib/units';
 
-/** 大会1件。日付・名前・会場・招集・開始・注意事項。これからの大会には残りの日数を出す */
-function CompetitionItem({
+/**
+ * 大会1件。日付・名前・会場・招集・開始・注意事項。これからの大会には残りの日数を出す。
+ * LP の見本の画面でも、見本のデータで使う
+ */
+export function CompetitionItem({
   competition,
   results,
   units,
@@ -37,7 +40,8 @@ function CompetitionItem({
   results: CompetitionResult[];
   units: Units;
   today: string;
-  onDelete: () => void;
+  /** LP の見本では渡さない（押せない枠の中に置く） */
+  onDelete?: () => void;
 }) {
   const t = useTranslations('calendar');
   const tHome = useTranslations('home');

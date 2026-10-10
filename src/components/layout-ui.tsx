@@ -93,9 +93,12 @@ export function PageTitle({
   children,
   action,
   back,
+  as: Tag = 'h1',
 }: {
   children: ReactNode;
   action?: ReactNode;
+  /** LP のスマホの枠の中では見出しにしない（ページの h1 が枠の数だけ増えるため） */
+  as?: 'h1' | 'p';
   /** label は戻るボタンの読み上げの名前（「記録に戻る」の文。呼ぶ側が nav.backTo で組む） */
   back?: { href: string; label: string };
 }) {
@@ -115,7 +118,7 @@ export function PageTitle({
             <ChevronLeft aria-hidden className="size-6" />
           </Link>
         )}
-        <h1 className="text-[32px] leading-tight font-extrabold tracking-tight">{children}</h1>
+        <Tag className="text-[32px] leading-tight font-extrabold tracking-tight">{children}</Tag>
       </div>
       {action}
     </div>
@@ -410,3 +413,64 @@ export function segmentClass(active: boolean) {
 }
 
 export const SEGMENTS = 'flex w-fit gap-1 rounded-full bg-muted p-1';
+
+/**
+ * LP の大きな見出し。英字はロゴと同じ Kanit の極太の斜体・大文字で組む（Strong の「Think less. Lift more.」の型）。
+ * 日本語は Kanit に字が無いので、端末の字の極太で、斜体にしない（日本語を斜めにすると崩れる）。
+ * hero は1画面目、section は機能の節。アプリの画面では使わない（アプリの題は PageTitle）
+ */
+const HEADLINE_SIZE = {
+  latin: {
+    hero: 'text-[56px] leading-[0.92] lg:text-[88px]',
+    section: 'text-[36px] leading-[0.95] lg:text-[48px]',
+  },
+  ja: {
+    hero: 'text-[40px] leading-tight lg:text-[60px]',
+    section: 'text-[28px] leading-snug lg:text-[36px]',
+  },
+} as const;
+
+export function Headline({
+  children,
+  size,
+  script,
+  as: Tag = 'h2',
+}: {
+  children: ReactNode;
+  size: 'hero' | 'section';
+  /** 文字の種類。日本語の文は斜体と大文字にしない */
+  script: 'latin' | 'ja';
+  as?: 'h1' | 'h2';
+}) {
+  return (
+    <Tag
+      className={cn(
+        'tracking-tight text-balance',
+        script === 'latin'
+          ? 'font-logo uppercase italic'
+          : 'font-extrabold [word-break:auto-phrase]',
+        HEADLINE_SIZE[script][size],
+      )}
+    >
+      {children}
+    </Tag>
+  );
+}
+
+/**
+ * LP でアプリの画面を見せるスマホの枠。中はアプリの部品に見本のデータを流したもので、押せない（inert）。
+ * 枠は灰色（黒で塗ったものは置かない）。高さを決めて、はみ出した下は地の色へ溶かす
+ */
+export function PhoneFrame({ children }: { children: ReactNode }) {
+  return (
+    <div
+      inert
+      className="relative mx-auto w-full max-w-[380px] rounded-[2.75rem] bg-muted p-2.5 shadow-2xl select-none"
+    >
+      <div className="relative h-[620px] overflow-hidden rounded-[2.25rem] bg-background">
+        <div className="flex flex-col gap-3 pt-4">{children}</div>
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-linear-to-t from-background to-transparent" />
+      </div>
+    </div>
+  );
+}

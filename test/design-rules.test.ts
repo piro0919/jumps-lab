@@ -36,15 +36,15 @@ describe('見た目の決まり', () => {
     expect(offenders((l) => /\bfont-medium\b/.test(l))).toEqual([]);
   });
 
-  it('角は full・xl・2xl・3xl だけ（アプリのアイコンの 22% は AppIcon の中だけ）', () => {
+  it('角は full・xl・2xl・3xl だけ（アプリのアイコンの 22% と、LP のスマホの枠は部品の中だけ）', () => {
     expect(
       offenders(
         (l) =>
           /\brounded(?!-(full|xl|2xl|3xl|\[inherit\])\b)(-[\w[\]]+)?\b/.test(
             l.replace(/'rounded-\[22%\]'/, ''),
           ),
-        // 規約の本文の英文（rounded to about 100 m）
-        ['app/(legal)/en/privacy/page.tsx'],
+        // 規約の本文の英文（rounded to about 100 m）と、部品の中（PhoneFrame の端末の角）
+        ['app/(legal)/en/privacy/page.tsx', SYSTEM],
       ),
     ).toEqual([]);
   });

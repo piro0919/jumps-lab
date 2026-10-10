@@ -8,6 +8,12 @@ const DEFAULT_LOCALE: Locale = 'en';
 /** 本人が設定で選んだ言語を入れておく Cookie の名前。無ければブラウザの言語で決める */
 export const LOCALE_COOKIE = 'locale';
 
+/**
+ * 言語が URL で決まるページ（LP の / と /ja）の言語。src/proxy.ts が要求に付け、Cookie とブラウザの言語より先に効く。
+ * ブラウザから同じ名前で送られても、変わるのは画面の言語だけ
+ */
+export const PAGE_LOCALE_HEADER = 'x-page-locale';
+
 export function isLocale(value: unknown): value is Locale {
   return LOCALES.some((l) => l === value);
 }

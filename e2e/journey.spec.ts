@@ -6,8 +6,21 @@ import { signInAsFreshUser } from './session';
  * 最初の登録 → ホーム → 今日の試技を足す → 直す → 大会を足す → 言語を切り替える
  */
 
-test('ログインしていなければログインの画面へ。規約は誰でも開ける', async ({ page }) => {
+test('ログインしていなければ / と /ja は LP、ほかはログインの画面へ。規約は誰でも開ける', async ({
+  page,
+}) => {
   await page.goto('/');
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Built for every jump.' }),
+  ).toBeVisible();
+  await page.goto('/ja');
+  await expect(
+    page.getByRole('heading', { level: 1, name: '跳躍の、一本一本のために。' }),
+  ).toBeVisible();
+  // 英語の LP の中身は /en にあるが、正しい URL は /
+  await page.goto('/en');
+  await expect(page).toHaveURL(/\/$/);
+  await page.goto('/log');
   await expect(page).toHaveURL(/\/sign-in$/);
   for (const path of ['/privacy', '/terms', '/en/privacy', '/en/terms']) {
     const res = await page.goto(path);
