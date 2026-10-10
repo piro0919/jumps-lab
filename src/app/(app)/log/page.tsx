@@ -1,12 +1,12 @@
 import { ChevronRight, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { getFormatter, getTranslations } from 'next-intl/server';
-import { Card, PageTitle } from '@/components/layout-ui';
+import { Card, PageTitle, SEGMENTS, Stat, segmentClass } from '@/components/layout-ui';
 import { LogCalendar } from '@/components/log-calendar';
 import { getProfile, listAllAttempts, listDayLogs } from '@/lib/data';
 import { todayIn } from '@/lib/dates';
 import { buildLogDays } from '@/lib/log-days';
-import { formatMark } from '@/lib/units';
+import { formatMarkParts } from '@/lib/units';
 import { requireViewer } from '@/lib/viewer';
 
 /**
@@ -34,11 +34,6 @@ export default async function Log({ searchParams }: PageProps<'/log'>) {
   const tEvents = await getTranslations('events');
   const format = await getFormatter();
 
-  const tab = (active: boolean) =>
-    `flex h-8 items-center rounded-lg px-3 text-sm font-semibold ${
-      active ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'
-    }`;
-
   return (
     <main className="flex flex-col gap-3">
       <PageTitle
@@ -55,14 +50,18 @@ export default async function Log({ searchParams }: PageProps<'/log'>) {
         {tNav('log')}
       </PageTitle>
 
-      <nav className="mx-4 flex w-fit gap-1 rounded-xl bg-muted p-1">
-        <Link href="/log" aria-current={calendar ? undefined : 'page'} className={tab(!calendar)}>
+      <nav className={`mx-4 ${SEGMENTS}`}>
+        <Link
+          href="/log"
+          aria-current={calendar ? undefined : 'page'}
+          className={segmentClass(!calendar)}
+        >
           {t('list')}
         </Link>
         <Link
           href="/log?view=calendar"
           aria-current={calendar ? 'page' : undefined}
-          className={tab(calendar)}
+          className={segmentClass(calendar)}
         >
           {t('calendar')}
         </Link>
@@ -77,47 +76,41 @@ export default async function Log({ searchParams }: PageProps<'/log'>) {
           <p className="text-sm text-muted-foreground">{t('empty')}</p>
         </Card>
       ) : (
-        <Card className="p-0">
-          <ul className="flex flex-col divide-y divide-border">
-            {days.map((entry) => (
-              <li key={entry.day}>
-                <Link
-                  href={`/log/${entry.day}`}
-                  className="flex items-center gap-3 px-4 py-3 hover:bg-accent"
-                >
-                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                    <span className="font-semibold">
-                      {entry.day === today
-                        ? t('today')
-                        : format.dateTime(new Date(`${entry.day}T00:00:00Z`), {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric',
-                            weekday: 'short',
-                            timeZone: 'UTC',
-                          })}
-                    </span>
-                    <span className="truncate text-sm text-muted-foreground">
-                      {[
-                        ...entry.events.map((e) =>
-                          t('eventSummary', {
-                            event: tEvents(e.event),
-                            mark: formatMark(e.bestM, profile.units),
-                            count: e.count,
-                          }),
-                        ),
-                        entry.condition !== null && t('condition', { value: entry.condition }),
-                      ]
-                        .filter(Boolean)
-                        .join(' · ')}
-                    </span>
+        <ul className="flex flex-col gap-3 lg:grid lg:grid-cols-2">
+          {days.map((entry) => (
+            <li key={entry.day}>
+              <Link href={`/log/${entry.day}`} className="block">
+                <Card className="flex flex-col gap-3 hover:bg-accent/40">
+                  <span className="flex items-center justify-between text-sm font-semibold text-muted-foreground">
+                    {entry.day === today
+                      ? t('today')
+                      : format.dateTime(new Date(`${entry.day}T00:00:00Z`), {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                          weekday: 'short',
+                          timeZone: 'UTC',
+                        })}
+                    <ChevronRight aria-hidden className="size-4" />
                   </span>
-                  <ChevronRight aria-hidden className="size-4 shrink-0 text-muted-foreground" />
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </Card>
+                  <div className="flex flex-wrap gap-x-6 gap-y-3">
+                    {entry.events.map((e) => (
+                      <Stat
+                        key={e.event}
+                        size="sm"
+                        value={formatMarkParts(e.bestM, profile.units)}
+                        label={t('eventLabel', { event: tEvents(e.event), count: e.count })}
+                      />
+                    ))}
+                    {entry.condition !== null && (
+                      <Stat size="sm" value={`${entry.condition}/10`} label={t('conditionLabel')} />
+                    )}
+                  </div>
+                </Card>
+              </Link>
+            </li>
+          ))}
+        </ul>
       )}
     </main>
   );

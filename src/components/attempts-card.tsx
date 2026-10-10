@@ -14,7 +14,9 @@ import {
   Input,
   PrimaryButton,
   SubtleButton,
+  segmentClass,
 } from '@/components/layout-ui';
+import { cn } from 'cn';
 import { MarkInput } from '@/components/measure-inputs';
 import { Drawer, DrawerContent, DrawerTitle } from '@/components/ui/drawer';
 import type { Attempt } from '@/lib/data';
@@ -35,7 +37,7 @@ function Segmented<T extends string>({
 }) {
   return (
     <div
-      className="grid gap-1 rounded-xl bg-muted p-1"
+      className="grid gap-1 rounded-full bg-muted p-1"
       style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}
     >
       {options.map((option) => (
@@ -44,9 +46,7 @@ function Segmented<T extends string>({
           type="button"
           aria-pressed={value === option}
           onClick={() => onChange(option)}
-          className={`h-9 truncate rounded-lg px-1 text-sm font-semibold ${
-            value === option ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'
-          }`}
+          className={cn(segmentClass(value === option), 'h-9 truncate px-1')}
         >
           {label(option)}
         </button>
@@ -192,7 +192,7 @@ export function AttemptsCard({
                       </span>
                       <span className="flex min-w-0 flex-1 flex-col">
                         <span className="flex items-baseline gap-2">
-                          <span className="text-lg font-bold tabular-nums">
+                          <span className="font-display text-[26px] leading-none font-extrabold italic tabular-nums">
                             {formatMark(attempt.markM, units)}
                           </span>
                           {attempt.markM === best && (

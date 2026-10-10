@@ -40,6 +40,15 @@ export function formatMark(meters: number, units: Units): string {
   return feet === 0 ? `${whole}${fraction}"` : `${feet}' ${whole}${fraction}"`;
 }
 
+/**
+ * 記録を数字と単位に分ける。大きな数字の横に単位を小さく添えるため。
+ * imperial はフィートとインチの記号が数字の一部なので、単位は空
+ */
+export function formatMarkParts(meters: number, units: Units): { value: string; unit: string } {
+  if (units === 'imperial') return { value: formatMark(meters, units), unit: '' };
+  return { value: formatMark(meters, units).replace(/ m$/, ''), unit: 'm' };
+}
+
 export function cmToFeetInches(cm: number): FeetInches {
   const totalInches = Math.round(cm / 2.54);
   return { feet: Math.floor(totalInches / 12), inches: totalInches % 12 };

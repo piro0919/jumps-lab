@@ -1,11 +1,11 @@
 import Link from 'next/link';
 import { getFormatter, getLocale, getTranslations } from 'next-intl/server';
 import { TrendChart } from '@/components/trend-chart';
-import { Card, CardTitle, PageTitle } from '@/components/layout-ui';
+import { Card, CardTitle, PageTitle, SEGMENTS, Stat, segmentClass } from '@/components/layout-ui';
 import { analyze } from '@/lib/analysis';
 import { getProfile, listAttempts } from '@/lib/data';
 import { isJumpEvent } from '@/lib/events';
-import { formatMark } from '@/lib/units';
+import { formatMark, formatMarkParts } from '@/lib/units';
 import { requireViewer } from '@/lib/viewer';
 
 const KINDS = ['all', 'practice', 'competition'] as const;
@@ -37,10 +37,6 @@ export default async function Analysis({ searchParams }: PageProps<'/analysis'>)
     if (query.get('kind') === 'all') query.delete('kind');
     return `/analysis?${query}`;
   };
-  const segment = (active: boolean) =>
-    `flex h-8 items-center rounded-lg px-3 text-sm font-semibold ${
-      active ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'
-    }`;
 
   return (
     <main className="flex flex-col gap-3">
@@ -48,26 +44,26 @@ export default async function Analysis({ searchParams }: PageProps<'/analysis'>)
 
       <div className="mx-4 flex flex-wrap gap-2">
         {profile.events.length > 1 && (
-          <nav className="flex w-fit gap-1 rounded-xl bg-muted p-1">
+          <nav className={SEGMENTS}>
             {profile.events.map((e) => (
               <Link
                 key={e}
                 href={href({ event: e })}
                 aria-current={e === event ? 'page' : undefined}
-                className={segment(e === event)}
+                className={segmentClass(e === event)}
               >
                 {tEvents(e)}
               </Link>
             ))}
           </nav>
         )}
-        <nav className="flex w-fit gap-1 rounded-xl bg-muted p-1">
+        <nav className={SEGMENTS}>
           {KINDS.map((k) => (
             <Link
               key={k}
               href={href({ kind: k })}
               aria-current={k === kind ? 'page' : undefined}
-              className={segment(k === kind)}
+              className={segmentClass(k === kind)}
             >
               {t(k)}
             </Link>
@@ -77,18 +73,16 @@ export default async function Analysis({ searchParams }: PageProps<'/analysis'>)
 
       <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[3fr_2fr] lg:items-start">
         <div className="flex flex-col gap-3">
-          <div className="mx-4 grid grid-cols-2 gap-3">
-            <section className="rounded-2xl bg-card p-4">
-              <h2 className="text-[13px] font-medium text-muted-foreground">{t('total')}</h2>
-              <p className="text-[28px] font-bold tabular-nums">{result.total}</p>
-            </section>
-            <section className="rounded-2xl bg-card p-4">
-              <h2 className="text-[13px] font-medium text-muted-foreground">{t('average')}</h2>
-              <p className="text-[28px] font-bold tabular-nums">
-                {result.averageM === null ? '—' : formatMark(result.averageM, profile.units)}
-              </p>
-            </section>
-          </div>
+          <Card className="grid gap-4 sm:grid-cols-2">
+            <Stat size="hero" value={result.total} label={t('total')} />
+            <Stat
+              size="hero"
+              value={
+                result.averageM === null ? null : formatMarkParts(result.averageM, profile.units)
+              }
+              label={t('average')}
+            />
+          </Card>
 
           <Card>
             <CardTitle>{t('trend')}</CardTitle>
@@ -114,7 +108,9 @@ export default async function Analysis({ searchParams }: PageProps<'/analysis'>)
                       timeZone: 'UTC',
                     })}
                   </span>
-                  <span className="font-bold tabular-nums">{formatMark(bestM, profile.units)}</span>
+                  <span className="font-display text-xl font-extrabold italic tabular-nums">
+                    {formatMark(bestM, profile.units)}
+                  </span>
                 </li>
               ))}
             </ul>

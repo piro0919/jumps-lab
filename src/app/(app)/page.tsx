@@ -30,34 +30,23 @@ async function EventCard({
   // 目標までの差は SB から測る（今季の目標なので）
   const gap = goalM !== null && bests.sbM !== null ? goalM - bests.sbM : null;
 
+  /*
+   * 手本の Nike Run Club の要約の形。主役の PB を大きく、その下に SB・練習ベスト・今季の目標を横に3つ。
+   * どの数字も押すとその場で手で直せる
+   */
   return (
-    <Card className="flex flex-col gap-3">
-      <CardTitle>{tEvents(event)}</CardTitle>
+    <Card className="flex flex-col gap-4">
+      <h2 className="text-sm font-bold">{tEvents(event)}</h2>
       <MarkEditor
         event={event}
-        field="seasonGoalM"
-        label={t('goal')}
-        shown={goalM}
-        manual={goalM}
+        field="manualPbM"
+        label={t('pb')}
+        shown={bests.pbM}
+        manual={manual.pbM}
         units={units}
         large
       />
-      {gap !== null && (
-        <p
-          className={`-mt-1 text-sm font-semibold ${gap <= 0 ? 'text-good' : 'text-muted-foreground'}`}
-        >
-          {gap <= 0 ? t('goalReached') : t('toGoal', { distance: formatMark(gap, units) })}
-        </p>
-      )}
-      <div className="flex flex-col divide-y divide-border border-t border-border [&>*]:py-3 [&>*:last-child]:pb-0">
-        <MarkEditor
-          event={event}
-          field="manualPbM"
-          label={t('pb')}
-          shown={bests.pbM}
-          manual={manual.pbM}
-          units={units}
-        />
+      <div className="grid grid-cols-3 gap-2">
         <MarkEditor
           event={event}
           field="manualSbM"
@@ -74,7 +63,22 @@ async function EventCard({
           manual={manual.practiceBestM}
           units={units}
         />
+        <MarkEditor
+          event={event}
+          field="seasonGoalM"
+          label={t('goal')}
+          shown={goalM}
+          manual={goalM}
+          units={units}
+        />
       </div>
+      {gap !== null && (
+        <p
+          className={`-mt-1 text-sm font-semibold ${gap <= 0 ? 'text-good' : 'text-muted-foreground'}`}
+        >
+          {gap <= 0 ? t('goalReached') : t('toGoal', { distance: formatMark(gap, units) })}
+        </p>
+      )}
     </Card>
   );
 }

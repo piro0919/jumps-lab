@@ -13,8 +13,53 @@ import type { ComponentProps, ReactNode } from 'react';
 export function PageTitle({ children, action }: { children: ReactNode; action?: ReactNode }) {
   return (
     <div className="flex items-end justify-between gap-3 px-4 pt-6 pb-3">
-      <h1 className="text-[28px] leading-tight font-bold tracking-tight">{children}</h1>
+      <h1 className="text-[32px] leading-tight font-extrabold tracking-tight">{children}</h1>
       {action}
+    </div>
+  );
+}
+
+/**
+ * 数字を主役にした1項目（手本の Nike Run Club の「20.6 / Miles」の形）。
+ * 数字は細長く太い斜体の字で大きく、単位は横に小さく、ラベルは下に小さく置く。
+ * 値が無いときは薄いダッシュ
+ */
+export function Stat({
+  value,
+  label,
+  size = 'md',
+}: {
+  value: { value: string; unit: string } | string | number | null;
+  label: string;
+  size?: 'hero' | 'md' | 'sm';
+}) {
+  const parts =
+    value === null ? null : typeof value === 'object' ? value : { value: String(value), unit: '' };
+  const numberSize = {
+    hero: 'text-[64px] leading-[0.95]',
+    md: 'text-[30px] leading-none',
+    sm: 'text-[22px] leading-none',
+  }[size];
+
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="flex items-baseline gap-1">
+        <span
+          className={cn(
+            'font-display font-extrabold tracking-tight tabular-nums italic',
+            numberSize,
+            parts === null && 'text-muted-foreground/40',
+          )}
+        >
+          {parts === null ? '—' : parts.value}
+        </span>
+        {parts?.unit && (
+          <span className="font-display text-lg font-bold text-muted-foreground italic">
+            {parts.unit}
+          </span>
+        )}
+      </span>
+      <span className="text-[13px] font-medium text-muted-foreground">{label}</span>
     </div>
   );
 }
@@ -129,3 +174,16 @@ export function SubtleButton({ className, ...props }: ComponentProps<typeof Butt
 export function ErrorText({ children }: { children: ReactNode }) {
   return children ? <p className="text-sm text-destructive">{children}</p> : null;
 }
+
+/**
+ * 切り替えの1つ分の見た目（手本の Nike Run Club の W・M・Y・All）。選んだものを丸く塗る。
+ * 並べる外側は SEGMENTS
+ */
+export function segmentClass(active: boolean) {
+  return cn(
+    'flex h-8 items-center justify-center rounded-full px-3.5 text-sm font-semibold whitespace-nowrap transition-colors',
+    active ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground',
+  );
+}
+
+export const SEGMENTS = 'flex w-fit gap-1 rounded-full bg-muted p-1';

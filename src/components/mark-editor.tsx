@@ -5,9 +5,9 @@ import { ActionForm } from '@/components/action-form';
 import { useActionState, useState } from 'react';
 import { saveTargetAction } from '@/app/actions/targets';
 import { MarkInput } from '@/components/measure-inputs';
-import { PrimaryButton, SubtleButton } from '@/components/layout-ui';
+import { PrimaryButton, Stat, SubtleButton } from '@/components/layout-ui';
 import type { JumpEvent } from '@/lib/events';
-import { formatMark, type Units } from '@/lib/units';
+import { formatMarkParts, type Units } from '@/lib/units';
 
 /**
  * 目標やベストの1行。押すとその場で入力欄に変わる（プロトタイプの「タップして入力」）。
@@ -64,16 +64,13 @@ export function MarkEditor({
     <button
       type="button"
       onClick={() => setEditing(true)}
-      className="flex w-full items-baseline justify-between gap-3 text-left"
+      className="w-full rounded-xl text-left hover:bg-accent/60"
     >
-      <span className="text-[13px] font-medium text-muted-foreground">{label}</span>
-      <span
-        className={`font-bold tabular-nums ${large ? 'text-[34px] leading-none' : 'text-xl'} ${
-          shown === null ? 'text-muted-foreground/40' : ''
-        }`}
-      >
-        {shown === null ? '—' : formatMark(shown, units)}
-      </span>
+      <Stat
+        value={shown === null ? null : formatMarkParts(shown, units)}
+        label={label}
+        size={large ? 'hero' : 'md'}
+      />
     </button>
   );
 }

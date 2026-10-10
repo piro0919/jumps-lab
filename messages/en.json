@@ -56,8 +56,8 @@
     "list": "List",
     "calendar": "Calendar",
     "empty": "No marks yet.",
-    "eventSummary": "{event} {mark} ({count, plural, one {# jump} other {# jumps}})",
-    "condition": "Body {value}/10",
+    "eventLabel": "{event} · {count, plural, one {# jump} other {# jumps}}",
+    "conditionLabel": "Body",
     "previousMonth": "Previous month",
     "nextMonth": "Next month"
   },

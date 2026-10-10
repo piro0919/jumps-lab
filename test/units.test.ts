@@ -4,6 +4,7 @@ import {
   feetInchesToCm,
   feetInchesToMeters,
   formatMark,
+  formatMarkParts,
   kgToLb,
   lbToKg,
   metersToFeetInches,
@@ -81,5 +82,15 @@ describe('metric の表示', () => {
     expect(formatMark(1.8542, 'metric')).toBe('1.85 m');
     expect(formatMark(1.8599, 'metric')).toBe('1.85 m');
     expect(formatMark(1.86, 'metric')).toBe('1.86 m');
+  });
+});
+
+describe('formatMarkParts', () => {
+  it('metric は数字と m に分ける', () => {
+    expect(formatMarkParts(1.8542, 'metric')).toEqual({ value: '1.85', unit: 'm' });
+  });
+
+  it('imperial は記号ごと数字にする', () => {
+    expect(formatMarkParts(1.8542, 'imperial')).toEqual({ value: `6' 1"`, unit: '' });
   });
 });

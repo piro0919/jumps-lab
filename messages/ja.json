@@ -56,8 +56,8 @@
     "list": "一覧",
     "calendar": "カレンダー",
     "empty": "記録はまだありません。",
-    "eventSummary": "{event} {mark}（{count}本）",
-    "condition": "体調 {value}/10",
+    "eventLabel": "{event}・{count}本",
+    "conditionLabel": "体調",
     "previousMonth": "前の月",
     "nextMonth": "次の月"
   },
