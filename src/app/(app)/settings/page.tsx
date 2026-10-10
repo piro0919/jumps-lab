@@ -1,6 +1,5 @@
 import { getLocale, getTranslations } from 'next-intl/server';
 import { ProfileForm } from '@/components/profile-form';
-import { SignOutButton } from '@/components/sign-out-button';
 import { PageTitle } from '@/components/layout-ui';
 import { getProfile } from '@/lib/data';
 import { todayIn } from '@/lib/dates';
@@ -28,7 +27,6 @@ export default async function Settings() {
         defaultName={profile.name}
         locale={await getLocale()}
       />
-      <SignOutButton />
     </main>
   );
 }

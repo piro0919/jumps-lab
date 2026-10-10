@@ -1,6 +1,6 @@
 'use client';
 
-import { CalendarDays, ChartLine, House, PencilLine, Settings } from 'lucide-react';
+import { CalendarDays, ChartLine, House, PencilLine } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -10,7 +10,6 @@ const TABS = [
   { href: '/today', key: 'today', Icon: PencilLine },
   { href: '/calendar', key: 'calendar', Icon: CalendarDays },
   { href: '/analysis', key: 'analysis', Icon: ChartLine },
-  { href: '/settings', key: 'settings', Icon: Settings },
 ] as const;
 
 function useActive() {
@@ -20,11 +19,10 @@ function useActive() {
 
 /**
  * 画面の切り替え。スマホは下のタブ（iPhone のホームバーの分は safe-area で空ける）、
- * 幅 1024px 以上は左のメニュー。中身は同じ5つ
+ * 幅 1024px 以上はヘッダーの下の左のメニュー。中身は同じ4つ（設定はヘッダーの歯車から）
  */
 export function TabBar() {
   const t = useTranslations('nav');
-  const tMeta = useTranslations('metadata');
   const isActive = useActive();
 
   return (
@@ -51,12 +49,7 @@ export function TabBar() {
         </ul>
       </nav>
 
-      <nav className="fixed inset-y-0 left-0 z-10 hidden w-60 flex-col gap-6 border-r border-border bg-card px-3 py-6 lg:flex">
-        <Link href="/" className="flex items-center gap-2.5 px-3">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/icon-192x192.png" alt="" className="size-8 rounded-lg" />
-          <span className="text-lg font-bold tracking-tight">{tMeta('title')}</span>
-        </Link>
+      <nav className="fixed top-16 bottom-0 left-0 z-10 hidden w-60 flex-col border-r border-border bg-card px-3 py-4 lg:flex">
         <ul className="flex flex-col gap-1">
           {TABS.map(({ href, key, Icon }) => {
             const active = isActive(href);

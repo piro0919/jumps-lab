@@ -103,6 +103,8 @@ Copy the shape of `~/Repository/onigiri` (which itself copies vocafy). Read its 
 
 ### Screens
 
+- Frame (koidamashii and spatto): a sticky full-width header (icon and name left, settings gear and the account avatar menu right), the menu under it on the left from 1024px, a bottom tab bar on phones. Settings is reached from the header, not the tabs
+- System Japanese font stack; shadcn's Geist (Latin only) was removed
 - Minimum width 375px, `viewportFit: 'cover'` with safe-area insets for the bottom tabs
 - No explanatory text or notes on screens
 - PWA: `app/manifest.ts` with `id: '/'`, no service worker. `favicon.ico` must be RGBA

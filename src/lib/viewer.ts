@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { cache } from 'react';
 import { getAuth } from '@/lib/auth';
 
-export type Viewer = { userId: string; name: string };
+export type Viewer = { userId: string; name: string; image: string | null };
 
 /**
  * いまログインしている人。いなければログインの画面へ送る。
@@ -15,5 +15,9 @@ export type Viewer = { userId: string; name: string };
 export const requireViewer = cache(async (): Promise<Viewer> => {
   const session = await getAuth().api.getSession({ headers: await headers() });
   if (!session) redirect('/sign-in');
-  return { userId: session.user.id, name: session.user.name };
+  return {
+    userId: session.user.id,
+    name: session.user.name,
+    image: session.user.image ?? null,
+  };
 });
