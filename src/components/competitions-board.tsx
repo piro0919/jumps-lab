@@ -6,7 +6,7 @@ import { useState, useTransition } from 'react';
 import { deleteCompetitionAction } from '@/app/actions/competitions';
 import { CompetitionForm } from '@/components/competition-form';
 import { ConfirmDialog } from '@/components/confirm-dialog';
-import { Card, CardTitle, PrimaryButton, Stat } from '@/components/layout-ui';
+import { Card, CardTitle, PageTitle, PrimaryButton, Stat } from '@/components/layout-ui';
 import type { Competition } from '@/lib/data';
 import type { CompetitionResult } from '@/lib/competition-results';
 import { daysBetween } from '@/lib/dates';
@@ -133,12 +133,15 @@ function CompetitionItem({
  * 足す・直す・消すをここで行う
  */
 export function CompetitionsBoard({
+  title,
   upcoming,
   past,
   results,
   units,
   today,
 }: {
+  /** 画面の見出し。追加のボタンをその右端に置くので、見出しごとここで描く */
+  title: string;
   upcoming: Competition[];
   past: Competition[];
   /** 日付ごとの大会の結果 */
@@ -189,23 +192,26 @@ export function CompetitionsBoard({
 
   return (
     <>
-      {editing === 'new' && (
-        <Card>
-          <CardTitle>{tCalendar('addCompetition')}</CardTitle>
-          <CompetitionForm initial={null} defaultDay={today} onDone={() => setEditing(null)} />
-        </Card>
-      )}
-      {editing !== 'new' && (
-        <div className="px-4">
+      <PageTitle
+        action={
           <PrimaryButton
             type="button"
+            disabled={editing === 'new'}
             onClick={() => setEditing('new')}
             className="h-9 px-4 text-sm"
           >
             <Plus aria-hidden className="size-4" />
             {tCalendar('addCompetition')}
           </PrimaryButton>
-        </div>
+        }
+      >
+        {title}
+      </PageTitle>
+      {editing === 'new' && (
+        <Card>
+          <CardTitle>{tCalendar('addCompetition')}</CardTitle>
+          <CompetitionForm initial={null} defaultDay={today} onDone={() => setEditing(null)} />
+        </Card>
       )}
       <div className="flex flex-col gap-3 lg:grid lg:grid-cols-2 lg:items-start">
         {section(t('upcoming'), upcoming, t('noUpcoming'))}

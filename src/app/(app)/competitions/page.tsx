@@ -1,6 +1,5 @@
 import { getTranslations } from 'next-intl/server';
 import { CompetitionsBoard } from '@/components/competitions-board';
-import { PageTitle } from '@/components/layout-ui';
 import { competitionResults } from '@/lib/competition-results';
 import { getProfile, listAllAttempts, listCompetitions } from '@/lib/data';
 import { todayIn } from '@/lib/dates';
@@ -22,8 +21,8 @@ export default async function Competitions() {
 
   return (
     <main className="flex flex-col gap-3">
-      <PageTitle>{t('competitions')}</PageTitle>
       <CompetitionsBoard
+        title={t('competitions')}
         upcoming={all.filter((c) => c.day >= today)}
         past={all.filter((c) => c.day < today).reverse()}
         results={Object.fromEntries(competitionResults(attempts))}
