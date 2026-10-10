@@ -161,7 +161,7 @@ export default async function Home() {
             className="mx-4 flex items-center gap-4 rounded-3xl bg-primary p-5 text-primary-foreground"
           >
             <div className="flex min-w-0 flex-1 flex-col gap-1">
-              <SectionTitle inverse>{t('nextCompetition')}</SectionTitle>
+              <SectionTitle inverse="primary">{t('nextCompetition')}</SectionTitle>
               <span className="truncate text-lg font-extrabold">
                 {competition ? competition.name : t('noCompetition')}
               </span>

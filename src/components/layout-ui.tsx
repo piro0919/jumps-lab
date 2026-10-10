@@ -183,10 +183,23 @@ export function SectionTitle({
   inverse = false,
 }: {
   children: ReactNode;
-  inverse?: boolean;
+  /**
+   * 色付きの地の上。true は白い字（種目の色の地）。'primary' はアプリの青の地の上の字の色
+   * （ダークでは青が明るくなるので、白だと 3.12 しか取れなかった）
+   */
+  inverse?: boolean | 'primary';
 }) {
   return (
-    <h2 className={cn('text-base font-extrabold', inverse ? 'text-white' : 'text-foreground')}>
+    <h2
+      className={cn(
+        'text-base font-extrabold',
+        inverse === 'primary'
+          ? 'text-primary-foreground'
+          : inverse
+            ? 'text-white'
+            : 'text-foreground',
+      )}
+    >
       {children}
     </h2>
   );

@@ -15,7 +15,6 @@ import {
 } from '@/components/layout-ui';
 import { analyze } from '@/lib/analysis';
 import { getProfile, listAttempts } from '@/lib/data';
-import { cn } from 'cn';
 import { EVENT_BG, EVENT_MARK, EVENT_TEXT, isJumpEvent } from '@/lib/events';
 import { formatMark, formatMarkParts } from '@/lib/units';
 import { requireViewer } from '@/lib/viewer';
@@ -63,10 +62,7 @@ export default async function Analysis({ searchParams }: PageProps<'/analysis'>)
                 key={e}
                 href={href({ event: e })}
                 aria-current={e === event ? 'page' : undefined}
-                className={cn(
-                  segmentClass(e === event),
-                  e === event && `${EVENT_BG[e]} text-white`,
-                )}
+                className={segmentClass(e === event)}
               >
                 {tEvents(e)}
               </Link>
