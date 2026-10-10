@@ -21,11 +21,15 @@
   --color-good: var(--good);
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
-  /* 種目の色。白い字を載せて 4.5 を超える濃さ（走高跳 4.85・走幅跳 5.18・三段跳 5.12・棒高跳 7.10） */
+  /*
+   * 種目の色。白い字を載せて 4.5 を超える濃さ（走高跳 4.85・走幅跳 5.18・三段跳 5.12・棒高跳 6.32）。
+   * 棒高跳は紫だと走高跳の青に近いと言われ、赤紫にした（本人、2026-10-11。dataviz の検査で
+   * 青との差が 15.4 から 22.9 に広がり、色覚の検査も通った）
+   */
   --color-high-jump: #1e6fd9;
   --color-long-jump: #c2410c;
   --color-triple-jump: #2f7d32;
-  --color-pole-vault: #6d28d9;
+  --color-pole-vault: #a21caf;
   /* 種目の色の字。明るいテーマは地の色と同じで、暗いテーマでは明るくして暗い面の上で 4.5 を超えさせる */
   --color-high-jump-ink: var(--high-jump-ink);
   --color-long-jump-ink: var(--long-jump-ink);
@@ -94,7 +98,7 @@
   --high-jump-ink: #1e6fd9;
   --long-jump-ink: #c2410c;
   --triple-jump-ink: #2f7d32;
-  --pole-vault-ink: #6d28d9;
+  --pole-vault-ink: #a21caf;
   --border: #e5e5ea;
   --input: #e5e5ea;
   --ring: #1a64c8;
@@ -124,7 +128,7 @@
   --high-jump-ink: #60a5fa;
   --long-jump-ink: #fb923c;
   --triple-jump-ink: #4ade80;
-  --pole-vault-ink: #a78bfa;
+  --pole-vault-ink: #e879f9;
   --border: #2c2c2e;
   --input: #3a3a3c;
   --ring: #4b93f0;
