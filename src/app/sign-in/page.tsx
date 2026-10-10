@@ -32,8 +32,9 @@ export default async function SignIn() {
       </div>
       <div className="flex w-full flex-col gap-4">
         <GoogleButton />
-        {/* 同意は押すボタンの下に一文で（押す動作の名前に合わせる。spatto と同じ） */}
-        <p className="text-center text-xs leading-relaxed text-muted-foreground">
+        {/* 同意は押すボタンの下に一文で（押す動作の名前に合わせる。spatto と同じ）。
+            行の長さをそろえ、日本語は文節の途中で折らない（最後の行に「ものとみなします。」だけが落ちていた） */}
+        <p className="text-center text-xs leading-relaxed text-balance text-muted-foreground [word-break:auto-phrase]">
           {tSignIn.rich('consent', {
             terms: (chunks) => (
               <Link href={`${prefix}/terms`} className="text-primary underline">
