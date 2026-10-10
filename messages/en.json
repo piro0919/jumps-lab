@@ -107,8 +107,8 @@
   },
   "home": {
     "goal": "Season goal",
-    "pb": "PB",
-    "sb": "SB",
+    "pb": "Personal best",
+    "sb": "Season best",
     "practiceBest": "Practice best",
     "toGoal": "{distance} to go",
     "goalReached": "Goal reached",

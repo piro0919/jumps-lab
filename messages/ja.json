@@ -107,8 +107,8 @@
   },
   "home": {
     "goal": "今季の目標",
-    "pb": "PB",
-    "sb": "SB",
+    "pb": "自己ベスト",
+    "sb": "今季ベスト",
     "practiceBest": "練習ベスト",
     "toGoal": "目標まで {distance}",
     "goalReached": "目標達成",
