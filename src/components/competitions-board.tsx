@@ -5,7 +5,15 @@ import { useFormatter, useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
 import { deleteCompetitionAction } from '@/app/actions/competitions';
 import { ConfirmDialog } from '@/components/confirm-dialog';
-import { Badge, Card, CardTitle, DisplayNumber, PageTitle, Stat } from '@/components/layout-ui';
+import {
+  Badge,
+  Card,
+  CardTitle,
+  DisplayNumber,
+  PageTitle,
+  Stat,
+  HALVES,
+} from '@/components/layout-ui';
 import Link from 'next/link';
 import { Button, buttonVariants } from '@/components/ui/button';
 import type { Competition } from '@/lib/data';
@@ -180,7 +188,7 @@ export function CompetitionsBoard({
       >
         {title}
       </PageTitle>
-      <div className="flex flex-col gap-3 lg:grid lg:grid-cols-2 lg:items-start">
+      <div className={HALVES}>
         {section(t('upcoming'), upcoming, t('noUpcoming'))}
         {section(t('past'), past, t('noPast'))}
       </div>

@@ -102,6 +102,12 @@ describe('見た目の決まり', () => {
     ).toEqual([]);
   });
 
+  it('PC の2列は MAIN_SIDE か HALVES で組む（画面ごとに列の幅を書かない）', () => {
+    expect(
+      offenders((l) => /\blg:grid-cols-\[/.test(l), [SYSTEM, 'components/site-header.tsx']),
+    ).toEqual([]);
+  });
+
   it('色を直に書かない（Google のボタンの決まりの色だけ例外）', () => {
     expect(
       offenders(

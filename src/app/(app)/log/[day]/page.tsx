@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import { AttemptsCard } from '@/components/attempts-card';
 import { ConditionCard } from '@/components/condition-card';
-import { BackLink, PageTitle } from '@/components/layout-ui';
+import { BackLink, PageTitle, HALVES } from '@/components/layout-ui';
 import { getDayLog, getProfile, listAttemptsBetween } from '@/lib/data';
 import { resolveLogDay, todayIn } from '@/lib/dates';
 import { requireViewer } from '@/lib/viewer';
@@ -41,7 +41,7 @@ export default async function LogDay({ params }: PageProps<'/log/[day]'>) {
               timeZone: 'UTC',
             })}
       </PageTitle>
-      <div className="flex flex-col gap-3 lg:grid lg:grid-cols-2 lg:items-start">
+      <div className={HALVES}>
         <AttemptsCard day={day} units={profile.units} attempts={attempts} events={profile.events} />
         <ConditionCard log={log} editHref={`/log/${day}/condition`} />
       </div>

@@ -19,6 +19,14 @@ import type { ComponentProps, ReactNode } from 'react';
  *     ほかに色が付くのは、種目の4色・「今日を記録」の黄緑（brand）・消すときの赤（destructive）だけ
  */
 
+/**
+ * PC（幅 1024px 以上）の2列の組み方。スマホでは縦に積む。
+ * MAIN_SIDE は「主役の列＋右の細い列（20rem）」でホームと分析、HALVES は「同じ幅の2列」で日の画面と大会。
+ * 画面ごとに列の幅を決めていて、似た形のホームと分析で色付きのカードの幅がずれた（本人、2026-10-11）
+ */
+export const MAIN_SIDE = 'flex flex-col gap-3 lg:grid lg:grid-cols-[1fr_20rem] lg:items-start';
+export const HALVES = 'flex flex-col gap-3 lg:grid lg:grid-cols-2 lg:items-start';
+
 /** 欄のラベル。入力欄の上、数字の下、スライダーの名前 */
 export const LABEL = 'text-[13px] font-semibold text-muted-foreground';
 

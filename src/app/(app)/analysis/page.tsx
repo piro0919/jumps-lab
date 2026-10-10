@@ -10,6 +10,7 @@ import {
   Stat,
   Watermark,
   segmentClass,
+  MAIN_SIDE,
 } from '@/components/layout-ui';
 import { analyze } from '@/lib/analysis';
 import { getProfile, listAttempts } from '@/lib/data';
@@ -84,7 +85,7 @@ export default async function Analysis({ searchParams }: PageProps<'/analysis'>)
         </nav>
       </div>
 
-      <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[3fr_2fr] lg:items-start">
+      <div className={MAIN_SIDE}>
         <div className="flex flex-col gap-3">
           <Card
             className={`relative grid gap-4 overflow-hidden text-white sm:grid-cols-2 ${EVENT_BG[event]}`}

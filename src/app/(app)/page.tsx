@@ -1,7 +1,14 @@
 import { ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
-import { Badge, DisplayNumber, PageTitle, SectionTitle, Watermark } from '@/components/layout-ui';
+import {
+  Badge,
+  DisplayNumber,
+  PageTitle,
+  SectionTitle,
+  Watermark,
+  MAIN_SIDE,
+} from '@/components/layout-ui';
 import { MarkEditor } from '@/components/mark-editor';
 import { WeatherCard } from '@/components/weather-card';
 import { computeBests } from '@/lib/bests';
@@ -113,7 +120,7 @@ export default async function Home() {
     <main className="flex flex-col gap-3">
       <PageTitle>{tNav('home')}</PageTitle>
 
-      <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[1fr_20rem] lg:items-start">
+      <div className={MAIN_SIDE}>
         <div className="flex flex-col gap-3">
           {profile.events.map((event) => {
             const target = targets.get(event)!;
