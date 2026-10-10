@@ -4,7 +4,8 @@ import { TrendChart } from '@/components/trend-chart';
 import { Card, CardTitle, PageTitle, SEGMENTS, Stat, segmentClass } from '@/components/layout-ui';
 import { analyze } from '@/lib/analysis';
 import { getProfile, listAttempts } from '@/lib/data';
-import { isJumpEvent } from '@/lib/events';
+import { cn } from 'cn';
+import { EVENT_BG, EVENT_MARK, EVENT_TEXT, isJumpEvent } from '@/lib/events';
 import { formatMark, formatMarkParts } from '@/lib/units';
 import { requireViewer } from '@/lib/viewer';
 
@@ -50,7 +51,10 @@ export default async function Analysis({ searchParams }: PageProps<'/analysis'>)
                 key={e}
                 href={href({ event: e })}
                 aria-current={e === event ? 'page' : undefined}
-                className={segmentClass(e === event)}
+                className={cn(
+                  segmentClass(e === event),
+                  e === event && `${EVENT_BG[e]} text-white`,
+                )}
               >
                 {tEvents(e)}
               </Link>
@@ -73,10 +77,19 @@ export default async function Analysis({ searchParams }: PageProps<'/analysis'>)
 
       <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[3fr_2fr] lg:items-start">
         <div className="flex flex-col gap-3">
-          <Card className="grid gap-4 sm:grid-cols-2">
-            <Stat size="hero" value={result.total} label={t('total')} />
+          <Card
+            className={`relative grid gap-4 overflow-hidden text-white sm:grid-cols-2 ${EVENT_BG[event]}`}
+          >
+            <span
+              aria-hidden
+              className="pointer-events-none absolute -right-3 -bottom-8 font-display text-[160px] leading-none font-extrabold text-white/10 italic select-none"
+            >
+              {EVENT_MARK[event]}
+            </span>
+            <Stat size="hero" inverse value={result.total} label={t('total')} />
             <Stat
               size="hero"
+              inverse
               value={
                 result.averageM === null ? null : formatMarkParts(result.averageM, profile.units)
               }
@@ -87,7 +100,12 @@ export default async function Analysis({ searchParams }: PageProps<'/analysis'>)
           <Card>
             <CardTitle>{t('trend')}</CardTitle>
             {result.recent.length >= 2 ? (
-              <TrendChart rows={result.recent} units={profile.units} locale={locale} />
+              <TrendChart
+                rows={result.recent}
+                units={profile.units}
+                locale={locale}
+                colorClass={EVENT_TEXT[event]}
+              />
             ) : (
               <p className="text-sm text-muted-foreground">{t('needTwo')}</p>
             )}
@@ -108,7 +126,9 @@ export default async function Analysis({ searchParams }: PageProps<'/analysis'>)
                       timeZone: 'UTC',
                     })}
                   </span>
-                  <span className="font-display text-xl font-extrabold italic tabular-nums">
+                  <span
+                    className={`font-display text-2xl font-extrabold italic tabular-nums ${EVENT_TEXT[event]}`}
+                  >
                     {formatMark(bestM, profile.units)}
                   </span>
                 </li>

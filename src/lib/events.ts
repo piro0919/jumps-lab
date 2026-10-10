@@ -30,3 +30,19 @@ export const EVENT_BG: Record<JumpEvent, string> = {
   triple_jump: 'bg-triple-jump',
   pole_vault: 'bg-pole-vault',
 };
+
+/** 種目の色の字。白い地の上でも 4.5 を超える（EVENT_BG と同じ色） */
+export const EVENT_TEXT: Record<JumpEvent, string> = {
+  high_jump: 'text-high-jump',
+  long_jump: 'text-long-jump',
+  triple_jump: 'text-triple-jump',
+  pole_vault: 'text-pole-vault',
+};
+
+/** 種目の英字の略。カードの隅に大きく透かして置く飾りなど（言語によらない） */
+export const EVENT_MARK: Record<JumpEvent, string> = {
+  high_jump: 'HJ',
+  long_jump: 'LJ',
+  triple_jump: 'TJ',
+  pole_vault: 'PV',
+};

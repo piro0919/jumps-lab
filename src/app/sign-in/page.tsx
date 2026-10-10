@@ -10,7 +10,13 @@ export default async function SignIn() {
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-sm flex-col items-center justify-center gap-10 px-6">
-      <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
+      <div className="flex flex-col items-center gap-4">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/icon-192x192.png" alt="" className="size-20 rounded-3xl" />
+        <h1 className="font-display text-[56px] leading-none font-extrabold tracking-tight italic">
+          {t('title')}
+        </h1>
+      </div>
       <div className="flex w-full flex-col gap-4">
         <GoogleButton />
         {/* 同意は押すボタンの下に一文で（押す動作の名前に合わせる。spatto と同じ） */}

@@ -7,17 +7,9 @@ import { WeatherCard } from '@/components/weather-card';
 import { computeBests } from '@/lib/bests';
 import { getProfile, getTargets, listAllAttempts, nextCompetition } from '@/lib/data';
 import { daysBetween, todayIn } from '@/lib/dates';
-import { EVENT_BG, type JumpEvent } from '@/lib/events';
+import { EVENT_BG, EVENT_MARK, type JumpEvent } from '@/lib/events';
 import { formatMark, type Units } from '@/lib/units';
 import { requireViewer } from '@/lib/viewer';
-
-/** 種目の英字の略。カードの隅に大きく透かして置く飾り（言語によらない） */
-const EVENT_MARK: Record<JumpEvent, string> = {
-  high_jump: 'HJ',
-  long_jump: 'LJ',
-  triple_jump: 'TJ',
-  pole_vault: 'PV',
-};
 
 /**
  * 1種目のカード。種目の色で塗り、PB を画面いっぱいの数字で出す（手本の Nike Run Club の色付きのカード）。

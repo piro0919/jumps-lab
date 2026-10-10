@@ -16,10 +16,13 @@ export function TrendChart({
   rows,
   units,
   locale,
+  colorClass = 'text-primary',
 }: {
   rows: MarkRow[];
   units: Units;
   locale: string;
+  /** 線と点の色（種目の色の字のクラス）。線は currentColor で描く */
+  colorClass?: string;
 }) {
   const [active, setActive] = useState<number>(rows.length - 1);
   const marks = rows.map((r) => r.markM);
@@ -49,7 +52,7 @@ export function TrendChart({
           <span className="text-sm text-muted-foreground tabular-nums">{dayLabel(point.day)}</span>
         </div>
       )}
-      <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="w-full" role="img">
+      <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className={`w-full ${colorClass}`} role="img">
         {[max, min].map((m) => (
           <g key={m}>
             <line
@@ -65,7 +68,7 @@ export function TrendChart({
         <path
           d={path}
           fill="none"
-          className="stroke-primary"
+          className="stroke-current"
           strokeWidth={2}
           strokeLinejoin="round"
         />
@@ -77,7 +80,7 @@ export function TrendChart({
               cx={x(i)}
               cy={y(r.markM)}
               r={i === active ? 5 : 4}
-              className={i === active ? 'fill-primary stroke-card' : 'fill-card stroke-primary'}
+              className={i === active ? 'fill-current stroke-card' : 'fill-card stroke-current'}
               strokeWidth={2}
             />
           </g>

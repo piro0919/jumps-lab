@@ -4,6 +4,7 @@ import { getFormatter, getTranslations } from 'next-intl/server';
 import { Card, PageTitle, SEGMENTS, Stat, segmentClass } from '@/components/layout-ui';
 import { LogCalendar } from '@/components/log-calendar';
 import { getProfile, listAllAttempts, listDayLogs } from '@/lib/data';
+import { EVENT_TEXT } from '@/lib/events';
 import { todayIn } from '@/lib/dates';
 import { buildLogDays } from '@/lib/log-days';
 import { formatMarkParts } from '@/lib/units';
@@ -40,7 +41,7 @@ export default async function Log({ searchParams }: PageProps<'/log'>) {
         action={
           <Link
             href="/log/today"
-            className="inline-flex h-9 items-center gap-1 rounded-full bg-primary px-3.5 text-sm font-semibold text-primary-foreground"
+            className="inline-flex h-9 items-center gap-1 rounded-full bg-foreground px-4 text-sm font-bold text-background"
           >
             <Plus aria-hidden className="size-4" />
             {t('recordToday')}
@@ -97,13 +98,14 @@ export default async function Log({ searchParams }: PageProps<'/log'>) {
                     {entry.events.map((e) => (
                       <Stat
                         key={e.event}
-                        size="sm"
+                        size="md"
+                        color={EVENT_TEXT[e.event]}
                         value={formatMarkParts(e.bestM, profile.units)}
                         label={t('eventLabel', { event: tEvents(e.event), count: e.count })}
                       />
                     ))}
                     {entry.condition !== null && (
-                      <Stat size="sm" value={`${entry.condition}/10`} label={t('conditionLabel')} />
+                      <Stat size="md" value={`${entry.condition}/10`} label={t('conditionLabel')} />
                     )}
                   </div>
                 </Card>

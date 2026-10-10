@@ -6,11 +6,12 @@ import { useState, useTransition } from 'react';
 import { deleteCompetitionAction } from '@/app/actions/competitions';
 import { CompetitionForm } from '@/components/competition-form';
 import { ConfirmDialog } from '@/components/confirm-dialog';
-import { Card, CardTitle, SubtleButton } from '@/components/layout-ui';
+import { Card, CardTitle, PrimaryButton, Stat } from '@/components/layout-ui';
 import type { Competition } from '@/lib/data';
 import type { CompetitionResult } from '@/lib/competition-results';
 import { daysBetween } from '@/lib/dates';
-import { formatMark, type Units } from '@/lib/units';
+import { EVENT_TEXT } from '@/lib/events';
+import { formatMarkParts, type Units } from '@/lib/units';
 
 /** 大会1件。日付・名前・会場・招集・開始・注意事項。これからの大会には残りの日数を出す */
 function CompetitionItem({
@@ -35,25 +36,35 @@ function CompetitionItem({
   const tCompetitions = useTranslations('competitions');
   const format = useFormatter();
   const upcoming = competition.day >= today;
+  const date = new Date(`${competition.day}T00:00:00Z`);
 
   return (
     <div className="flex items-start gap-3 py-3">
+      {/* 日付の札。これからの大会は黒、過去の大会は灰色 */}
+      <div
+        className={`flex w-14 shrink-0 flex-col items-center rounded-2xl py-2 ${
+          upcoming ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground'
+        }`}
+      >
+        <span className="text-[11px] font-bold">
+          {format.dateTime(date, { month: 'short', timeZone: 'UTC' })}
+        </span>
+        <span className="font-display text-[30px] leading-none font-extrabold italic tabular-nums">
+          {date.getUTCDate()}
+        </span>
+        <span className="text-[11px] font-bold">
+          {format.dateTime(date, { weekday: 'short', timeZone: 'UTC' })}
+        </span>
+      </div>
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="flex items-baseline justify-between gap-3 text-sm text-muted-foreground tabular-nums">
-          {format.dateTime(new Date(`${competition.day}T00:00:00Z`), {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            weekday: 'short',
-            timeZone: 'UTC',
-          })}
+        <span className="flex items-start justify-between gap-2">
+          <span className="text-base font-extrabold">{competition.name}</span>
           {upcoming && (
-            <span className="font-semibold text-primary">
+            <span className="shrink-0 rounded-full bg-secondary px-2.5 py-0.5 text-xs font-bold text-primary">
               {tHome('daysLeft', { days: daysBetween(today, competition.day) })}
             </span>
           )}
         </span>
-        <span className="font-bold">{competition.name}</span>
         {competition.venue && (
           <span className="flex items-center gap-1 text-sm text-muted-foreground">
             <MapPin aria-hidden className="size-3.5" />
@@ -75,17 +86,26 @@ function CompetitionItem({
         </span>
         {competition.notes && <p className="text-sm whitespace-pre-wrap">{competition.notes}</p>}
         {results.length > 0 && (
-          <p className="mt-1 text-sm">
-            <span className="font-semibold">{tCompetitions('result')}</span>{' '}
-            {results
-              .map((r) =>
-                tCompetitions(r.windAided ? 'resultWindAided' : 'resultItem', {
-                  event: tEvents(r.event),
-                  mark: formatMark(r.bestM, units),
-                }),
-              )
-              .join(' · ')}
-          </p>
+          <div className="mt-2 flex flex-col gap-1">
+            <span className="text-xs font-bold text-muted-foreground">
+              {tCompetitions('result')}
+            </span>
+            <div className="flex flex-wrap gap-x-5 gap-y-2">
+              {results.map((r) => (
+                <Stat
+                  key={r.event}
+                  size="sm"
+                  color={EVENT_TEXT[r.event]}
+                  value={formatMarkParts(r.bestM, units)}
+                  label={
+                    r.windAided
+                      ? tCompetitions('windAidedLabel', { event: tEvents(r.event) })
+                      : tEvents(r.event)
+                  }
+                />
+              ))}
+            </div>
+          </div>
         )}
       </div>
       <button
@@ -177,10 +197,14 @@ export function CompetitionsBoard({
       )}
       {editing !== 'new' && (
         <div className="px-4">
-          <SubtleButton type="button" onClick={() => setEditing('new')}>
+          <PrimaryButton
+            type="button"
+            onClick={() => setEditing('new')}
+            className="h-9 px-4 text-sm"
+          >
             <Plus aria-hidden className="size-4" />
             {tCalendar('addCompetition')}
-          </SubtleButton>
+          </PrimaryButton>
         </div>
       )}
       <div className="flex flex-col gap-3 lg:grid lg:grid-cols-2 lg:items-start">

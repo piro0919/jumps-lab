@@ -20,7 +20,7 @@ import { cn } from 'cn';
 import { MarkInput } from '@/components/measure-inputs';
 import { Drawer, DrawerContent, DrawerTitle } from '@/components/ui/drawer';
 import type { Attempt } from '@/lib/data';
-import { hasWind, isWindAided, type JumpEvent } from '@/lib/events';
+import { EVENT_BG, hasWind, isWindAided, type JumpEvent } from '@/lib/events';
 import { formatMark, type Units } from '@/lib/units';
 
 /** 2つ以上から1つを選ぶ、横並びの切り替え（練習・大会、種目） */
@@ -165,10 +165,10 @@ export function AttemptsCard({
     <Card>
       <CardTitle
         action={
-          <SubtleButton type="button" onClick={() => setAdding(true)}>
+          <PrimaryButton type="button" onClick={() => setAdding(true)} className="h-9 px-4 text-sm">
             <Plus aria-hidden className="size-4" />
             {t('add')}
-          </SubtleButton>
+          </PrimaryButton>
         }
       >
         {t('attempts')}
@@ -181,7 +181,9 @@ export function AttemptsCard({
             const best = Math.max(...rows.map((r) => r.markM));
             return (
               <section key={event}>
-                <h3 className="text-[13px] font-semibold text-muted-foreground">
+                <h3
+                  className={`w-fit rounded-full px-3 py-1 text-xs font-bold text-white ${EVENT_BG[event]}`}
+                >
                   {tEvents(event)}
                 </h3>
                 <ol className="flex flex-col divide-y divide-border">
@@ -196,7 +198,9 @@ export function AttemptsCard({
                             {formatMark(attempt.markM, units)}
                           </span>
                           {attempt.markM === best && (
-                            <span className="rounded-full bg-secondary px-2 text-xs font-semibold text-primary">
+                            <span
+                              className={`rounded-full px-2 text-xs font-bold text-white ${EVENT_BG[event]}`}
+                            >
                               {t('best')}
                             </span>
                           )}

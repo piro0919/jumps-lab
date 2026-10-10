@@ -29,12 +29,15 @@ export function Stat({
   label,
   size = 'md',
   inverse = false,
+  color,
 }: {
   value: { value: string; unit: string } | string | number | null;
   label: string;
   size?: 'giant' | 'hero' | 'md' | 'sm';
   /** 色付きの地の上。字をすべて白にする（薄めると 4.5 を割るので薄めない） */
   inverse?: boolean;
+  /** 数字の色（種目の色など）。無ければ地の字の色 */
+  color?: string;
 }) {
   const parts =
     value === null ? null : typeof value === 'object' ? value : { value: String(value), unit: '' };
@@ -53,6 +56,7 @@ export function Stat({
           className={cn(
             'font-display font-extrabold tracking-tight tabular-nums italic',
             numberSize,
+            parts !== null && color,
             parts === null && (inverse ? 'text-white/50' : 'text-muted-foreground/40'),
           )}
         >
@@ -68,7 +72,7 @@ export function Stat({
 }
 
 export function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <section className={`mx-4 rounded-2xl bg-card p-4 ${className}`}>{children}</section>;
+  return <section className={cn('mx-4 rounded-3xl bg-card p-5', className)}>{children}</section>;
 }
 
 export function CardTitle({ children, action }: { children: ReactNode; action?: ReactNode }) {
@@ -150,26 +154,29 @@ export function TextArea({ className, ...props }: ComponentProps<'textarea'>) {
   );
 }
 
-/** 押すと結果が起きるボタン。濃い青はこれだけに使う */
+/** 押すと結果が起きるボタン。黒い丸いボタン（手本の Nike Run Club の主なボタン） */
 export function PrimaryButton({ className, ...props }: ComponentProps<typeof Button>) {
   return (
     <Button
       {...props}
       className={cn(
-        'h-11 rounded-xl px-5 text-[15px] font-semibold active:scale-[0.98]',
+        'h-11 rounded-full bg-foreground px-6 text-[15px] font-bold text-background hover:bg-foreground/85 active:scale-[0.98]',
         className,
       )}
     />
   );
 }
 
-/** 控えめなボタン。追加・キャンセルなど */
+/** 控えめなボタン。追加・キャンセルなど。灰色の丸いボタン */
 export function SubtleButton({ className, ...props }: ComponentProps<typeof Button>) {
   return (
     <Button
       variant="secondary"
       {...props}
-      className={cn('h-9 rounded-full px-3.5 font-semibold active:scale-[0.98]', className)}
+      className={cn(
+        'h-9 rounded-full bg-muted px-4 font-bold text-foreground hover:bg-accent active:scale-[0.98]',
+        className,
+      )}
     />
   );
 }

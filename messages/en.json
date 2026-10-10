@@ -67,8 +67,7 @@
     "noUpcoming": "No upcoming competitions.",
     "noPast": "No past competitions.",
     "result": "Result",
-    "resultItem": "{event} {mark}",
-    "resultWindAided": "{event} {mark} (wind-aided)"
+    "windAidedLabel": "{event} (wind-aided)"
   },
   "profile": {
     "welcome": "Welcome",
