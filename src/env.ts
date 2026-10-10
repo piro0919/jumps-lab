@@ -1,0 +1,28 @@
+import { createEnv } from '@t3-oss/env-nextjs';
+import { z } from 'zod';
+
+/**
+ * サイトが読む環境変数の検査。next.config.ts が読み込むので、欠けていればビルドの頭で止まる。
+ * scripts/ の鍵は手元でしか使わないので、ここではなく scripts/lib/env.ts で確かめる
+ */
+export const env = createEnv({
+  server: {
+    // 手元は compose.yaml の Postgres、本番は Neon（プールを通す接続文字列）
+    DATABASE_URL: z.string().min(1),
+    // ログイン（Better Auth）。鍵を持たないビルドや CI も通すため、ここでは任意にしておく。
+    // 欠けたままログインの受け口に来たら、そこで名前を挙げて止まる（src/lib/auth.ts）
+    BETTER_AUTH_SECRET: z.string().min(32).optional(),
+    BETTER_AUTH_URL: z.url().optional(),
+    GOOGLE_CLIENT_ID: z.string().min(1).optional(),
+    GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
+  },
+  client: {},
+  runtimeEnv: {
+    DATABASE_URL: process.env.DATABASE_URL,
+    BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
+    BETTER_AUTH_URL: process.env.BETTER_AUTH_URL,
+    GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+    GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+  },
+  emptyStringAsUndefined: true,
+});

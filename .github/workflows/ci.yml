@@ -1,0 +1,64 @@
+# 手元のフック（lefthook）と同じ確かめをかける。
+# main には直接 push するので、push でも回す（プルリクエストだけだと一度も走らない）。
+# 依存の更新（Renovate）の PR は手元を通らないので、ここが唯一の確かめ
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      db:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: jumpslab
+          POSTGRES_PASSWORD: jumpslab
+          POSTGRES_DB: jumpslab
+        ports:
+          - 5436:5432
+        options: >-
+          --health-cmd "pg_isready -U jumpslab" --health-interval 2s --health-retries 30
+    env:
+      DATABASE_URL: postgres://jumpslab:jumpslab@localhost:5436/jumpslab
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm typecheck
+
+      - run: pnpm lint
+
+      - run: pnpm format:check
+
+      - run: pnpm secretlint
+
+      - run: pnpm test
+
+      # 使われていないファイル・エクスポート・パッケージ
+      - run: pnpm knip
+
+      # db/migrations/ が空の DB に頭から当たるか
+      - run: pnpm migrate
+
+      - run: pnpm build

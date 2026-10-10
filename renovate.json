@@ -1,0 +1,12 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["github>piro0919/renovate-config"],
+  "packageRules": [
+    {
+      "description": "TypeScript は 5、ESLint は 9 に据え置く。eslint-config-next の依存が次の版に追いつくまで、大きな版の PR は出さない",
+      "matchPackageNames": ["typescript", "eslint"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    }
+  ]
+}

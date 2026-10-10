@@ -1,0 +1,25 @@
+pre-commit:
+  parallel: true
+  commands:
+    eslint:
+      glob: '**/*.{ts,tsx,mjs,js}'
+      run: npx eslint --fix {staged_files}
+      stage_fixed: true
+    prettier:
+      glob: '**/*'
+      run: npx prettier --write --ignore-unknown {staged_files}
+      stage_fixed: true
+    secretlint:
+      glob: '**/*'
+      run: npx secretlint --maskSecrets {staged_files}
+    # ルートの型（.next/types）を作り直してから確かめる
+    typescript:
+      run: pnpm typecheck
+commit-msg:
+  scripts:
+    'commitlint.sh':
+      runner: bash
+pre-push:
+  commands:
+    test:
+      run: pnpm test

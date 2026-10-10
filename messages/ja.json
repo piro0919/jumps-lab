@@ -1,0 +1,9 @@
+{
+  "metadata": {
+    "title": "Jumps Lab",
+    "description": "走高跳・走幅跳・三段跳・棒高跳の記録をつけるサービスです。"
+  },
+  "signIn": {
+    "google": "Google でログイン"
+  }
+}

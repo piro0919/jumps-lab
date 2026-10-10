@@ -1,0 +1,20 @@
+# 手元の DB。本番は Neon の Postgres で、ここは同じ版の素の Postgres を立てるだけ。
+# 接続先は .env.local の DATABASE_URL（postgres://jumpslab:jumpslab@localhost:5436/jumpslab）。
+# ポートは Vocafy（5434）・onigiri（5435）とぶつからないように 5436 にする
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: jumpslab
+      POSTGRES_PASSWORD: jumpslab
+      POSTGRES_DB: jumpslab
+    ports:
+      - '5436:5432'
+    volumes:
+      - db:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-U', 'jumpslab']
+      interval: 2s
+      retries: 30
+volumes:
+  db:

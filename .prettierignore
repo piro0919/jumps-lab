@@ -1,0 +1,11 @@
+.next
+out
+node_modules
+pnpm-lock.yaml
+.lefthook
+.playwright-mcp
+public
+*.ico
+*.png
+# next dev が書き直す
+AGENTS.md
