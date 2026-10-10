@@ -1,6 +1,7 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+// 線（components/progress.tsx）を出すため、移るのは @bprogress の useRouter で
+import { useRouter } from '@bprogress/next/app';
 import { useTranslations } from 'next-intl';
 import { useActionState } from 'react';
 import { saveCompetitionAction } from '@/app/actions/competitions';

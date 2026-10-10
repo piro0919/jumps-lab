@@ -1,7 +1,8 @@
 'use client';
 
 import { LogOut } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+// 線（components/progress.tsx）を出すため、移るのは @bprogress の useRouter で
+import { useRouter } from '@bprogress/next/app';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { authClient } from '@/lib/auth-client';

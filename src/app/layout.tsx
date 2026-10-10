@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { Barlow_Condensed, Kanit } from 'next/font/google';
+import { Progress } from '@/components/progress';
 import { ThemeProvider } from '@/components/theme-provider';
 import './globals.css';
 
@@ -48,7 +49,9 @@ export default async function RootLayout({ children }: LayoutProps<'/'>) {
     >
       <body className="min-h-full min-w-[375px] font-sans">
         <ThemeProvider>
-          <NextIntlClientProvider>{children}</NextIntlClientProvider>
+          <NextIntlClientProvider>
+            <Progress>{children}</Progress>
+          </NextIntlClientProvider>
         </ThemeProvider>
       </body>
     </html>
