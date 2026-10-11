@@ -109,7 +109,7 @@ export default async function Home() {
             )}
             <ChevronRight aria-hidden className="size-5 shrink-0" />
           </Link>
-          <AdviceCard readiness={advice} conditionHref="/log/today/condition?from=home" />
+          <AdviceCard readiness={advice} />
           {/* 今日のコンディション。押すと直す画面へ移り、保存したらホームへ戻る */}
           <ConditionCard
             log={todayLog}

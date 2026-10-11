@@ -1,5 +1,5 @@
 import { getTranslations } from 'next-intl/server';
-import { Badge, Card, CardTitle, EmptyState } from '@/components/layout-ui';
+import { Badge, Card, CardTitle } from '@/components/layout-ui';
 import { REASON_SOURCES, type Readiness } from '@/lib/readiness';
 
 /**
@@ -7,16 +7,8 @@ import { REASON_SOURCES, type Readiness } from '@/lib/readiness';
  * 判定は src/lib/readiness.ts。痛みの記入がある日は、病院で診てもらう目安を決まった文で必ず出す
  * （AI には書かせない。2026-10-11 に調べた根拠に沿って本人と決めた）
  */
-export async function AdviceCard({
-  readiness,
-  conditionHref,
-}: {
-  readiness: Readiness;
-  /** 今日のコンディションを入れる画面 */
-  conditionHref: string;
-}) {
+export async function AdviceCard({ readiness }: { readiness: Readiness }) {
   const t = await getTranslations('advice');
-  const tToday = await getTranslations('today');
   const { level, reasons, weeksToTarget, needsLog } = readiness;
 
   return (
@@ -52,12 +44,8 @@ export async function AdviceCard({
           </ul>
         )}
         {level === 'protect' && <p className="text-sm font-semibold">{t('doctor')}</p>}
-        {needsLog && (
-          <EmptyState
-            message={t('needsLog')}
-            action={{ href: conditionHref, label: tToday('enterCondition') }}
-          />
-        )}
+        {/* 入れるボタンは、すぐ下の今日のコンディションのカードにある（2つ並んでいた。本人、2026-10-11） */}
+        {needsLog && <p className="text-sm text-muted-foreground">{t('needsLog')}</p>}
       </div>
     </Card>
   );

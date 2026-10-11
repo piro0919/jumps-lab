@@ -24,10 +24,11 @@ import type { ComponentProps, ReactNode } from 'react';
 
 /**
  * PC（幅 1024px 以上）の2列の組み方。スマホでは縦に積む。
- * MAIN_SIDE は「主役の列＋右の細い列（20rem）」でホームと分析、HALVES は「同じ幅の2列」で日の画面と大会。
- * 画面ごとに列の幅を決めていて、似た形のホームと分析で色付きのカードの幅がずれた（本人、2026-10-11）
+ * MAIN_SIDE は「主役の列と右の列を 3:2」でホームと分析、HALVES は「同じ幅の2列」で日の画面と大会。
+ * 画面ごとに列の幅を決めていて、似た形のホームと分析で色付きのカードの幅がずれた（本人、2026-10-11）。
+ * 右の列は 20rem で固定していて、広い画面で種目のカードだけが伸び、右のカードの文が折り返した（本人、2026-10-11）
  */
-export const MAIN_SIDE = 'flex flex-col gap-3 lg:grid lg:grid-cols-[1fr_20rem] lg:items-start';
+export const MAIN_SIDE = 'flex flex-col gap-3 lg:grid lg:grid-cols-main-side lg:items-start';
 export const HALVES = 'flex flex-col gap-3 lg:grid lg:grid-cols-2 lg:items-start';
 
 /**
