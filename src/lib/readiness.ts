@@ -37,6 +37,9 @@ const TOWARD_TARGET_DAYS = 56;
  */
 const HIGH_FATIGUE = 8;
 const LOW_CONDITION = 3;
+/** 尺度の端（疲労10・体調1）は、本人の平均にかかわらず軽めにする（いつも疲労が高い人も拾うため。仮決め） */
+const WORST_FATIGUE = 10;
+const WORST_CONDITION = 1;
 const BASELINE_WINDOW_DAYS = 28;
 const BASELINE_MIN_LOGS = 14;
 const WORSE_BY = 2;
@@ -100,9 +103,11 @@ function worse(
   value: number | null,
   history: (number | null)[],
   fixed: number,
+  worst: number,
   high: boolean,
 ): boolean {
   if (value === null) return false;
+  if (value === worst) return true;
   const past = history.filter((v): v is number => v !== null);
   if (past.length < BASELINE_MIN_LOGS) return high ? value >= fixed : value <= fixed;
   const mean = average(past);
@@ -167,6 +172,7 @@ export function readiness({
       todayLog?.fatigue ?? null,
       before.map((l) => l.fatigue),
       HIGH_FATIGUE,
+      WORST_FATIGUE,
       true,
     )
   ) {
@@ -177,6 +183,7 @@ export function readiness({
       todayLog?.condition ?? null,
       before.map((l) => l.condition),
       LOW_CONDITION,
+      WORST_CONDITION,
       false,
     )
   ) {
@@ -199,9 +206,16 @@ export function readiness({
     reasons,
     weeksToTarget:
       daysToTarget !== null && daysToTarget <= TOWARD_TARGET_DAYS
-        ? Math.ceil(daysToTarget / DAYS_PER_WEEK)
+        ? // 当日は0週ではなく1週と出す
+          Math.max(1, Math.ceil(daysToTarget / DAYS_PER_WEEK))
         : null,
-    needsLog: todayLog === null,
+    // 練習メモだけの日は、体調を入れていない扱い
+    needsLog:
+      todayLog === null ||
+      (todayLog.condition === null &&
+        todayLog.fatigue === null &&
+        todayLog.sleepHours === null &&
+        !todayLog.injury),
   };
 }
 

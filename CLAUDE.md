@@ -169,7 +169,7 @@ Copy the shape of `~/Repository/onigiri` (which itself copies vocafy). Read its 
 
 - Released 2026-10-11 at https://jumpslab.kkweb.io. GitHub `piro0919/jumps-lab` is public (the owner: nothing special in it)
 - Vercel team `kkweb`, project `jumps-lab`: framework nextjs, functions sin1, Vercel Authentication off for the custom domain only, `jumps-lab.vercel.app` removed. Renovate branches skip builds (`ignoreCommand` in vercel.json)
-- Neon `jumps-lab-db` (free plan, sin1) through the Vercel Neon integration, which sets DATABASE_URL and friends. Migrations 0001–0008 applied to production by hand with DATABASE_URL_UNPOOLED. Project `square-grass-26844004` in the Neon org "Vercel: kk-web"; its endpoint is fixed at 0.25 CU with the default suspend (checked with `neonctl api` on 2026-10-11)
+- Neon `jumps-lab-db` (free plan, sin1) through the Vercel Neon integration, which sets DATABASE_URL and friends. Migrations 0001–0009 applied to production by hand with DATABASE_URL_UNPOOLED. Project `square-grass-26844004` in the Neon org "Vercel: kk-web"; its endpoint is fixed at 0.25 CU with the default suspend (checked with `neonctl api` on 2026-10-11)
 - Production env: BETTER_AUTH_SECRET (its own, not the local one), BETTER_AUTH_URL, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
 - DNS in Cloudflare (kkweb.io): CNAME `jumpslab` to Vercel (proxy off) and a `_vercel` TXT, added with the DNS-only token in janify's .env.local
 - Google Cloud project `jumps-lab-kkweb`, OAuth client "Jumps Lab web". Consent screen External and in production since 2026-10-11, with home, /privacy and /terms set and no logo (a logo would need Google's review)

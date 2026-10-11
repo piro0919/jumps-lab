@@ -6,7 +6,15 @@ import { useTranslations } from 'next-intl';
 import { useActionState, useState } from 'react';
 import { saveCompetitionAction } from '@/app/actions/competitions';
 import { ActionForm } from '@/components/action-form';
-import { ErrorText, Field, FieldLabel, Input, TextArea } from '@/components/layout-ui';
+import {
+  ErrorText,
+  Field,
+  FieldLabel,
+  Input,
+  SEGMENTS,
+  segmentClass,
+  TextArea,
+} from '@/components/layout-ui';
 import { cn } from '@/lib/cn';
 import { FormActions } from '@/components/form-actions';
 import type { Competition } from '@/lib/data';
@@ -61,17 +69,25 @@ export function CompetitionForm({
       <div className="flex flex-col gap-1.5">
         <input type="hidden" name="isTarget" value={String(isTarget)} />
         <FieldLabel label={t('target')} />
-        <button
-          type="button"
-          aria-pressed={isTarget}
-          onClick={() => setIsTarget(!isTarget)}
-          className={cn(
-            'h-9 w-fit rounded-full px-3 text-sm font-semibold transition',
-            isTarget ? 'bg-secondary text-primary' : 'bg-muted text-muted-foreground',
-          )}
+        {/* 1つだけ選ぶので切り替えの形（性別と同じ） */}
+        <div
+          role="radiogroup"
+          aria-label={t('target')}
+          className={cn(SEGMENTS, 'grid w-full grid-cols-2')}
         >
-          {t('targetToggle')}
-        </button>
+          {([false, true] as const).map((value) => (
+            <button
+              key={String(value)}
+              type="button"
+              role="radio"
+              aria-checked={isTarget === value}
+              onClick={() => setIsTarget(value)}
+              className={cn(segmentClass(isTarget === value), 'px-2')}
+            >
+              {value ? t('targetBadge') : t('targetNo')}
+            </button>
+          ))}
+        </div>
       </div>
       <Field label={t('notes')}>
         <TextArea

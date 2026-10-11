@@ -7,7 +7,6 @@ import { EventHero } from '@/components/event-hero';
 import { WeatherCard } from '@/components/weather-card';
 import { computeBests } from '@/lib/bests';
 import {
-  getDayLog,
   getTargets,
   listAllAttempts,
   listCompetitionsBetween,
@@ -28,14 +27,16 @@ export default async function Home() {
   const viewer = await requireViewer();
   const profile = await requireProfile(viewer.userId);
   const today = todayIn(profile.timeZone);
-  const [targets, attempts, competition, todayLog, recentLogs, upcoming] = await Promise.all([
+  const [targets, attempts, recentLogs, upcoming] = await Promise.all([
     getTargets(viewer.userId, profile.events),
     listAllAttempts(viewer.userId),
-    nextCompetition(viewer.userId, today),
-    getDayLog(viewer.userId, today),
     listConditionsBetween(viewer.userId, readinessFrom(today), today),
     listCompetitionsBetween(viewer.userId, today, readinessUntil(today)),
   ]);
+  // 今日の体調と次の大会は、アドバイスのために読んだ範囲から取る（DB への問い合わせを減らす）。
+  // 8週より先の大会だけは範囲の外なので、そのときだけ読み直す
+  const todayLog = recentLogs.find((log) => log.day === today) ?? null;
+  const competition = upcoming[0] ?? (await nextCompetition(viewer.userId, today));
   // 今日のアドバイス。体調と大会の予定から今日の強さを決める（src/lib/readiness.ts）
   const advice = readiness({
     today,

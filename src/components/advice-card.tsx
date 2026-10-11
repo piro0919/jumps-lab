@@ -9,7 +9,7 @@ import { REASON_SOURCES, type Readiness } from '@/lib/readiness';
  */
 export async function AdviceCard({ readiness }: { readiness: Readiness }) {
   const t = await getTranslations('advice');
-  const { level, reasons, weeksToTarget, needsLog } = readiness;
+  const { level, reasons, weeksToTarget } = readiness;
 
   return (
     <Card>
@@ -24,9 +24,7 @@ export async function AdviceCard({ readiness }: { readiness: Readiness }) {
       </CardTitle>
       <div className="flex flex-col gap-3">
         <span className="text-lg font-extrabold">{t(`level.${level}`)}</span>
-        {reasons.length === 0 ? (
-          !needsLog && <p className="text-sm text-muted-foreground">{t('normal')}</p>
-        ) : (
+        {reasons.length > 0 && (
           <ul className="flex flex-col gap-2">
             {reasons.map((reason) => (
               <li key={reason.key} className="text-sm">
@@ -35,7 +33,7 @@ export async function AdviceCard({ readiness }: { readiness: Readiness }) {
                   href={REASON_SOURCES[reason.key]}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-xs whitespace-nowrap text-muted-foreground underline"
+                  className="text-xs whitespace-nowrap underline"
                 >
                   {t('source')}
                 </a>
@@ -44,8 +42,6 @@ export async function AdviceCard({ readiness }: { readiness: Readiness }) {
           </ul>
         )}
         {level === 'protect' && <p className="text-sm font-semibold">{t('doctor')}</p>}
-        {/* 入れるボタンは、すぐ下の今日のコンディションのカードにある（2つ並んでいた。本人、2026-10-11） */}
-        {needsLog && <p className="text-sm text-muted-foreground">{t('needsLog')}</p>}
       </div>
     </Card>
   );

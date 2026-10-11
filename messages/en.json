@@ -195,8 +195,8 @@
     "callRoom": "Call room {time}",
     "start": "Start {time}",
     "target": "Main goal",
-    "targetToggle": "This is my main goal meet",
-    "targetBadge": "Main goal"
+    "targetBadge": "Main goal",
+    "targetNo": "Regular meet"
   },
   "analysis": {
     "all": "All",
@@ -275,9 +275,7 @@
       "fatigue": "Fatigue {value}/10 is high for you.",
       "condition": "Condition {value}/10 is low for you."
     },
-    "normal": "Nothing in your log calls for holding back.",
     "doctor": "See a doctor or physio if it hurts at rest or at night, is swollen, hurts when you press one spot on a bone, makes you limp, is not gone by the next morning, or keeps coming back for weeks.",
-    "needsLog": "Log today's condition to include it.",
     "source": "Source",
     "toward": "{weeks, plural, one {# week} other {# weeks}} to your main goal meet",
     "build": "Building phase"

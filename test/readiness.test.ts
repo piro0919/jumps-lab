@@ -109,6 +109,27 @@ describe('readiness', () => {
   });
 });
 
+describe('readiness の端の場合', () => {
+  it('主目標の大会の当日は1週と出す', () => {
+    expect(
+      readiness({ ...base, competitions: [{ day: today, isTarget: true }] }).weeksToTarget,
+    ).toBe(1);
+  });
+
+  it('練習メモだけの日は、体調を入れていない扱い', () => {
+    expect(readiness({ ...base, logs: [log(today)] }).needsLog).toBe(true);
+  });
+
+  it('いつも疲労が高い人でも、疲労10なら軽め', () => {
+    const past = Array.from({ length: 14 }, (_, i) =>
+      log(addDays(today, -(i + 1)), { fatigue: 9 }),
+    );
+    expect(readiness({ ...base, logs: [...past, log(today, { fatigue: 10 })] }).level).toBe(
+      'lighter',
+    );
+  });
+});
+
 describe('ageOn', () => {
   it('誕生日の前日まではひとつ下', () => {
     expect(ageOn('2008-10-12', '2026-10-11')).toBe(17);
