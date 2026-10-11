@@ -73,7 +73,10 @@ export function CompetitionItem({
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="flex items-start justify-between gap-2">
-          <span className="text-lg font-extrabold">{competition.name}</span>
+          <span className="flex flex-wrap items-center gap-2">
+            <span className="text-lg font-extrabold">{competition.name}</span>
+            {competition.isTarget && <Badge tone="accent">{t('targetBadge')}</Badge>}
+          </span>
           {upcoming && (
             <Badge tone="accent">
               {tHome('daysLeft', { days: daysBetween(today, competition.day) })}

@@ -193,7 +193,10 @@
     "cancel": "Cancel",
     "deleteConfirm": "Delete this competition?",
     "callRoom": "Call room {time}",
-    "start": "Start {time}"
+    "start": "Start {time}",
+    "target": "Main goal",
+    "targetToggle": "This is my main goal meet",
+    "targetBadge": "Main goal"
   },
   "analysis": {
     "all": "All",
@@ -253,5 +256,30 @@
     "play": "Watch the video",
     "usage": "Videos",
     "usageValue": "{used} of {limit}"
+  },
+  "advice": {
+    "title": "Today's advice",
+    "level": {
+      "protect": "Protect the sore spot",
+      "preMeet": "Light before the meet",
+      "taper": "Taper",
+      "lighter": "Go lighter",
+      "normal": "Train as planned"
+    },
+    "reason": {
+      "injury": "You noted pain or discomfort. Skip jumps, sprints and loading that use that area.",
+      "preMeet": "{days, plural, =0 {Meet today.} one {Meet tomorrow.} other {Meet in # days.}} Cut volume; keep speed and jump quality.",
+      "taper": "{days} days to your main goal meet. Reduce volume step by step; keep intensity and how often you train.",
+      "shortNight": "You slept {hours} hours last night.",
+      "shortWeek": "Your sleep over the last week averaged {average} hours, below {target} hours.",
+      "fatigue": "Fatigue {value}/10 is high for you.",
+      "condition": "Condition {value}/10 is low for you."
+    },
+    "normal": "Nothing in your log calls for holding back.",
+    "doctor": "See a doctor or physio if it hurts at rest or at night, is swollen, hurts when you press one spot on a bone, makes you limp, is not gone by the next morning, or keeps coming back for weeks.",
+    "needsLog": "Log today's condition to include it.",
+    "source": "Source",
+    "toward": "{weeks, plural, one {# week} other {# weeks}} to your main goal meet",
+    "build": "Building phase"
   }
 }

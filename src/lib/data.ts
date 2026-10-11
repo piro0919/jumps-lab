@@ -346,10 +346,13 @@ export type Competition = {
   callRoomTime: string | null;
   startTime: string | null;
   notes: string | null;
+  /** 主目標の大会か。今日のアドバイスが、この大会の前2週間を調整期にする */
+  isTarget: boolean;
 };
 
 const competitionColumns = `id, name, to_char(day, 'YYYY-MM-DD') as day, venue, "callRoomPlace",
-  to_char("callRoomTime", 'HH24:MI') as "callRoomTime", to_char("startTime", 'HH24:MI') as "startTime", notes`;
+  to_char("callRoomTime", 'HH24:MI') as "callRoomTime", to_char("startTime", 'HH24:MI') as "startTime", notes,
+  "isTarget"`;
 
 /** today 以降でいちばん近い大会 */
 export async function nextCompetition(userId: string, today: string): Promise<Competition | null> {
@@ -373,19 +376,20 @@ export async function saveCompetition(
     input.callRoomTime,
     input.startTime,
     input.notes,
+    input.isTarget,
   ];
   if (input.id) {
     await db().query(
       `update competition set name = $3, day = $4, venue = $5, "callRoomPlace" = $6,
-              "callRoomTime" = $7, "startTime" = $8, notes = $9
+              "callRoomTime" = $7, "startTime" = $8, notes = $9, "isTarget" = $10
         where "userId" = $1 and id = $2`,
       [userId, input.id, ...values],
     );
   } else {
     await db().query(
       `insert into competition ("userId", name, day, venue, "callRoomPlace", "callRoomTime",
-                                "startTime", notes)
-       values ($1, $2, $3, $4, $5, $6, $7, $8)`,
+                                "startTime", notes, "isTarget")
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
       [userId, ...values],
     );
   }
@@ -422,6 +426,34 @@ export async function listDayLogs(
   const { rows } = await db().query<{ day: string; condition: number | null; note: string | null }>(
     `select to_char(day, 'YYYY-MM-DD') as day, condition, note from day_log where "userId" = $1`,
     [userId],
+  );
+  return rows;
+}
+
+/** from から to までの日の体調（今日のアドバイスが、睡眠の平均と本人のふだんの値を出すのに使う） */
+export async function listConditionsBetween(
+  userId: string,
+  from: string,
+  to: string,
+): Promise<(DayLog & { day: string })[]> {
+  const { rows } = await db().query<DayLog & { day: string; sleepHours: string | null }>(
+    `select to_char(day, 'YYYY-MM-DD') as day, condition, fatigue, "sleepHours", injury, note
+       from day_log where "userId" = $1 and day between $2 and $3 order by day`,
+    [userId, from, to],
+  );
+  return rows.map((row) => ({ ...row, sleepHours: num(row.sleepHours) }));
+}
+
+/** from から to までの大会（今日のアドバイス用。日付の近い順） */
+export async function listCompetitionsBetween(
+  userId: string,
+  from: string,
+  to: string,
+): Promise<Competition[]> {
+  const { rows } = await db().query<Competition>(
+    `select ${competitionColumns} from competition
+      where "userId" = $1 and day between $2 and $3 order by day, "startTime" nulls last`,
+    [userId, from, to],
   );
   return rows;
 }

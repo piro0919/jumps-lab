@@ -3,10 +3,11 @@
 // 線（components/progress.tsx）を出すため、移るのは @bprogress の useRouter で
 import { useRouter } from '@bprogress/next/app';
 import { useTranslations } from 'next-intl';
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
 import { saveCompetitionAction } from '@/app/actions/competitions';
 import { ActionForm } from '@/components/action-form';
-import { ErrorText, Field, Input, TextArea } from '@/components/layout-ui';
+import { ErrorText, Field, FieldLabel, Input, TextArea } from '@/components/layout-ui';
+import { cn } from '@/lib/cn';
 import { FormActions } from '@/components/form-actions';
 import type { Competition } from '@/lib/data';
 import { LONG_NOTE_MAX_LENGTH } from '@/lib/limits';
@@ -26,6 +27,7 @@ export function CompetitionForm({
   const t = useTranslations('calendar');
   const tErrors = useTranslations('errors');
   const tProfile = useTranslations('profile');
+  const [isTarget, setIsTarget] = useState(initial?.isTarget ?? false);
   const [state, action, pending] = useActionState(async (previous: unknown, formData: FormData) => {
     const result = await saveCompetitionAction(null, formData);
     if (result?.ok) router.push('/competitions');
@@ -54,6 +56,22 @@ export function CompetitionForm({
         <Field label={t('startTime')}>
           <Input name="startTime" type="time" defaultValue={initial?.startTime ?? ''} />
         </Field>
+      </div>
+      {/* 主目標の大会。今日のアドバイスが、この大会の前2週間を調整期にする */}
+      <div className="flex flex-col gap-1.5">
+        <input type="hidden" name="isTarget" value={String(isTarget)} />
+        <FieldLabel label={t('target')} />
+        <button
+          type="button"
+          aria-pressed={isTarget}
+          onClick={() => setIsTarget(!isTarget)}
+          className={cn(
+            'h-9 w-fit rounded-full px-3 text-sm font-semibold transition',
+            isTarget ? 'bg-secondary text-primary' : 'bg-muted text-muted-foreground',
+          )}
+        >
+          {t('targetToggle')}
+        </button>
       </div>
       <Field label={t('notes')}>
         <TextArea

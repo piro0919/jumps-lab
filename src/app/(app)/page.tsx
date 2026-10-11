@@ -2,10 +2,19 @@ import { ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { DisplayNumber, PageTitle, SectionTitle, MAIN_SIDE } from '@/components/layout-ui';
+import { AdviceCard } from '@/components/advice-card';
 import { EventHero } from '@/components/event-hero';
 import { WeatherCard } from '@/components/weather-card';
 import { computeBests } from '@/lib/bests';
-import { getDayLog, getTargets, listAllAttempts, nextCompetition } from '@/lib/data';
+import {
+  getDayLog,
+  getTargets,
+  listAllAttempts,
+  listCompetitionsBetween,
+  listConditionsBetween,
+  nextCompetition,
+} from '@/lib/data';
+import { readiness, readinessFrom, readinessUntil } from '@/lib/readiness';
 import { ConditionCard } from '@/components/condition-card';
 import { daysBetween, seasonOf, todayIn } from '@/lib/dates';
 import { requireProfile, requireViewer } from '@/lib/viewer';
@@ -19,12 +28,21 @@ export default async function Home() {
   const viewer = await requireViewer();
   const profile = await requireProfile(viewer.userId);
   const today = todayIn(profile.timeZone);
-  const [targets, attempts, competition, todayLog] = await Promise.all([
+  const [targets, attempts, competition, todayLog, recentLogs, upcoming] = await Promise.all([
     getTargets(viewer.userId, profile.events),
     listAllAttempts(viewer.userId),
     nextCompetition(viewer.userId, today),
     getDayLog(viewer.userId, today),
+    listConditionsBetween(viewer.userId, readinessFrom(today), today),
+    listCompetitionsBetween(viewer.userId, today, readinessUntil(today)),
   ]);
+  // 今日のアドバイス。体調と大会の予定から今日の強さを決める（src/lib/readiness.ts）
+  const advice = readiness({
+    today,
+    logs: recentLogs,
+    competitions: upcoming,
+    birthdate: profile.birthdate,
+  });
   const t = await getTranslations('home');
   const tNav = await getTranslations('nav');
   const days = competition ? daysBetween(today, competition.day) : null;
@@ -91,6 +109,7 @@ export default async function Home() {
             )}
             <ChevronRight aria-hidden className="size-5 shrink-0" />
           </Link>
+          <AdviceCard readiness={advice} conditionHref="/log/today/condition?from=home" />
           {/* 今日のコンディション。押すと直す画面へ移り、保存したらホームへ戻る */}
           <ConditionCard
             log={todayLog}

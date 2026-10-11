@@ -300,6 +300,7 @@ export async function Landing() {
                 callRoomTime: '09:40',
                 startTime: '10:30',
                 notes: null,
+                isTarget: false,
               }}
               results={[]}
               units={units}
@@ -319,6 +320,7 @@ export async function Landing() {
                 callRoomTime: null,
                 startTime: null,
                 notes: null,
+                isTarget: false,
               }}
               results={[
                 { event: 'long_jump', bestM: 6.98, windAided: false },

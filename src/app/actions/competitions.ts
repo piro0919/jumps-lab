@@ -24,6 +24,8 @@ const schema = z.object({
   callRoomTime: time,
   startTime: time,
   notes: optionalText(LONG_NOTE_MAX_LENGTH),
+  // 主目標の印。押した札が「true」を送る
+  isTarget: z.preprocess((v) => v === 'true', z.boolean()),
 });
 
 /** 大会を足すか書き換える。id があれば書き換え（本人の大会だけ） */

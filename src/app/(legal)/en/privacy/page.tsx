@@ -36,7 +36,8 @@ export default function PrivacyEn() {
           Your condition, fatigue, sleep, injuries or discomfort and practice notes for each day
         </li>
         <li>
-          Your competitions (name, date, venue, call room place and time, start time and notes)
+          Your competitions (name, date, venue, call room place and time, start time, notes and
+          whether it is your main goal meet)
         </li>
         <li>Your goal marks and the bests you enter by hand</li>
         <li>
@@ -53,6 +54,10 @@ export default function PrivacyEn() {
       <ol>
         <li>To save your marks and show them to you</li>
         <li>To calculate and show your personal best, season best and progress</li>
+        <li>
+          To suggest how hard to train each day from your condition, sleep, injuries and competition
+          schedule
+        </li>
         <li>To sign you in and confirm who you are</li>
       </ol>
       <p>We use it for nothing else. We do not use it for advertising or sell it to anyone.</p>

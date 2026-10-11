@@ -193,7 +193,10 @@
     "cancel": "キャンセル",
     "deleteConfirm": "この大会を削除しますか？",
     "callRoom": "招集 {time}",
-    "start": "開始 {time}"
+    "start": "開始 {time}",
+    "target": "主目標",
+    "targetToggle": "主目標の大会にする",
+    "targetBadge": "主目標"
   },
   "analysis": {
     "all": "すべて",
@@ -253,5 +256,30 @@
     "play": "動画を見る",
     "usage": "動画",
     "usageValue": "{limit} のうち {used}"
+  },
+  "advice": {
+    "title": "今日のアドバイス",
+    "level": {
+      "protect": "痛む部位を休める",
+      "preMeet": "試合前の軽め",
+      "taper": "調整期",
+      "lighter": "軽めに",
+      "normal": "予定どおり"
+    },
+    "reason": {
+      "injury": "痛み・違和感の記録があります。その部位を使う跳躍・ダッシュ・負荷は避けましょう。",
+      "preMeet": "{days, plural, =0 {今日は大会です。} =1 {明日は大会です。} other {大会まであと#日です。}}量を減らし、スピードと跳躍の質は保ちましょう。",
+      "taper": "主目標の大会まであと{days}日。量を少しずつ減らし、強さと練習の回数は保ちましょう。",
+      "shortNight": "昨夜の睡眠は{hours}時間でした。",
+      "shortWeek": "直近1週間の睡眠の平均は{average}時間で、{target}時間を下回っています。",
+      "fatigue": "疲労度{value}/10は、ふだんより高めです。",
+      "condition": "体調{value}/10は、ふだんより低めです。"
+    },
+    "normal": "記録から、控える理由は見当たりません。",
+    "doctor": "安静にしていても・夜も痛む、腫れている、骨の一点を押すと痛む、足を引きずる、翌朝まで引かない、何週間も続くときは、病院で診てもらいましょう。",
+    "needsLog": "今日のコンディションを入れると、体調からも判定します。",
+    "source": "出典",
+    "toward": "主目標の大会まで{weeks}週",
+    "build": "準備期"
   }
 }
