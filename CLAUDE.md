@@ -170,13 +170,19 @@ Copy the shape of `~/Repository/onigiri` (which itself copies vocafy). Read its 
 - Released 2026-10-11 at https://jumpslab.kkweb.io. GitHub `piro0919/jumps-lab` is public (the owner: nothing special in it)
 - Vercel team `kkweb`, project `jumps-lab`: framework nextjs, functions sin1, Vercel Authentication off for the custom domain only, `jumps-lab.vercel.app` removed. Renovate branches skip builds (`ignoreCommand` in vercel.json)
 - Neon `jumps-lab-db` (free plan, sin1) through the Vercel Neon integration, which sets DATABASE_URL and friends. Migrations 0001–0009 applied to production by hand with DATABASE_URL_UNPOOLED. Project `square-grass-26844004` in the Neon org "Vercel: kk-web"; its endpoint is fixed at 0.25 CU with the default suspend (checked with `neonctl api` on 2026-10-11)
-- Production env: BETTER_AUTH_SECRET (its own, not the local one), BETTER_AUTH_URL, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
+- Production env: BETTER_AUTH_SECRET (its own, not the local one), BETTER_AUTH_URL, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, SENTRY_DSN, R2_ENDPOINT, R2_BUCKET, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY. No ANTHROPIC_API_KEY: the app calls no AI yet
 - DNS in Cloudflare (kkweb.io): CNAME `jumpslab` to Vercel (proxy off) and a `_vercel` TXT, added with the DNS-only token in janify's .env.local
 - Google Cloud project `jumps-lab-kkweb`, OAuth client "Jumps Lab web". Consent screen External and in production since 2026-10-11, with home, /privacy and /terms set and no logo (a logo would need Google's review)
 - Listed in the Notion portfolio DB and kk-web (WEB SERVICE, order 17)
 - Web Analytics and Sentry are in the code and the privacy policy (section 5, ja and en), live in production since 2026-10-11 (the analytics script loads on production; no Sentry event has arrived yet to confirm delivery):
   - Web Analytics: `<Analytics />` in the root layout. Turned on in the Vercel dashboard (Analytics tab) by the owner on 2026-10-11. No cookies; Vercel keeps the page, referrer, country, device, OS and browser (https://vercel.com/docs/analytics/privacy-policy)
   - Sentry: server errors only, through `onRequestError` in `src/instrumentation.ts`; settings in `src/lib/monitoring.ts` (koidamashii's). v11 collects user, cookies, headers, bodies and query strings by default, so `dataCollection` turns them all off and `scrubEvent` (`src/lib/scrub-event.ts`, tested) deletes them again. The project is `jumps-lab` in the owner's Sentry org `kk-web` (team `piro`, US region, free Developer plan: 5k errors a month shared with koidamashii, spatto and chappie), created 2026-10-11. SENTRY_DSN (the project's client key) is set in Vercel production since 2026-10-11 (SENTRY_AUTH_TOKEN, SENTRY_ORG and SENTRY_PROJECT would add source maps; not set). Breadcrumbs are dropped entirely (console breadcrumbs can carry a failed row's marks and notes). Keep what it sends inside what the privacy policy promises
-- The landing page and videos are live since 2026-10-11. Not yet checked: uploading and playing a video in production (needs the owner's Google sign-in on a phone; works locally against jumps-lab-dev)
-- Not done: an LLM-written session inside today's advice, coach questions
+- Everything is pushed and live (2026-10-11): the landing page, videos, today's advice with the main goal meet, grade only in Japan, week start, the terms sentence, the shared lint rules at error level, and the UTC time zone fix with its one-time repair
+- Not yet checked:
+  - Uploading and playing a video in production (needs the owner's Google sign-in on a phone; works locally against jumps-lab-dev)
+  - How many production profiles were saved as UTC (reading production was blocked by the permission classifier); remove `TimeZoneRepair` once none are left
+  - The analysis page at 3:2 was not looked at after the layout change (home was)
+- Not done:
+  - An LLM-written session inside today's advice (needs ANTHROPIC_API_KEY and the owner's OK on the cost; limits are written under "Today's advice")
+  - Coach questions (the prototype's hidden coach mode)
 - Dev server runs on port 3110 (`pnpm dev`); local Postgres on 5436 (`pnpm db:up`, then `pnpm migrate`)
