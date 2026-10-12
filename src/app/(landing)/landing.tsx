@@ -135,6 +135,12 @@ function SignInBlock() {
   );
 }
 
+/** LP の言語の切り替え。言語の名前はその言語のまま（どちらの画面でも探せるように） */
+const LANGUAGES = [
+  { value: 'en', href: '/', label: 'English' },
+  { value: 'ja', href: '/ja', label: '日本語' },
+] as const;
+
 export async function Landing() {
   const locale = await getLocale();
   const script = locale === 'ja' ? 'ja' : 'latin';
@@ -170,9 +176,6 @@ export async function Landing() {
     markM,
   }));
 
-  const other =
-    locale === 'ja' ? { href: '/', label: 'English' } : { href: '/ja', label: '日本語' };
-
   return (
     <div className="flex min-h-dvh flex-col">
       <header className="sticky top-0 z-40 flex h-16 items-center gap-6 bg-background/70 px-4 backdrop-blur-xl backdrop-saturate-150">
@@ -180,17 +183,19 @@ export async function Landing() {
           <AppIcon size="header" />
           <Wordmark size="header">{tMeta('title')}</Wordmark>
         </Link>
+        {/* 並びは English・日本語で固定し、今の言語を塗る（今の言語を左に出していて、押すと文字だけ入れ替わって見えた） */}
         <nav aria-label={tNav('language')} className={`ml-auto ${SEGMENTS}`}>
-          <span aria-current="page" className={segmentClass(true)}>
-            {locale === 'ja' ? '日本語' : 'English'}
-          </span>
-          <Link
-            href={other.href}
-            hrefLang={other.href === '/' ? 'en' : 'ja'}
-            className={segmentClass(false)}
-          >
-            {other.label}
-          </Link>
+          {LANGUAGES.map(({ value, href, label }) =>
+            value === locale ? (
+              <span key={value} aria-current="page" className={segmentClass(true)}>
+                {label}
+              </span>
+            ) : (
+              <Link key={value} href={href} hrefLang={value} className={segmentClass(false)}>
+                {label}
+              </Link>
+            ),
+          )}
         </nav>
       </header>
 
