@@ -180,7 +180,7 @@ Copy the shape of `~/Repository/onigiri` (which itself copies vocafy). Read its 
 - Released 2026-10-11 at https://jumpslab.kkweb.io. GitHub `piro0919/jumps-lab` is public (the owner: nothing special in it)
 - Vercel team `kkweb`, project `jumps-lab`: framework nextjs, functions sin1, Vercel Authentication off for the custom domain only, `jumps-lab.vercel.app` removed. Renovate branches skip builds (`ignoreCommand` in vercel.json)
 - Neon `jumps-lab-db` (free plan, sin1) through the Vercel Neon integration, which sets DATABASE_URL and friends. Migrations 0001–0014 applied to production by hand with DATABASE_URL_UNPOOLED (0010–0014 on 2026-10-12). Project `square-grass-26844004` in the Neon org "Vercel: kk-web"; its endpoint is fixed at 0.25 CU with the default suspend (checked with `neonctl api` on 2026-10-11)
-- Production env: BETTER_AUTH_SECRET (its own, not the local one), BETTER_AUTH_URL, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, SENTRY_DSN, R2_ENDPOINT, R2_BUCKET, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY. No OPENAI_API_KEY: the AI menu stays hidden in production
+- Production env: BETTER_AUTH_SECRET (its own, not the local one), BETTER_AUTH_URL, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, SENTRY_DSN, R2_ENDPOINT, R2_BUCKET, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY. OPENAI_API_KEY (sensitive, 中元さん's key, set by the owner on 2026-10-12): the AI menu and chat are live in production
 - DNS in Cloudflare (kkweb.io): CNAME `jumpslab` to Vercel (proxy off) and a `_vercel` TXT, added with the DNS-only token in janify's .env.local
 - Google Cloud project `jumps-lab-kkweb`, OAuth client "Jumps Lab web". Consent screen External and in production since 2026-10-11, with home, /privacy and /terms set and no logo (a logo would need Google's review)
 - Listed in the Notion portfolio DB and kk-web (WEB SERVICE, order 17)
@@ -193,9 +193,9 @@ Copy the shape of `~/Repository/onigiri` (which itself copies vocafy). Read its 
   - How many production profiles were saved as UTC (reading production was blocked by the permission classifier); remove `TimeZoneRepair` once none are left
   - The analysis page at 3:2 was not looked at after the layout change (home was)
 - Not done:
-  - The AI menu in production. Needs, in this order (explained to the owner 2026-10-12):
-    - A key under the owner's account and the owner's OK on the cost (costs are settled with 中元さん later)
-    - Privacy policy section 5 (ja and en) lists OpenAI as a recipient, with what is sent: age, gender, height, weight, events, the last 14 days of condition, fatigue, sleep, pain note, practice note and attempts, the session note and chat messages, and on competition day that meet's venue, call room place and time, start time and notes (never name or email). Not written yet because production sends nothing to OpenAI; writing it early would describe sending that does not happen
+  - The AI menu went live on 2026-10-12 because the owner asked for it with the items below set aside ("規約とか諸々一回置いといて"). Still open, in this order:
+    - A key under the owner's account (production uses 中元さん's key for now, so user data goes through their account and they pay)
+    - Privacy policy section 5 (ja and en) lists OpenAI as a recipient, with what is sent: age, gender, height, weight, events, the last 14 days of condition, fatigue, sleep, pain note, practice note and attempts, the session note and chat messages, and on competition day that meet's venue, call room place and time, start time and notes (never name or email). Not written yet: production now sends this to OpenAI without the policy saying so
     - Check against official sources before writing it (not yet checked): OpenAI is a US company, and the APPI has rules for giving personal data to a third party abroad (consent or equivalent measures); the pain note may count as special care-required personal information (要配慮個人情報), which may need the person's consent before it is sent. If consent is needed, a consent step is required before the first menu, not only a policy sentence. No lawyer review, like the terms
   - Coach questions (the prototype's hidden coach mode)
 - Dev server runs on port 3110 (`pnpm dev`); local Postgres on 5436 (`pnpm db:up`, then `pnpm migrate`)
