@@ -73,11 +73,10 @@ export function CompetitionItem({
         </span>
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="flex items-start justify-between gap-2">
-          <span className="flex flex-wrap items-center gap-2">
-            <span className="text-lg font-extrabold">{competition.name}</span>
-            {competition.isTarget && <Badge tone="accent">{t('targetBadge')}</Badge>}
-          </span>
+        {/* 名前と札（主目標・残りの日数）。札は名前のすぐ後ろに並べ、行の高さを右のアイコンボタンにそろえる */}
+        <span className="flex min-h-9 flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="text-lg font-extrabold">{competition.name}</span>
+          {competition.isTarget && <Badge tone="accent">{t('targetBadge')}</Badge>}
           {upcoming && (
             <Badge tone="accent">
               {tHome('daysLeft', { days: daysBetween(today, competition.day) })}
@@ -85,35 +84,40 @@ export function CompetitionItem({
           )}
         </span>
         {competition.venue && (
-          <span className="flex items-center gap-1 text-sm text-muted-foreground">
-            <MapPin aria-hidden className="size-3.5" />
+          <span className="flex items-center gap-1 text-sm break-keep text-muted-foreground">
+            <MapPin aria-hidden className="size-3.5 shrink-0" />
             {competition.venue}
           </span>
         )}
-        <span className="text-sm text-muted-foreground tabular-nums">
-          {[
-            (competition.callRoomTime || competition.callRoomPlace) &&
-              t('callRoom', {
-                time: [competition.callRoomTime, competition.callRoomPlace]
-                  .filter(Boolean)
-                  .join(' '),
-              }),
-            competition.startTime && t('start', { time: competition.startTime }),
-          ]
-            .filter(Boolean)
-            .join(' · ')}
-        </span>
+        {/* 招集と開始は1行ずつ（1行につなげると、スマホで場所の名前の途中で折り返した） */}
+        {(competition.callRoomTime || competition.callRoomPlace) && (
+          // 日本語の語の途中で折り返さない（「サブトラッ／ク」になった）。空白の位置で折り返す
+          <span className="text-sm break-keep text-muted-foreground tabular-nums">
+            {t('callRoom', {
+              time: [competition.callRoomTime, competition.callRoomPlace].filter(Boolean).join(' '),
+            })}
+          </span>
+        )}
+        {competition.startTime && (
+          <span className="text-sm text-muted-foreground tabular-nums">
+            {t('start', { time: competition.startTime })}
+          </span>
+        )}
         {competition.notes && <p className="text-sm whitespace-pre-wrap">{competition.notes}</p>}
-        {/* 申し込みのサイト。申し込むのは大会の前なので、これからの大会にだけ出す */}
+        {/* 申し込みのサイト。申し込むのは大会の前なので、これからの大会にだけ出す。灰色の小さなボタン */}
         {upcoming && competition.entryUrl && (
           <a
             href={competition.entryUrl}
             target="_blank"
             rel="noreferrer"
-            className="flex w-fit items-center gap-1 text-sm font-bold underline"
+            className={buttonVariants({
+              variant: 'secondary',
+              size: 'sm',
+              className: 'mt-2 w-fit',
+            })}
           >
             {tCompetitions('entry')}
-            <ExternalLink aria-hidden className="size-3.5" />
+            <ExternalLink aria-hidden />
           </a>
         )}
         {results.length > 0 && (
