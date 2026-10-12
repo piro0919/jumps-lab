@@ -11,6 +11,13 @@ export const GIB = MIB * KIB;
 export const MAX_VIDEO_BYTES = 100 * MIB;
 export const USER_VIDEO_BYTES = 1 * GIB;
 
+/**
+ * 動画を残す日数（2026-10-12 に本人と決めた）。残す価値があるのは動画より分析の結果なので、期限を過ぎたら消す。
+ * あとでプランごとに変える。本体は R2 のライフサイクルの規則が消す（videos/ を、この日数に1日足した日で。
+ * 画面に出す消える日より先に消さないように）。日数を変えるときは、その規則も一緒に直す
+ */
+export const VIDEO_KEEP_DAYS = 90;
+
 /** 受け付ける種類。iPhone は mov（quicktime）、Android は mp4、PC のブラウザの録画は webm */
 export const VIDEO_TYPES = ['video/mp4', 'video/quicktime', 'video/webm'] as const;
 

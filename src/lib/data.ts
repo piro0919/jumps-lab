@@ -489,9 +489,15 @@ export type Video = {
   note: string | null;
   objectKey: string;
   sizeBytes: number;
+  /** 消える時刻（ISO 8601） */
+  expiresAt: string;
 };
 
-const videoColumns = `id, to_char(day, 'YYYY-MM-DD') as day, event, kind, "attemptId", note, "objectKey", "sizeBytes"`;
+const videoColumns = `id, to_char(day, 'YYYY-MM-DD') as day, event, kind, "attemptId", note, "objectKey", "sizeBytes",
+  to_char("expiresAt" at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as "expiresAt"`;
+
+/** 期限の過ぎていない動画（期限を過ぎた行は、R2 の本体がもう無いか、まもなく消える） */
+const LIVE_VIDEO = `"expiresAt" > now()`;
 
 /**
  * 送る前に1本分の枠を取る（pending の行）。入力の中身もここで入れ、届いたら ready にするだけにする。
@@ -512,6 +518,7 @@ export async function reserveVideo(
     sizeBytes: number;
   },
   limitBytes: number,
+  keepDays: number,
 ): Promise<boolean> {
   // 人ごとのロックを取ってから数える。取らずに数えると、同時に送った2本がどちらも古い合計を見て上限を抜ける
   const client = await db().connect();
@@ -519,12 +526,13 @@ export async function reserveVideo(
     await client.query('begin');
     await client.query(`select pg_advisory_xact_lock(hashtext('video:' || $1))`, [userId]);
     const { rowCount } = await client.query(
-      `insert into video (id, "userId", day, event, kind, "attemptId", note, "objectKey", "contentType", "sizeBytes")
+      `insert into video (id, "userId", day, event, kind, "attemptId", note, "objectKey", "contentType", "sizeBytes",
+                          "expiresAt")
        select $1, $2, $3, $4, $5,
               (select a.id from attempt a where a.id = $6 and a."userId" = $2 and a.day = $3),
-              $7, $8, $9, $10::integer
-        where (select coalesce(sum("sizeBytes"), 0) from video where "userId" = $2) + $10::bigint
-              <= $11::bigint`,
+              $7, $8, $9, $10::integer, now() + make_interval(days => $12::integer)
+        where (select coalesce(sum("sizeBytes"), 0) from video where "userId" = $2 and ${LIVE_VIDEO})
+              + $10::bigint <= $11::bigint`,
       [
         video.id,
         userId,
@@ -537,6 +545,7 @@ export async function reserveVideo(
         video.contentType,
         video.sizeBytes,
         limitBytes,
+        keepDays,
       ],
     );
     await client.query('commit');
@@ -571,13 +580,13 @@ export async function getPendingVideo(
 }
 
 /**
- * 送りかけて3時間たっても届かなかった枠を外し、その置き場所を返す（R2 に残っていれば消すため）。
+ * 送りかけて3時間たっても届かなかった枠と、期限を過ぎた動画の行を外し、その置き場所を返す（R2 に残っていれば消すため）。
  * 送るための URL は30分で切れるが、遅い回線では 100MB の送信がその先まで続くので、間を空ける
  */
 export async function releaseStaleVideos(userId: string): Promise<string[]> {
   const { rows } = await db().query<{ objectKey: string }>(
-    `delete from video where "userId" = $1 and status = 'pending'
-        and "createdAt" < now() - interval '3 hours'
+    `delete from video where "userId" = $1
+        and ((status = 'pending' and "createdAt" < now() - interval '3 hours') or not (${LIVE_VIDEO}))
       returning "objectKey"`,
     [userId],
   );
@@ -588,7 +597,7 @@ export async function releaseStaleVideos(userId: string): Promise<string[]> {
 export async function listVideosOnDay(userId: string, day: string): Promise<Video[]> {
   const { rows } = await db().query<Video>(
     `select ${videoColumns} from video
-      where "userId" = $1 and day = $2 and status = 'ready'
+      where "userId" = $1 and day = $2 and status = 'ready' and ${LIVE_VIDEO}
       order by "createdAt"`,
     [userId, day],
   );
@@ -613,10 +622,10 @@ export async function deleteVideo(userId: string, id: string): Promise<string | 
   return rows[0]?.objectKey ?? null;
 }
 
-/** 動画の合計の大きさ（届いていない枠も含む） */
+/** 動画の合計の大きさ（届いていない枠も含む。期限を過ぎた動画は数えない） */
 export async function videoUsage(userId: string): Promise<number> {
   const { rows } = await db().query<{ total: string }>(
-    `select coalesce(sum("sizeBytes"), 0) as total from video where "userId" = $1`,
+    `select coalesce(sum("sizeBytes"), 0) as total from video where "userId" = $1 and ${LIVE_VIDEO}`,
     [userId],
   );
   return Number(rows[0]!.total);

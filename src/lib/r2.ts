@@ -64,6 +64,23 @@ export async function viewUrl(key: string): Promise<string> {
   });
 }
 
+/**
+ * 端末に保存するための署名 URL。開くと再生せずに保存する（Content-Disposition: attachment）。
+ * 動画は期限で消えるので、残したい人が手元に移せるように
+ */
+export async function downloadUrl(key: string, filename: string): Promise<string> {
+  const { client, bucket } = r2();
+  return getSignedUrl(
+    client,
+    new GetObjectCommand({
+      Bucket: bucket,
+      Key: key,
+      ResponseContentDisposition: `attachment; filename="${filename}"`,
+    }),
+    { expiresIn: 60 * 60 },
+  );
+}
+
 /** 届いたファイルの大きさ。無ければ null。通信の失敗などは投げる（「無い」と取り違えて、届いた分を置き去りにしないように） */
 export async function objectSize(key: string): Promise<number | null> {
   const { client, bucket } = r2();

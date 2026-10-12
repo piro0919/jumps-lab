@@ -16,7 +16,13 @@ import { EVENTS } from '@/lib/events';
 import { optionalText } from '@/lib/form';
 import { NOTE_MAX_LENGTH } from '@/lib/limits';
 import { deleteObject, objectSize, uploadUrl } from '@/lib/r2';
-import { MAX_VIDEO_BYTES, USER_VIDEO_BYTES, VIDEO_TYPES, videoKey } from '@/lib/videos';
+import {
+  MAX_VIDEO_BYTES,
+  USER_VIDEO_BYTES,
+  VIDEO_KEEP_DAYS,
+  VIDEO_TYPES,
+  videoKey,
+} from '@/lib/videos';
 import { requireViewer } from '@/lib/viewer';
 
 /**
@@ -65,7 +71,7 @@ export async function startVideoUploadAction(input: {
     return { ok: false, error: 'generic' };
   }
   try {
-    // 届かずに残った枠を外してから数える（途中で閉じた送信が、合計を食い続けないように）
+    // 届かずに残った枠と、期限を過ぎた動画の行を外してから数える（途中で閉じた送信が、合計を食い続けないように）
     for (const key of await releaseStaleVideos(viewer.userId)) {
       await deleteObject(key).catch(() => {});
     }
@@ -75,6 +81,7 @@ export async function startVideoUploadAction(input: {
       viewer.userId,
       { ...video, id, objectKey },
       USER_VIDEO_BYTES,
+      VIDEO_KEEP_DAYS,
     );
     if (!reserved) return { ok: false, error: 'videoQuota' };
     const url = await uploadUrl(objectKey, video.sizeBytes, video.contentType);

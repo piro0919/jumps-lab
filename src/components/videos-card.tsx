@@ -1,7 +1,7 @@
 'use client';
 
-import { Plus, Trash2 } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { Download, Plus, Trash2 } from 'lucide-react';
+import { useFormatter, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useState, useTransition } from 'react';
 import { deleteVideoAction } from '@/app/actions/videos';
@@ -17,6 +17,10 @@ export type VideoItem = {
   note: string | null;
   /** 見るための署名 URL（期限つき） */
   url: string;
+  /** 端末に保存するための署名 URL（期限つき） */
+  downloadUrl: string;
+  /** 動画が消える時刻（ISO 8601） */
+  expiresAt: string;
   /** 結び付けた試技の記録（表示用の文字） */
   attemptLabel: string | null;
 };
@@ -24,12 +28,23 @@ export type VideoItem = {
 /**
  * その日の動画。古い順に並べ、その場で再生する（ブラウザの再生の操作をそのまま使う）。
  * 頭の1コマを見せるため、URL の末尾に #t=0.1 を付ける（iPhone は preload だけでは1コマ目を描かない）。
- * 足すのは別の画面（/log/[day]/videos/new）、削除は確かめてから
+ * 足すのは別の画面（/log/[day]/videos/new）、削除は確かめてから。
+ * 動画は 90 日で消えるので、消える日と、端末に保存するボタンを出す（2026-10-12 に本人と決めた）
  */
-export function VideosCard({ addHref, videos }: { addHref: string; videos: VideoItem[] }) {
+export function VideosCard({
+  addHref,
+  videos,
+  timeZone,
+}: {
+  addHref: string;
+  videos: VideoItem[];
+  /** 消える日を出す時間帯（本人の設定。サーバーは UTC で動くので渡す） */
+  timeZone: string;
+}) {
   const t = useTranslations('videos');
   const tToday = useTranslations('today');
   const tEvents = useTranslations('events');
+  const format = useFormatter();
   const [removing, setRemoving] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
@@ -75,7 +90,25 @@ export function VideosCard({ addHref, videos }: { addHref: string; videos: Video
                     </span>
                   </span>
                   {video.note && <p className="text-sm whitespace-pre-wrap">{video.note}</p>}
+                  <span className="text-xs text-muted-foreground">
+                    {t('expires', {
+                      date: format.dateTime(new Date(video.expiresAt), {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        timeZone,
+                      }),
+                    })}
+                  </span>
                 </div>
+                <a
+                  href={video.downloadUrl}
+                  download
+                  aria-label={t('download')}
+                  className={buttonVariants({ variant: 'ghost', size: 'icon' })}
+                >
+                  <Download aria-hidden />
+                </a>
                 <Button
                   variant="ghost"
                   size="icon"

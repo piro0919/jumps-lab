@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 /** プライバシーポリシーの英訳。節は日本語版（/privacy）と1対1 */
 export default function PrivacyEn() {
   return (
-    <Legal title="Privacy Policy" doc="privacy" locale="en" updated="October 11, 2026">
+    <Legal title="Privacy Policy" doc="privacy" locale="en" updated="October 12, 2026">
       <h2>1. Operator</h2>
       <dl>
         <dt>Operator</dt>
@@ -107,8 +107,9 @@ export default function PrivacyEn() {
 
       <h2>7. How long we keep it</h2>
       <p>
-        We keep it until you delete your account. When you do, we delete all of the information
-        above.
+        We delete each video 90 days after you upload it, and show the date under each video. We
+        keep the rest of the information until you delete your account. When you do, we delete all
+        of the information above.
       </p>
 
       <h2>8. Access, correction and deletion</h2>

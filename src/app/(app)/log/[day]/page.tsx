@@ -6,7 +6,7 @@ import { PageTitle, HALVES } from '@/components/layout-ui';
 import { VideosCard } from '@/components/videos-card';
 import { getDayLog, listAttemptsBetween, listVideosOnDay } from '@/lib/data';
 import { resolveLogDay, todayIn } from '@/lib/dates';
-import { viewUrl } from '@/lib/r2';
+import { downloadUrl, viewUrl } from '@/lib/r2';
 import { formatMark } from '@/lib/units';
 import { requireProfile, requireViewer } from '@/lib/viewer';
 
@@ -27,7 +27,7 @@ export default async function LogDay({ params }: PageProps<'/log/[day]'>) {
     listAttemptsBetween(viewer.userId, day, day),
     listVideosOnDay(viewer.userId, day),
   ]);
-  // 動画は開くたびに期限つきの URL を作る。結び付けた試技は「2. 6.12 m」のように、試技の欄と同じ番号で出す
+  // 動画は開くたびに期限つきの URL（見る用と保存する用）を作る。結び付けた試技は「2. 6.12 m」のように、試技の欄と同じ番号で出す
   const videoItems = await Promise.all(
     videos.map(async (video) => {
       const sameEvent = attempts.filter((a) => a.event === video.event);
@@ -38,6 +38,12 @@ export default async function LogDay({ params }: PageProps<'/log/[day]'>) {
         kind: video.kind,
         note: video.note,
         url: await viewUrl(video.objectKey),
+        // 保存する名前は日付と種目（元のファイル名は IMG_1234 のようなもので、持っていない）
+        downloadUrl: await downloadUrl(
+          video.objectKey,
+          `jumps-lab-${video.day}-${video.event}${video.objectKey.slice(video.objectKey.lastIndexOf('.'))}`,
+        ),
+        expiresAt: video.expiresAt,
         attemptLabel:
           index < 0 ? null : `${index + 1}. ${formatMark(sameEvent[index]!.markM, profile.units)}`,
       };
@@ -73,7 +79,11 @@ export default async function LogDay({ params }: PageProps<'/log/[day]'>) {
           videos={videoByAttempt}
         />
         <ConditionCard log={log} editHref={`/log/${day}/condition`} />
-        <VideosCard addHref={`${base}/videos/new`} videos={videoItems} />
+        <VideosCard
+          addHref={`${base}/videos/new`}
+          videos={videoItems}
+          timeZone={profile.timeZone}
+        />
       </div>
     </main>
   );

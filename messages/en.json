@@ -262,7 +262,9 @@
     "uploading": "Uploading {percent}%",
     "play": "Watch the video",
     "usage": "Videos",
-    "usageValue": "{used} of {limit}"
+    "usageValue": "{used} of {limit}",
+    "expires": "Deleted on {date}",
+    "download": "Save video"
   },
   "advice": {
     "title": "Today's advice",

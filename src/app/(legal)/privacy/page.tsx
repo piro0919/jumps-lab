@@ -15,7 +15,7 @@ export const metadata: Metadata = {
  */
 export default function Privacy() {
   return (
-    <Legal title="プライバシーポリシー" doc="privacy" locale="ja" updated="2026年10月11日">
+    <Legal title="プライバシーポリシー" doc="privacy" locale="ja" updated="2026年10月12日">
       <h2>1. 運営者</h2>
       <dl>
         <dt>運営者</dt>
@@ -98,7 +98,10 @@ export default function Privacy() {
       <p>ログインの状態を保つためのクッキーだけを使います。</p>
 
       <h2>7. 保存する期間</h2>
-      <p>アカウントを削除するまで保存します。削除すると、上記の情報をすべて削除します。</p>
+      <p>
+        動画は、送っていただいた日から90日で削除します。削除する日は、それぞれの動画の下に表示します。
+        動画を除く情報は、アカウントを削除するまで保存します。アカウントを削除すると、上記の情報をすべて削除します。
+      </p>
 
       <h2>8. 開示・訂正・削除の求め</h2>
       <p>

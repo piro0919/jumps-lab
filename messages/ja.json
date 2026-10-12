@@ -262,7 +262,9 @@
     "uploading": "送信中 {percent}%",
     "play": "動画を見る",
     "usage": "動画",
-    "usageValue": "{limit} のうち {used}"
+    "usageValue": "{limit} のうち {used}",
+    "expires": "{date}に削除",
+    "download": "動画を保存"
   },
   "advice": {
     "title": "今日のアドバイス",
