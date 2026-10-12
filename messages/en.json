@@ -307,7 +307,6 @@
     "takeoffs": "Takeoffs",
     "contacts": "Plyo contacts",
     "total": "Total",
-    "ofLimit": "{count}/{limit}",
     "minUnit": "min",
     "takeoffCount": "{count, plural, one {# takeoff} other {# takeoffs}}",
     "contactCount": "{count, plural, one {# contact} other {# contacts}}",

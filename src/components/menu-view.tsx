@@ -20,15 +20,16 @@ export async function MenuView({ menu, level }: { menu: Menu; level: MenuLevel }
         </CardTitle>
         <div className="flex flex-col gap-4">
           <p className="text-sm">{menu.summary}</p>
+          {/* 3つとも「数字＋小さな単位」の同じ形にして、ラベルの高さをそろえる（上限は単位の側に出す） */}
           <div className="flex flex-wrap gap-x-6 gap-y-3">
             <Stat
               size="sm"
-              value={t('ofLimit', { count: totals.takeoffs, limit: limit.takeoffs })}
+              value={{ value: String(totals.takeoffs), unit: `/${limit.takeoffs}` }}
               label={t('takeoffs')}
             />
             <Stat
               size="sm"
-              value={t('ofLimit', { count: totals.contacts, limit: limit.contacts })}
+              value={{ value: String(totals.contacts), unit: `/${limit.contacts}` }}
               label={t('contacts')}
             />
             <Stat
@@ -46,7 +47,7 @@ export async function MenuView({ menu, level }: { menu: Menu; level: MenuLevel }
             </ul>
           )}
           {menu.missing.length > 0 && (
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs break-keep text-muted-foreground">
               {t('missing', { items: menu.missing.join(' / ') })}
             </p>
           )}
@@ -72,8 +73,9 @@ export async function MenuView({ menu, level }: { menu: Menu; level: MenuLevel }
                   </span>
                   <span className="text-sm font-semibold tabular-nums">
                     {[
-                      item.sets !== null && t('sets', { count: item.sets }),
-                      item.reps,
+                      // 1セットは書かない（情報にならない）。回数の欄が時間と同じ文なら、時間だけを出す
+                      item.sets !== null && item.sets > 1 && t('sets', { count: item.sets }),
+                      item.reps !== t('minutesValue', { count: item.minutes }) && item.reps,
                       item.intensity,
                       t('minutesValue', { count: item.minutes }),
                     ]

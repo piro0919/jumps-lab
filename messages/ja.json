@@ -307,7 +307,6 @@
     "takeoffs": "跳躍",
     "contacts": "プライオの接地",
     "total": "合計",
-    "ofLimit": "{count}/{limit}",
     "minUnit": "分",
     "takeoffCount": "跳躍 {count}本",
     "contactCount": "接地 {count}回",
