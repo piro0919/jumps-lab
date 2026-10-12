@@ -660,16 +660,6 @@ export async function hasMenu(userId: string, day: string): Promise<boolean> {
   return rowCount === 1;
 }
 
-/** 日付と同じ月に作ったメニューの数（月の上限を確かめる） */
-export async function countMenusInMonth(userId: string, day: string): Promise<number> {
-  const { rows } = await db().query<{ count: string }>(
-    `select count(*) from practice_menu
-      where "userId" = $1 and date_trunc('month', day) = date_trunc('month', $2::date)`,
-    [userId, day],
-  );
-  return Number(rows[0]!.count);
-}
-
 /** メニューを保存する。その日にもうあれば保存せず false（1日に1つ。二度押しで2回作らせない） */
 export async function saveMenu(
   userId: string,
@@ -700,15 +690,6 @@ export async function listMenuMessages(userId: string, day: string): Promise<Men
     [userId, day],
   );
   return rows;
-}
-
-/** その日に送った相談の数（1日の上限を確かめる） */
-export async function countMenuQuestions(userId: string, day: string): Promise<number> {
-  const { rows } = await db().query<{ count: string }>(
-    `select count(*) from menu_message where "userId" = $1 and day = $2 and role = 'user'`,
-    [userId, day],
-  );
-  return Number(rows[0]!.count);
 }
 
 /**
@@ -763,4 +744,33 @@ export async function saveMenuExchange(
   } finally {
     client.release();
   }
+}
+
+/** AI を1回呼ぶ前に記録する（失敗した呼び出しも上限に数えるため） */
+export async function recordAiCall(
+  userId: string,
+  day: string,
+  kind: 'menu' | 'chat',
+  model: string,
+): Promise<void> {
+  await db().query(`insert into ai_call ("userId", day, kind, model) values ($1, $2, $3, $4)`, [
+    userId,
+    day,
+    kind,
+    model,
+  ]);
+}
+
+/** AI を呼んだ回数。その日の分と、その日と同じ月の分 */
+export async function countAiCalls(
+  userId: string,
+  day: string,
+  kind: 'menu' | 'chat',
+): Promise<{ today: number; month: number }> {
+  const { rows } = await db().query<{ today: string; month: string }>(
+    `select count(*) filter (where day = $2::date) as today, count(*) as month from ai_call
+      where "userId" = $1 and kind = $3 and date_trunc('month', day) = date_trunc('month', $2::date)`,
+    [userId, day, kind],
+  );
+  return { today: Number(rows[0]!.today), month: Number(rows[0]!.month) };
 }

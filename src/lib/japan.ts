@@ -12,6 +12,9 @@ export function inJapan(timeZone: string): boolean {
  */
 export const JAAF_ENTRY_URL = 'https://athleticfamily.jaaf.or.jp/user/?page=menu';
 
+/** 一覧の年度。年度入りの URL（yearly）は、この年を含んでいなければならない */
+export const SCHEDULE_YEAR = 2026;
+
 export type PrefectureLink = {
   /** 都道府県の名前（日本語と英語） */
   ja: string;
@@ -20,7 +23,7 @@ export type PrefectureLink = {
   url: string;
   /**
    * 年度ごとに差し替えが要るか。URL に年度が入っているもの（annual）と、年度で検索するもの。
-   * 毎年4月の新年度に、ここを見直す
+   * 毎年4月の新年度に、ここを見直す（SCHEDULE_YEAR を上げると、test/japan.test.ts が差し替え漏れを見つける）
    */
   yearly: boolean;
 };
@@ -29,7 +32,8 @@ export type PrefectureLink = {
  * 47都道府県の陸上競技協会の大会日程。2026-10-12 に中元さんが日本陸連の加盟団体一覧
  * （https://www.jaaf.or.jp/about/group/accn/）から確かめた一覧のまま。
  * 中身は読み込まない。転載の可否がわからず、招集の時刻などは本人が要項で確かめるべきなので、リンクだけ出す。
- * 高知県は県陸協の日程のリンクが壊れているため、日本陸連の地域別の大会検索。埼玉県は HTTPS が無い
+ * 高知県は県陸協の日程のリンクが壊れているため、日本陸連の地域別の大会検索。
+ * 秋田・埼玉・千葉・神奈川・大阪・兵庫・奈良・佐賀・熊本は HTTPS が無く http のまま
  */
 export const PREFECTURE_LINKS: PrefectureLink[] = [
   {

@@ -123,9 +123,9 @@
     "videoUpload": "Could not upload the video. Try again.",
     "entryUrl": "Enter the entry site as a web address starting with https://.",
     "menuMinutes": "Enter the practice time in minutes (15 to 240).",
-    "menuLimit": "You've made this month's menus.",
+    "menuLimit": "You've reached the limit for making menus.",
     "menuFailed": "Couldn't make the menu. Try again later.",
-    "chatLimit": "You've asked as many questions as you can today."
+    "chatLimit": "You've reached the limit for questions."
   },
   "home": {
     "goal": "Season goal",

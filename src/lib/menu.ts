@@ -15,14 +15,20 @@ export const MENU_MODEL = 'gpt-6-luna';
 /** チャットで使うモデル（中元さんの案の第2段階も GPT-6 Luna） */
 export const CHAT_MODEL = 'gpt-6-luna';
 
-/** 1日に送れる相談の数（AI の費用の歯止め。仮決め） */
-export const QUESTIONS_PER_DAY = 20;
+/**
+ * AI を呼べる回数（費用の歯止め。どれも仮決め）。失敗した呼び出しも数える（ai_call の行）。
+ * メニューは1日1つだが、上限を超えて作り直させる分と失敗した分を見込む。プランができたらここを分ける
+ */
+export const AI_CALL_LIMITS = {
+  menu: { perDay: 4, perMonth: 62 },
+  chat: { perDay: 20, perMonth: 300 },
+} as const;
+
+/** チャットの返事の字数の上限（menu_message の柵と同じ） */
+export const REPLY_MAX_LENGTH = 4000;
 
 /** 相談1回の字数 */
 export const QUESTION_MAX_LENGTH = 1000;
-
-/** 1か月に作れるメニューの数。1日1つなので、ひと月の日数で足りる。プランができたらここを分ける */
-export const MENUS_PER_MONTH = 31;
 
 /** 練習時間の範囲（分） */
 export const SESSION_MIN_MINUTES = 15;
@@ -120,10 +126,10 @@ const MINUTES_SLACK = 1.2;
 
 export type Revision = {
   reply: string;
-  /** 直したか。false のときの menu は使わない */
+  /** 直したか。false のときは menu を返させない（全部を書かせると返事の分だけ費用がかさむ） */
   changed: boolean;
   sessionMinutes: number;
-  menu: Menu;
+  menu: Menu | null;
 };
 
 /** チャットの返事の形。返事の文と、直したメニュー（直さないときは今のメニューのまま） */
@@ -135,7 +141,7 @@ export const REVISION_SCHEMA = {
     reply: { type: 'string' },
     changed: { type: 'boolean' },
     sessionMinutes: { type: 'integer' },
-    menu: MENU_SCHEMA,
+    menu: { anyOf: [MENU_SCHEMA, { type: 'null' }] },
   },
 } as const;
 
@@ -211,7 +217,7 @@ export function revisionInstructions(level: MenuLevel, language: 'en' | 'ja'): s
     menuInstructions(level, language),
     "Now you are adjusting today's latest menu (in the input) in a chat with the athlete.",
     'When the time, place, equipment, weather or how they feel has changed, revise only the items that need it and keep the rest as they are. Set "changed" to true and return the whole revised menu.',
-    'When nothing needs to change (a question, thanks), set "changed" to false and return the current menu unchanged.',
+    'When nothing needs to change (a question, thanks), set "changed" to false and "menu" to null.',
     'In "reply", answer the athlete briefly and, when you revised the menu, say what you changed and why.',
     'Set "sessionMinutes" to the session length after this message (the current one unless the athlete changed it).',
     'If the athlete asks for more jumps than the limits allow, keep the limits and explain why in the reply.',

@@ -5,8 +5,7 @@ import { getLocale } from 'next-intl/server';
 import { z } from 'zod';
 import { aiEnabled, askJson } from '@/lib/ai';
 import {
-  countMenuQuestions,
-  countMenusInMonth,
+  countAiCalls,
   getMenu,
   getProfile,
   listAttemptsBetween,
@@ -14,6 +13,7 @@ import {
   listConditionsBetween,
   listMenuMessages,
   type Profile,
+  recordAiCall,
   saveMenu,
   saveMenuExchange,
 } from '@/lib/data';
@@ -21,15 +21,16 @@ import { addDays, daysBetween, todayIn } from '@/lib/dates';
 import { type ActionResult, optionalText } from '@/lib/form';
 import { NOTE_MAX_LENGTH } from '@/lib/limits';
 import {
+  AI_CALL_LIMITS,
   CHAT_MODEL,
   checkMenu,
   type Menu,
   MENU_MODEL,
   MENU_SCHEMA,
   menuInstructions,
-  MENUS_PER_MONTH,
+  menuTotals,
   QUESTION_MAX_LENGTH,
-  QUESTIONS_PER_DAY,
+  REPLY_MAX_LENGTH,
   type Revision,
   REVISION_SCHEMA,
   revisionInstructions,
@@ -96,6 +97,13 @@ async function menuContext(userId: string, profile: Profile, today: string) {
   };
 }
 
+/** 今日・今月の AI の呼び出しが上限に達しているか */
+async function overLimit(userId: string, today: string, kind: 'menu' | 'chat'): Promise<boolean> {
+  const used = await countAiCalls(userId, today, kind);
+  const limit = AI_CALL_LIMITS[kind];
+  return used.today >= limit.perDay || used.month >= limit.perMonth;
+}
+
 async function language(): Promise<'en' | 'ja'> {
   return (await getLocale()) === 'ja' ? 'ja' : 'en';
 }
@@ -123,9 +131,7 @@ export async function createMenuAction(
 
   try {
     if (await getMenu(viewer.userId, today)) return { ok: true };
-    if ((await countMenusInMonth(viewer.userId, today)) >= MENUS_PER_MONTH) {
-      return { ok: false, error: 'menuLimit' };
-    }
+    if (await overLimit(viewer.userId, today, 'menu')) return { ok: false, error: 'menuLimit' };
     const { advice, data } = await menuContext(viewer.userId, profile, today);
     const input = JSON.stringify({
       ...data,
@@ -134,6 +140,8 @@ export async function createMenuAction(
     let instructions = menuInstructions(advice.level, await language());
 
     for (let attempt = 0; attempt <= RETRIES; attempt += 1) {
+      // 呼ぶ前に記録する（失敗しても上限に数える）
+      await recordAiCall(viewer.userId, today, 'menu', MENU_MODEL);
       const menu = await askJson<Menu>({
         model: MENU_MODEL,
         instructions,
@@ -185,14 +193,13 @@ export async function askMenuAction(
   try {
     const current = await getMenu(viewer.userId, today);
     if (!current) return { ok: false, error: 'generic' };
-    if ((await countMenuQuestions(viewer.userId, today)) >= QUESTIONS_PER_DAY) {
-      return { ok: false, error: 'chatLimit' };
-    }
+    if (await overLimit(viewer.userId, today, 'chat')) return { ok: false, error: 'chatLimit' };
     const [{ advice, data }, history] = await Promise.all([
       menuContext(viewer.userId, profile, today),
       listMenuMessages(viewer.userId, today),
     ]);
-    const minutes = current.minutes ?? SESSION_MAX_MINUTES;
+    // 練習時間を持たないメニュー（チャットより前に作ったもの）は、メニューの合計の分を練習時間とみなす
+    const minutes = current.minutes ?? menuTotals(current.menu).minutes;
     const input = JSON.stringify({
       ...data,
       session: { minutes: current.minutes },
@@ -210,6 +217,7 @@ export async function askMenuAction(
     }
 
     for (let attempt = 0; attempt <= RETRIES; attempt += 1) {
+      await recordAiCall(viewer.userId, today, 'chat', CHAT_MODEL);
       const answer = await askJson<Revision>({
         model: CHAT_MODEL,
         instructions,
@@ -217,28 +225,27 @@ export async function askMenuAction(
         schemaName: 'menu_revision',
         schema: REVISION_SCHEMA,
       });
+      // 強さが変わった日は、直したメニューが無ければ出せない
+      const revised = answer.changed || levelChanged ? answer.menu : null;
       const sessionMinutes = Math.min(
         SESSION_MAX_MINUTES,
-        Math.max(SESSION_MIN_MINUTES, answer.changed ? answer.sessionMinutes : minutes),
+        Math.max(SESSION_MIN_MINUTES, revised ? answer.sessionMinutes : minutes),
       );
       const problem =
-        answer.changed || levelChanged
-          ? checkMenu(answer.menu, advice.level, sessionMinutes)
-          : null;
+        (answer.changed || levelChanged) && !revised
+          ? 'The revised menu is missing.'
+          : revised
+            ? checkMenu(revised, advice.level, sessionMinutes)
+            : null;
       if (!problem) {
         const saved = await saveMenuExchange(viewer.userId, today, {
           fromVersion: current.version,
           question: parsed.data.question,
-          reply: answer.reply,
-          revised:
-            answer.changed || levelChanged
-              ? {
-                  level: advice.level,
-                  model: CHAT_MODEL,
-                  menu: answer.menu,
-                  minutes: sessionMinutes,
-                }
-              : null,
+          // 返事の長さは表の柵に合わせて切る（超えると保存ごと失敗する）
+          reply: answer.reply.slice(0, REPLY_MAX_LENGTH),
+          revised: revised
+            ? { level: advice.level, model: CHAT_MODEL, menu: revised, minutes: sessionMinutes }
+            : null,
         });
         if (!saved) return { ok: false, error: 'generic' };
         refresh();

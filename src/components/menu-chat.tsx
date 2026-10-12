@@ -37,7 +37,8 @@ export function MenuChat({
     <Card>
       <CardTitle>{t('chatTitle')}</CardTitle>
       <div className="flex flex-col gap-4">
-        {messages.length > 0 && (
+        {/* 最初の相談でも「考え中」を出す（返事に十数秒かかる） */}
+        {(messages.length > 0 || pending) && (
           <ul className="flex flex-col gap-2">
             {messages.map((message) => (
               <li

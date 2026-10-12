@@ -33,6 +33,15 @@ export default async function LogDay({ params }: PageProps<'/log/[day]'>) {
   // 動画は開くたびに期限つきの URL（見る用と保存する用）を作る。結び付けた試技は「2. 6.12 m」のように、試技の欄と同じ番号で出す
   const videoItems = await Promise.all(
     videos.map(async (video) => {
+      // 見る用と保存する用の URL は、並べて作る
+      const [url, saveUrl] = await Promise.all([
+        viewUrl(video.objectKey),
+        // 保存する名前は日付と種目（元のファイル名は IMG_1234 のようなもので、持っていない）
+        downloadUrl(
+          video.objectKey,
+          `jumps-lab-${video.day}-${video.event}${video.objectKey.slice(video.objectKey.lastIndexOf('.'))}`,
+        ),
+      ]);
       const sameEvent = attempts.filter((a) => a.event === video.event);
       const index = sameEvent.findIndex((a) => a.id === video.attemptId);
       return {
@@ -40,12 +49,8 @@ export default async function LogDay({ params }: PageProps<'/log/[day]'>) {
         event: video.event,
         kind: video.kind,
         note: video.note,
-        url: await viewUrl(video.objectKey),
-        // 保存する名前は日付と種目（元のファイル名は IMG_1234 のようなもので、持っていない）
-        downloadUrl: await downloadUrl(
-          video.objectKey,
-          `jumps-lab-${video.day}-${video.event}${video.objectKey.slice(video.objectKey.lastIndexOf('.'))}`,
-        ),
+        url,
+        downloadUrl: saveUrl,
         expiresAt: video.expiresAt,
         attemptLabel:
           index < 0 ? null : `${index + 1}. ${formatMark(sameEvent[index]!.markM, profile.units)}`,
