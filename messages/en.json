@@ -124,7 +124,8 @@
     "entryUrl": "Enter the entry site as a web address starting with https://.",
     "menuMinutes": "Enter the practice time in minutes (15 to 240).",
     "menuLimit": "You've made this month's menus.",
-    "menuFailed": "Couldn't make the menu. Try again later."
+    "menuFailed": "Couldn't make the menu. Try again later.",
+    "chatLimit": "You've asked as many questions as you can today."
   },
   "home": {
     "goal": "Season goal",
@@ -320,6 +321,11 @@
       "drills": "Drills",
       "strength": "Strength",
       "cooldown": "Cool-down"
-    }
+    },
+    "chatTitle": "Ask the coach",
+    "chatPlaceholder": "Only 60 minutes today, it is raining…",
+    "send": "Send",
+    "thinking": "Thinking…",
+    "revised": "Menu updated (v{version})"
   }
 }

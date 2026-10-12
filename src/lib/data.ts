@@ -632,12 +632,20 @@ export async function videoUsage(userId: string): Promise<number> {
   return Number(rows[0]!.total);
 }
 
-export type SavedMenu = { level: MenuLevel; model: string; menu: Menu };
+export type SavedMenu = {
+  level: MenuLevel;
+  model: string;
+  menu: Menu;
+  /** 練習時間（分）。チャットの前に作ったメニューには無い */
+  minutes: number | null;
+  /** チャットで直すたびに 1 ずつ上がる */
+  version: number;
+};
 
 /** その日の AI のメニュー。無ければ null */
 export async function getMenu(userId: string, day: string): Promise<SavedMenu | null> {
   const { rows } = await db().query<SavedMenu>(
-    `select level, model, menu from practice_menu where "userId" = $1 and day = $2`,
+    `select level, model, menu, minutes, version from practice_menu where "userId" = $1 and day = $2`,
     [userId, day],
   );
   return rows[0] ?? null;
@@ -663,11 +671,96 @@ export async function countMenusInMonth(userId: string, day: string): Promise<nu
 }
 
 /** メニューを保存する。その日にもうあれば保存せず false（1日に1つ。二度押しで2回作らせない） */
-export async function saveMenu(userId: string, day: string, saved: SavedMenu): Promise<boolean> {
+export async function saveMenu(
+  userId: string,
+  day: string,
+  saved: Omit<SavedMenu, 'version'>,
+): Promise<boolean> {
   const { rowCount } = await db().query(
-    `insert into practice_menu ("userId", day, level, model, menu) values ($1, $2, $3, $4, $5)
+    `insert into practice_menu ("userId", day, level, model, menu, minutes) values ($1, $2, $3, $4, $5, $6)
      on conflict ("userId", day) do nothing`,
-    [userId, day, saved.level, saved.model, JSON.stringify(saved.menu)],
+    [userId, day, saved.level, saved.model, JSON.stringify(saved.menu), saved.minutes],
   );
   return rowCount === 1;
+}
+
+export type MenuMessage = {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  /** assistant の返事で直したメニューの版。直さなかったら null */
+  version: number | null;
+};
+
+/** その日のチャット。古い順（同じ時刻に入れた相談と返事は、相談が先） */
+export async function listMenuMessages(userId: string, day: string): Promise<MenuMessage[]> {
+  const { rows } = await db().query<MenuMessage>(
+    `select id, role, content, version from menu_message
+      where "userId" = $1 and day = $2 order by "createdAt", role desc`,
+    [userId, day],
+  );
+  return rows;
+}
+
+/** その日に送った相談の数（1日の上限を確かめる） */
+export async function countMenuQuestions(userId: string, day: string): Promise<number> {
+  const { rows } = await db().query<{ count: string }>(
+    `select count(*) from menu_message where "userId" = $1 and day = $2 and role = 'user'`,
+    [userId, day],
+  );
+  return Number(rows[0]!.count);
+}
+
+/**
+ * 相談と返事を保存し、直したメニューがあれば版を上げて上書きする（直さなかった返事では版を変えない）。
+ * 読んだときの版（fromVersion）から変わっていたら何もせず false（別の画面で同時に直したとき、後の方を捨てる）
+ */
+export async function saveMenuExchange(
+  userId: string,
+  day: string,
+  exchange: {
+    fromVersion: number;
+    question: string;
+    reply: string;
+    revised: { level: MenuLevel; model: string; menu: Menu; minutes: number } | null;
+  },
+): Promise<boolean> {
+  const client = await db().connect();
+  try {
+    await client.query('begin');
+    const { rows } = await client.query<{ version: number }>(
+      `update practice_menu
+          set version = version + (case when $6::jsonb is null then 0 else 1 end),
+              level = coalesce($4, level), model = coalesce($5, model),
+              menu = coalesce($6::jsonb, menu), minutes = coalesce($7, minutes)
+        where "userId" = $1 and day = $2 and version = $3
+        returning version`,
+      [
+        userId,
+        day,
+        exchange.fromVersion,
+        exchange.revised?.level ?? null,
+        exchange.revised?.model ?? null,
+        exchange.revised ? JSON.stringify(exchange.revised.menu) : null,
+        exchange.revised?.minutes ?? null,
+      ],
+    );
+    const version = rows[0]?.version;
+    if (version === undefined) {
+      await client.query('rollback');
+      return false;
+    }
+    await client.query(
+      `insert into menu_message ("userId", day, role, content, version, "createdAt")
+       values ($1, $2, 'user', $3, null, now()), ($1, $2, 'assistant', $4, $5, now())`,
+      [userId, day, exchange.question, exchange.reply, exchange.revised ? version : null],
+    );
+    await client.query('commit');
+    return true;
+  } catch (error) {
+    await client.query('rollback');
+    throw error;
+  } finally {
+    client.release();
+  }
 }
