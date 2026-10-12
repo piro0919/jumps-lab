@@ -107,10 +107,10 @@ function Feature({
 }
 
 /**
- * LP の写真。Unsplash の無料の写真（Unsplash License: 商用可・クレジット不要）を縮めて public/landing に置いた。
- * Vercel の画像の最適化は課金なので使わず、幅 800 と 1600 の WebP を srcSet で出し分ける。
- * 走幅跳 Peter Zhan（unsplash.com/photos/RWpEFLH86jA）、走高跳 Steve Hillman（1eMdn8dCPQ4）、
- * 締めの走幅跳 Peter Zhan（UKRycPqHtdg）
+ * LP の写真。ChatGPT で生成した架空の選手の写真（2026-10-12）を縮めて public/landing に置いた。
+ * 前は Unsplash の写真だったが、Unsplash の規約（5条）は写っている人の姿とロゴをライセンスから外していて、
+ * 顔の分かる実在の選手を看板に使えなかった。顔は出したいので、構図だけ元の写真に倣って生成した（本人と決めた）。
+ * Vercel の画像の最適化は課金なので使わず、幅 800 と 1600 の WebP を srcSet で出し分ける
  */
 function Photo({ name, alt, className }: { name: string; alt: string; className: string }) {
   return (

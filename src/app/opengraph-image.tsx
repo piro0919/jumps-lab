@@ -14,7 +14,7 @@ const BRAND = '#d4ff3a';
  * 共有の絵（2026-10-11 の青一色にアイコンと既定の書体の版は、本人に「クソダサい」と言われた。2026-10-12）。
  * LP と同じ走幅跳の写真を右に敷き、左を暗く溶かして、ロゴの書体（Kanit の極太の斜体）で LP の見出しを置く。
  * kkweb.io の一覧では 176px まで縮むので、見出しは2行・大きく。字は英字だけなので和文の書体は持たない。
- * next/og は WebP を読めないので、写真は assets/og に JPEG で置いた（Unsplash License、Peter Zhan）。
+ * next/og は WebP を読めないので、写真は assets/og に JPEG で置いた（LP と同じ、ChatGPT で生成した架空の選手）。
  * 書体は Kanit（OFL、assets/og/OFL.txt）。ビルドのときに焼く（開くたびに作ると本番で落ちる）
  */
 export default async function OpengraphImage() {
