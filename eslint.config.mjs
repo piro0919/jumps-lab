@@ -30,7 +30,7 @@ const eslintConfig = defineConfig([
   ...magicNumbers({
     files: ['src/**/*.{ts,tsx}'],
     level: 'error',
-    ignores: ['src/app/opengraph-image.tsx'],
+    ignores: ['src/app/opengraph-image.tsx', 'src/app/share-image.tsx', 'src/app/**/opengraph-image.tsx'],
   }),
   // Override default ignores of eslint-config-next.
   globalIgnores([

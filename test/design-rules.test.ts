@@ -129,7 +129,7 @@ describe('見た目の決まり', () => {
     expect(
       offenders(
         (l) => /#[0-9a-fA-F]{3,8}\b/.test(l),
-        ['app/sign-in/google-button.tsx', 'app/opengraph-image.tsx'],
+        ['app/sign-in/google-button.tsx', 'app/share-image.tsx'],
       ),
     ).toEqual([]);
   });

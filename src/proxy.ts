@@ -50,9 +50,9 @@ export function proxy(request: NextRequest) {
   return pass();
 }
 
-// ログインの受け口、Next の配信物、アイコンや OG 画像、LP の写真（public/landing）などは通す
+// ログインの受け口、Next の配信物、アイコンや OG 画像（日本語の LP の /ja/opengraph-image も）、LP の写真（public/landing）などは通す
 export const config = {
   matcher: [
-    '/((?!api/auth|_next/|landing/|favicon\\.ico|icon|apple-icon|manifest\\.webmanifest|opengraph-image|robots\\.txt|sitemap\\.xml).*)',
+    '/((?!api/auth|_next/|landing/|favicon\\.ico|icon|apple-icon|manifest\\.webmanifest|opengraph-image|ja/opengraph-image|robots\\.txt|sitemap\\.xml).*)',
   ],
 };
