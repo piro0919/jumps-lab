@@ -26,6 +26,9 @@ export const env = createEnv({
     R2_ACCESS_KEY_ID: z.string().min(1).optional(),
     R2_SECRET_ACCESS_KEY: z.string().min(1).optional(),
     R2_BUCKET: z.string().min(1).optional(),
+    // AI コーチ（OpenAI）。無ければ AI の機能を出さない（src/lib/ai.ts）。
+    // 今は中元さんから借りたキーを手元だけに置く。本番に入れるのは、払う名義が決まってから（2026-10-12）
+    OPENAI_API_KEY: z.string().min(1).optional(),
   },
   client: {},
   runtimeEnv: {
@@ -39,6 +42,7 @@ export const env = createEnv({
     R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID,
     R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY,
     R2_BUCKET: process.env.R2_BUCKET,
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
   },
   emptyStringAsUndefined: true,
 });

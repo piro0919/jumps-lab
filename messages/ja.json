@@ -121,7 +121,10 @@
     "videoFile": "60秒・100MB までの動画を選んでください。",
     "videoQuota": "動画の保存量がいっぱいです。動画を削除してから追加してください。",
     "videoUpload": "動画を送れませんでした。もう一度お試しください。",
-    "entryUrl": "エントリーサイトは https:// で始まるアドレスで入れてください。"
+    "entryUrl": "エントリーサイトは https:// で始まるアドレスで入れてください。",
+    "menuMinutes": "練習時間を15〜240分で入れてください。",
+    "menuLimit": "今月のメニューの数がいっぱいです。",
+    "menuFailed": "メニューを作れませんでした。時間をおいてお試しください。"
   },
   "home": {
     "goal": "今季の目標",
@@ -288,5 +291,35 @@
     "source": "出典",
     "toward": "主目標の大会まで{weeks}週",
     "build": "準備期"
+  },
+  "menu": {
+    "title": "今日のメニュー",
+    "newTitle": "今日のメニューを作る",
+    "short": "メニュー",
+    "create": "今日のメニューを作る",
+    "creating": "作成中…",
+    "view": "今日のメニューを見る",
+    "minutes": "練習時間（分）",
+    "note": "場所・器具など",
+    "notePlaceholder": "競技場、ボックスなし、チームで90分…",
+    "summary": "まとめ",
+    "takeoffs": "跳躍",
+    "contacts": "プライオの接地",
+    "total": "合計",
+    "ofLimit": "{count}/{limit}",
+    "minUnit": "分",
+    "takeoffCount": "跳躍 {count}本",
+    "contactCount": "接地 {count}回",
+    "sets": "{count}セット",
+    "minutesValue": "{count}分",
+    "missing": "足りないデータ：{items}",
+    "disclaimer": "AI が作った目安です。体の声とコーチの指示を優先してください。",
+    "section": {
+      "warmup": "ウォーミングアップ",
+      "technique": "専門練習",
+      "drills": "ドリル",
+      "strength": "筋力トレーニング",
+      "cooldown": "クールダウン"
+    }
   }
 }

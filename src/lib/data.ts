@@ -1,6 +1,7 @@
 import 'server-only';
 import { db } from '@/lib/db';
 import type { JumpEvent } from '@/lib/events';
+import type { Menu, MenuLevel } from '@/lib/menu';
 import type { Grade } from '@/lib/profile-options';
 import type { Units } from '@/lib/units';
 
@@ -629,4 +630,44 @@ export async function videoUsage(userId: string): Promise<number> {
     [userId],
   );
   return Number(rows[0]!.total);
+}
+
+export type SavedMenu = { level: MenuLevel; model: string; menu: Menu };
+
+/** その日の AI のメニュー。無ければ null */
+export async function getMenu(userId: string, day: string): Promise<SavedMenu | null> {
+  const { rows } = await db().query<SavedMenu>(
+    `select level, model, menu from practice_menu where "userId" = $1 and day = $2`,
+    [userId, day],
+  );
+  return rows[0] ?? null;
+}
+
+/** その日に AI のメニューがあるか（記録の日の画面のリンク用） */
+export async function hasMenu(userId: string, day: string): Promise<boolean> {
+  const { rowCount } = await db().query(
+    `select 1 from practice_menu where "userId" = $1 and day = $2`,
+    [userId, day],
+  );
+  return rowCount === 1;
+}
+
+/** 日付と同じ月に作ったメニューの数（月の上限を確かめる） */
+export async function countMenusInMonth(userId: string, day: string): Promise<number> {
+  const { rows } = await db().query<{ count: string }>(
+    `select count(*) from practice_menu
+      where "userId" = $1 and date_trunc('month', day) = date_trunc('month', $2::date)`,
+    [userId, day],
+  );
+  return Number(rows[0]!.count);
+}
+
+/** メニューを保存する。その日にもうあれば保存せず false（1日に1つ。二度押しで2回作らせない） */
+export async function saveMenu(userId: string, day: string, saved: SavedMenu): Promise<boolean> {
+  const { rowCount } = await db().query(
+    `insert into practice_menu ("userId", day, level, model, menu) values ($1, $2, $3, $4, $5)
+     on conflict ("userId", day) do nothing`,
+    [userId, day, saved.level, saved.model, JSON.stringify(saved.menu)],
+  );
+  return rowCount === 1;
 }

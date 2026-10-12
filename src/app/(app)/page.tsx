@@ -5,9 +5,11 @@ import { DisplayNumber, PageTitle, SectionTitle, MAIN_SIDE } from '@/components/
 import { AdviceCard } from '@/components/advice-card';
 import { EventHero } from '@/components/event-hero';
 import { WeatherCard } from '@/components/weather-card';
+import { aiEnabled } from '@/lib/ai';
 import { computeBests } from '@/lib/bests';
 import {
   getTargets,
+  hasMenu,
   listAllAttempts,
   listCompetitionsBetween,
   listConditionsBetween,
@@ -30,11 +32,12 @@ export default async function Home() {
   const viewer = await requireViewer();
   const profile = await requireProfile(viewer.userId);
   const today = todayIn(profile.timeZone);
-  const [targets, attempts, recentLogs, upcoming] = await Promise.all([
+  const [targets, attempts, recentLogs, upcoming, menuMade] = await Promise.all([
     getTargets(viewer.userId, profile.events),
     listAllAttempts(viewer.userId),
     listConditionsBetween(viewer.userId, readinessFrom(today), today),
     listCompetitionsBetween(viewer.userId, today, readinessUntil(today)),
+    aiEnabled() ? hasMenu(viewer.userId, today) : null,
   ]);
   // 今日の体調と次の大会は、アドバイスのために読んだ範囲から取る（DB への問い合わせを減らす）。
   // 8週より先の大会だけは範囲の外なので、そのときだけ読み直す
@@ -119,7 +122,10 @@ export default async function Home() {
         </div>
         <div className="flex flex-col gap-3">
           {soon ? <div className="hidden lg:contents">{nextCard}</div> : nextCard}
-          <AdviceCard readiness={advice} />
+          <AdviceCard
+            readiness={advice}
+            menu={menuMade === null ? null : menuMade ? 'made' : 'none'}
+          />
           {/* 今日のコンディション。押すと直す画面へ移り、保存したらホームへ戻る */}
           <ConditionCard
             log={todayLog}

@@ -121,7 +121,10 @@
     "videoFile": "Choose a video up to 60 seconds and 100 MB.",
     "videoQuota": "Video storage is full. Delete a video to add another.",
     "videoUpload": "Could not upload the video. Try again.",
-    "entryUrl": "Enter the entry site as a web address starting with https://."
+    "entryUrl": "Enter the entry site as a web address starting with https://.",
+    "menuMinutes": "Enter the practice time in minutes (15 to 240).",
+    "menuLimit": "You've made this month's menus.",
+    "menuFailed": "Couldn't make the menu. Try again later."
   },
   "home": {
     "goal": "Season goal",
@@ -288,5 +291,35 @@
     "source": "Source",
     "toward": "{weeks, plural, one {# week} other {# weeks}} to your main goal meet",
     "build": "Building phase"
+  },
+  "menu": {
+    "title": "Today's menu",
+    "newTitle": "Make today's menu",
+    "short": "Menu",
+    "create": "Make today's menu",
+    "creating": "Making…",
+    "view": "See today's menu",
+    "minutes": "Practice time (minutes)",
+    "note": "Place, equipment, anything else",
+    "notePlaceholder": "Track, no box, 90 minutes with the team…",
+    "summary": "Summary",
+    "takeoffs": "Takeoffs",
+    "contacts": "Plyo contacts",
+    "total": "Total",
+    "ofLimit": "{count}/{limit}",
+    "minUnit": "min",
+    "takeoffCount": "{count, plural, one {# takeoff} other {# takeoffs}}",
+    "contactCount": "{count, plural, one {# contact} other {# contacts}}",
+    "sets": "{count, plural, one {# set} other {# sets}}",
+    "minutesValue": "{count} min",
+    "missing": "Missing data: {items}",
+    "disclaimer": "A guide made by AI. Your body and your coach come first.",
+    "section": {
+      "warmup": "Warm-up",
+      "technique": "Technique",
+      "drills": "Drills",
+      "strength": "Strength",
+      "cooldown": "Cool-down"
+    }
   }
 }

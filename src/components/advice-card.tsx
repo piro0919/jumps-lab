@@ -1,5 +1,7 @@
+import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { Badge, Card, CardTitle } from '@/components/layout-ui';
+import { buttonVariants } from '@/components/ui/button';
 import { REASON_SOURCES, type Readiness } from '@/lib/readiness';
 
 /**
@@ -7,8 +9,16 @@ import { REASON_SOURCES, type Readiness } from '@/lib/readiness';
  * 判定は src/lib/readiness.ts。痛みの記入がある日は、病院で診てもらう目安を決まった文で必ず出す
  * （AI には書かせない。2026-10-11 に調べた根拠に沿って本人と決めた）
  */
-export async function AdviceCard({ readiness }: { readiness: Readiness }) {
+export async function AdviceCard({
+  readiness,
+  menu,
+}: {
+  readiness: Readiness;
+  /** 今日の AI のメニュー。made は作ってある、none はまだ、null は AI を使えない環境（ボタンを出さない） */
+  menu: 'made' | 'none' | null;
+}) {
   const t = await getTranslations('advice');
+  const tMenu = await getTranslations('menu');
   const { level, reasons, weeksToTarget } = readiness;
 
   return (
@@ -42,6 +52,23 @@ export async function AdviceCard({ readiness }: { readiness: Readiness }) {
           </ul>
         )}
         {level === 'protect' && <p className="text-sm font-semibold">{t('doctor')}</p>}
+        {/* AI のメニュー（中元さんのフィードバックの第1段階）。強さはこのカードが決め、AI はその中で中身を書く */}
+        {menu === 'none' && (
+          <Link
+            href="/log/today/menu/new"
+            className={buttonVariants({ size: 'sm', className: 'w-fit' })}
+          >
+            {tMenu('create')}
+          </Link>
+        )}
+        {menu === 'made' && (
+          <Link
+            href="/log/today/menu"
+            className={buttonVariants({ variant: 'secondary', size: 'sm', className: 'w-fit' })}
+          >
+            {tMenu('view')}
+          </Link>
+        )}
       </div>
     </Card>
   );

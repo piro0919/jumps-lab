@@ -1,10 +1,12 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import { AttemptsCard } from '@/components/attempts-card';
 import { ConditionCard } from '@/components/condition-card';
 import { PageTitle, HALVES } from '@/components/layout-ui';
+import { buttonVariants } from '@/components/ui/button';
 import { VideosCard } from '@/components/videos-card';
-import { getDayLog, listAttemptsBetween, listVideosOnDay } from '@/lib/data';
+import { getDayLog, hasMenu, listAttemptsBetween, listVideosOnDay } from '@/lib/data';
 import { resolveLogDay, todayIn } from '@/lib/dates';
 import { downloadUrl, viewUrl } from '@/lib/r2';
 import { formatMark } from '@/lib/units';
@@ -22,10 +24,11 @@ export default async function LogDay({ params }: PageProps<'/log/[day]'>) {
   const day = resolveLogDay((await params).day, today);
   if (!day) redirect('/log/today');
 
-  const [log, attempts, videos] = await Promise.all([
+  const [log, attempts, videos, menuMade] = await Promise.all([
     getDayLog(viewer.userId, day),
     listAttemptsBetween(viewer.userId, day, day),
     listVideosOnDay(viewer.userId, day),
+    hasMenu(viewer.userId, day),
   ]);
   // 動画は開くたびに期限つきの URL（見る用と保存する用）を作る。結び付けた試技は「2. 6.12 m」のように、試技の欄と同じ番号で出す
   const videoItems = await Promise.all(
@@ -55,11 +58,25 @@ export default async function LogDay({ params }: PageProps<'/log/[day]'>) {
   const base = `/log/${(await params).day === 'today' ? 'today' : day}`;
   const t = await getTranslations('log');
   const tNav = await getTranslations('nav');
+  const tMenu = await getTranslations('menu');
   const format = await getFormatter();
 
   return (
     <main className="flex flex-col gap-3">
-      <PageTitle back={{ href: '/log', label: tNav('backTo', { page: tNav('log') }) }}>
+      <PageTitle
+        back={{ href: '/log', label: tNav('backTo', { page: tNav('log') }) }}
+        action={
+          // AI が作ったその日のメニュー（作った日だけ）
+          menuMade ? (
+            <Link
+              href={`${base}/menu`}
+              className={buttonVariants({ variant: 'secondary', size: 'sm' })}
+            >
+              {tMenu('short')}
+            </Link>
+          ) : undefined
+        }
+      >
         {day === today
           ? t('today')
           : format.dateTime(new Date(`${day}T00:00:00Z`), {
