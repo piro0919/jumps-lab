@@ -51,6 +51,8 @@ export const LIMITS: Record<MenuLevel, { takeoffs: number; contacts: number }> =
 const SECTION_KINDS = ['warmup', 'technique', 'drills', 'strength', 'cooldown'] as const;
 
 export type MenuItem = {
+  /** 始める時刻（HH:MM）。大会の当日のアップだけ。2026-10-12 より前に作ったメニューには欄ごと無い */
+  at?: string | null;
   name: string;
   purpose: string;
   sets: number | null;
@@ -90,6 +92,7 @@ export const MENU_SCHEMA = {
               type: 'object',
               additionalProperties: false,
               required: [
+                'at',
                 'name',
                 'purpose',
                 'sets',
@@ -101,6 +104,7 @@ export const MENU_SCHEMA = {
                 'reason',
               ],
               properties: {
+                at: { type: ['string', 'null'] },
                 name: { type: 'string' },
                 purpose: { type: 'string' },
                 sets: { type: ['integer', 'null'] },
@@ -195,14 +199,37 @@ const LEVEL_TEXT: Record<MenuLevel, string> = {
 };
 
 /** AI への決まった指示。強さ・上限・禁止事項はここで固定し、材料（menuInput）とは分ける */
-export function menuInstructions(level: MenuLevel, language: 'en' | 'ja'): string {
+/**
+ * 大会の当日の指示（2026-10-12 に本人と決めた）。練習の代わりに、招集時刻から逆算したアップの段取りを作らせる。
+ * 招集時刻が無ければ試合開始の MEET_DAY_START_MARGIN_MINUTES 分前を終わりにする（仮決め）
+ */
+const MEET_DAY_START_MARGIN_MINUTES = 30;
+
+const PRACTICE_TEXT = [
+  "Build today's practice from the athlete data in the input: warm-up, event technique, drills for their ongoing issues, strength, and cool-down.",
+  'Fit the total minutes into the session length in the input.',
+  'Set "at" to null on every item.',
+];
+
+const MEET_DAY_TEXT = [
+  'Today is competition day ("meetToday" in the input). Do not build a practice. Build the warm-up timeline before the competition: arrival, general warm-up, mobility, sprints, event-specific run-throughs and approach checks, then the last minutes before the call room.',
+  `Count back so the warm-up ends when the athlete must be at the call room ("callRoomTime", at "callRoomPlace"). Without a call room time, end ${MEET_DAY_START_MARGIN_MINUTES} minutes before "startTime". With neither, use times relative to the call room, set "at" to null, and list the missing time in "missing".`,
+  'Set "at" to the start time of each item (HH:MM, 24-hour). The total minutes must fit the warm-up length in the input.',
+  'Use only the "warmup" section for the timeline, and add a short "cooldown" section for after the competition. No strength training and no conditioning.',
+];
+
+/** AI への決まった指示。強さ・上限・禁止事項はここで固定し、材料（menuInput）とは分ける */
+export function menuInstructions(
+  level: MenuLevel,
+  language: 'en' | 'ja',
+  meetDay: boolean,
+): string {
   const limit = LIMITS[level];
   return [
     'You are a training-design coach for jumpers (high jump, long jump, triple jump, pole vault).',
-    "Build today's practice from the athlete data in the input: warm-up, event technique, drills for their ongoing issues, strength, and cool-down.",
+    ...(meetDay ? MEET_DAY_TEXT : PRACTICE_TEXT),
     `Today's intensity is fixed by the app and you must not raise it: ${LEVEL_TEXT[level]}`,
     `Hard limits for the whole session: at most ${limit.takeoffs} takeoffs (every jump with a take-off: full or short approach jumps and take-off drills) and at most ${limit.contacts} plyometric ground contacts. Put the count on each item; use 0 when the item has none. Contacts are only for plyometric drills (bounds, hops, hurdle hops, skips); never count a takeoff again as a contact.`,
-    'Fit the total minutes into the session length in the input.',
     'For each item give the purpose, sets, reps (with the unit, such as "10 reps" or "30 m"), intensity, minutes and the reason you chose it from the data.',
     'Never diagnose an illness or injury. Never tell the athlete to train through pain. Give no diet, weight-loss, supplement or medication advice. Do not suggest changing the pole or other equipment.',
     'If data is missing, list what is missing in "missing" and do not invent numbers. Keep facts from the data apart from your assumptions by wording (say "probably" or "since we do not know"), never with labels such as "Fact:" or "Assumption:".',
@@ -212,9 +239,13 @@ export function menuInstructions(level: MenuLevel, language: 'en' | 'ja'): strin
 }
 
 /** チャットで今日のメニューを直すときの決まった指示。強さ・上限・禁止事項はメニューを作るときと同じ */
-export function revisionInstructions(level: MenuLevel, language: 'en' | 'ja'): string {
+export function revisionInstructions(
+  level: MenuLevel,
+  language: 'en' | 'ja',
+  meetDay: boolean,
+): string {
   return [
-    menuInstructions(level, language),
+    menuInstructions(level, language, meetDay),
     "Now you are adjusting today's latest menu (in the input) in a chat with the athlete.",
     'When the time, place, equipment, weather or how they feel has changed, revise only the items that need it and keep the rest as they are. Set "changed" to true and return the whole revised menu.',
     'When nothing needs to change (a question, thanks), set "changed" to false and "menu" to null.',

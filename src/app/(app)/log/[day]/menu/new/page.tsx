@@ -3,7 +3,7 @@ import { getTranslations } from 'next-intl/server';
 import { Card, PageTitle, FORM_PAGE } from '@/components/layout-ui';
 import { MenuForm } from '@/components/menu-form';
 import { aiEnabled } from '@/lib/ai';
-import { getMenu } from '@/lib/data';
+import { getMenu, listCompetitionsBetween } from '@/lib/data';
 import { todayIn } from '@/lib/dates';
 import { requireProfile, requireViewer } from '@/lib/viewer';
 
@@ -17,7 +17,11 @@ export default async function NewMenu({ params }: PageProps<'/log/[day]/menu/new
   const today = todayIn(profile.timeZone);
   const requested = (await params).day;
   if (!aiEnabled() || (requested !== 'today' && requested !== today)) redirect('/');
-  if (await getMenu(viewer.userId, today)) redirect('/log/today/menu');
+  const [menu, meets] = await Promise.all([
+    getMenu(viewer.userId, today),
+    listCompetitionsBetween(viewer.userId, today, today),
+  ]);
+  if (menu) redirect('/log/today/menu');
   const t = await getTranslations('menu');
   const tNav = await getTranslations('nav');
 
@@ -27,7 +31,7 @@ export default async function NewMenu({ params }: PageProps<'/log/[day]/menu/new
         {t('newTitle')}
       </PageTitle>
       <Card>
-        <MenuForm />
+        <MenuForm meetDay={meets.length > 0} />
       </Card>
     </main>
   );

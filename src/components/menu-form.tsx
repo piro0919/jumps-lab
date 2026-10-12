@@ -11,14 +11,15 @@ import { ErrorText, Field, Input, TextArea } from '@/components/layout-ui';
 import { NOTE_MAX_LENGTH } from '@/lib/limits';
 import { SESSION_MAX_MINUTES, SESSION_MIN_MINUTES } from '@/lib/menu';
 
-/** 練習時間のはじめの値（分） */
+/** 練習時間のはじめの値（分）。大会の当日はアップに使える時間 */
 const DEFAULT_MINUTES = 90;
+const DEFAULT_WARMUP_MINUTES = 60;
 
 /**
  * 今日のメニューを作る前に、今日の練習の時間と場所・器具を聞く（/log/today/menu/new）。
  * 作り終えたらメニューの画面へ移る。AI の返事に十数秒かかるので、ボタンは作っている間押せない
  */
-export function MenuForm() {
+export function MenuForm({ meetDay }: { meetDay: boolean }) {
   const router = useRouter();
   const t = useTranslations('menu');
   const tErrors = useTranslations('errors');
@@ -30,14 +31,15 @@ export function MenuForm() {
 
   return (
     <ActionForm action={action} className="flex flex-col gap-4">
-      <Field label={t('minutes')}>
+      {/* 大会の当日は練習ではなく、招集時刻から逆算したアップの段取りを作る */}
+      <Field label={t(meetDay ? 'warmupMinutes' : 'minutes')}>
         <Input
           name="minutes"
           type="number"
           inputMode="numeric"
           min={SESSION_MIN_MINUTES}
           max={SESSION_MAX_MINUTES}
-          defaultValue={DEFAULT_MINUTES}
+          defaultValue={meetDay ? DEFAULT_WARMUP_MINUTES : DEFAULT_MINUTES}
           required
         />
       </Field>

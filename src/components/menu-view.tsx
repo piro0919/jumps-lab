@@ -1,5 +1,5 @@
 import { getTranslations } from 'next-intl/server';
-import { Badge, Card, CardTitle, Stat } from '@/components/layout-ui';
+import { Badge, Card, CardTitle, DisplayNumber, Stat } from '@/components/layout-ui';
 import { LIMITS, type Menu, type MenuLevel, menuTotals } from '@/lib/menu';
 
 /**
@@ -63,6 +63,8 @@ export async function MenuView({ menu, level }: { menu: Menu; level: MenuLevel }
               {section.items.map((item, i) => (
                 <li key={i} className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
                   <span className="flex flex-wrap items-center gap-2">
+                    {/* 大会の当日のアップは、始める時刻を名前の前に */}
+                    {item.at && <DisplayNumber size="sm">{item.at}</DisplayNumber>}
                     <span className="text-lg font-extrabold">{item.name}</span>
                     {item.takeoffs > 0 && (
                       <Badge tone="accent">{t('takeoffCount', { count: item.takeoffs })}</Badge>

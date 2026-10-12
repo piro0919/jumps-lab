@@ -3,6 +3,7 @@ import { checkMenu, LIMITS, type Menu, type MenuItem, menuTotals } from '@/lib/m
 
 function item(over: Partial<MenuItem> = {}): MenuItem {
   return {
+    at: null,
     name: 'x',
     purpose: '',
     sets: null,

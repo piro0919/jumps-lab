@@ -325,6 +325,7 @@
     "chatPlaceholder": "Only 60 minutes today, it is raining…",
     "send": "Send",
     "thinking": "Thinking…",
-    "revised": "Menu updated (v{version})"
+    "revised": "Menu updated (v{version})",
+    "warmupMinutes": "Warm-up time (minutes)"
   }
 }

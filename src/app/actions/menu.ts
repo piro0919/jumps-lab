@@ -59,8 +59,11 @@ async function menuContext(userId: string, profile: Profile, today: string) {
     listAttemptsBetween(userId, historyFrom, today),
   ]);
   const advice: Readiness = readiness({ today, logs, competitions, birthdate: profile.birthdate });
+  // 今日の大会（あれば、練習ではなくアップの段取りを作る）。開始の早いもの
+  const meet = competitions.find((c) => c.day === today) ?? null;
   return {
     advice,
+    meetDay: meet !== null,
     data: {
       today,
       athlete: {
@@ -89,6 +92,13 @@ async function menuContext(userId: string, profile: Profile, today: string) {
         windMs: a.windMs,
         note: a.note,
       })),
+      meetToday: meet && {
+        venue: meet.venue,
+        callRoomPlace: meet.callRoomPlace,
+        callRoomTime: meet.callRoomTime,
+        startTime: meet.startTime,
+        notes: meet.notes,
+      },
       upcomingCompetitions: competitions.map((c) => ({
         daysLeft: daysBetween(today, c.day),
         mainGoal: c.isTarget,
@@ -132,12 +142,12 @@ export async function createMenuAction(
   try {
     if (await getMenu(viewer.userId, today)) return { ok: true };
     if (await overLimit(viewer.userId, today, 'menu')) return { ok: false, error: 'menuLimit' };
-    const { advice, data } = await menuContext(viewer.userId, profile, today);
+    const { advice, meetDay, data } = await menuContext(viewer.userId, profile, today);
     const input = JSON.stringify({
       ...data,
       session: { minutes: parsed.data.minutes, note: parsed.data.note },
     });
-    let instructions = menuInstructions(advice.level, await language());
+    let instructions = menuInstructions(advice.level, await language(), meetDay);
 
     for (let attempt = 0; attempt <= RETRIES; attempt += 1) {
       // 呼ぶ前に記録する（失敗しても上限に数える）
@@ -194,7 +204,7 @@ export async function askMenuAction(
     const current = await getMenu(viewer.userId, today);
     if (!current) return { ok: false, error: 'generic' };
     if (await overLimit(viewer.userId, today, 'chat')) return { ok: false, error: 'chatLimit' };
-    const [{ advice, data }, history] = await Promise.all([
+    const [{ advice, meetDay, data }, history] = await Promise.all([
       menuContext(viewer.userId, profile, today),
       listMenuMessages(viewer.userId, today),
     ]);
@@ -209,7 +219,7 @@ export async function askMenuAction(
         .map((m) => ({ role: m.role, text: m.content })),
       athleteMessage: parsed.data.question,
     });
-    let instructions = revisionInstructions(advice.level, await language());
+    let instructions = revisionInstructions(advice.level, await language(), meetDay);
     // 強さが作ったときから変わっていたら（あとで痛みを記録したなど）、今のメニューのままでは出せない
     const levelChanged = advice.level !== current.level;
     if (levelChanged) {

@@ -325,6 +325,7 @@
     "chatPlaceholder": "今日は60分しかない、雨が降ってきた…",
     "send": "送る",
     "thinking": "考え中…",
-    "revised": "メニューを更新しました（v{version}）"
+    "revised": "メニューを更新しました（v{version}）",
+    "warmupMinutes": "アップに使える時間（分）"
   }
 }
