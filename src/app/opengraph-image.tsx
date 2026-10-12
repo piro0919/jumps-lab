@@ -40,20 +40,14 @@ export default async function OpengraphImage() {
         fontStyle: 'italic',
       }}
     >
+      {/* 写真（4:3）は高さに合わせて元の比のまま置き、右へはみ出させて選手を右寄りにする
+          （右端に揃えると選手が中央に来て、見出しと重なって窮屈に見えた。本人、2026-10-12） */}
       <img
         src={photoSrc}
         alt=""
-        width={800}
+        width={840}
         height={630}
-        style={{
-          position: 'absolute',
-          right: 0,
-          top: 0,
-          width: 800,
-          height: 630,
-          objectFit: 'cover',
-          objectPosition: 'center 25%',
-        }}
+        style={{ position: 'absolute', right: -120, top: 0, width: 840, height: 630 }}
       />
       {/* 写真の左を地の色へ溶かす */}
       <div
@@ -64,7 +58,7 @@ export default async function OpengraphImage() {
           width: 1200,
           height: 630,
           display: 'flex',
-          backgroundImage: `linear-gradient(90deg, ${INK} 34%, rgba(11,13,18,0.82) 52%, rgba(11,13,18,0) 78%)`,
+          backgroundImage: `linear-gradient(90deg, ${INK} 38%, rgba(11,13,18,0.8) 54%, rgba(11,13,18,0) 76%)`,
         }}
       />
       <div
