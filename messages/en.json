@@ -326,6 +326,7 @@
     "send": "Send",
     "thinking": "Thinking…",
     "revised": "Menu updated (v{version})",
-    "warmupMinutes": "Warm-up time (minutes)"
+    "warmupMinutes": "Warm-up time (minutes)",
+    "outOf": "/{limit}"
   }
 }

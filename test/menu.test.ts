@@ -80,3 +80,21 @@ describe('checkMenu', () => {
     expect(checkMenu(menu(item({ minutes: 109 })), 'normal', 90)).toMatch(/minutes/);
   });
 });
+
+describe('大会の当日', () => {
+  // アップの時間（60分）に、試合後のクールダウンは数えない
+  it('試合後のクールダウンはアップの時間に数えない', () => {
+    const m: Menu = {
+      meetDay: true,
+      summary: '',
+      sections: [
+        { kind: 'warmup', items: [item({ minutes: 60 })] },
+        { kind: 'cooldown', items: [item({ minutes: 15 })] },
+      ],
+      cautions: [],
+      missing: [],
+    };
+    expect(checkMenu(m, 'preMeet', 60)).toBeNull();
+    expect(checkMenu({ ...m, meetDay: false }, 'preMeet', 60)).toMatch(/minutes/);
+  });
+});

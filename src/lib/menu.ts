@@ -65,6 +65,11 @@ export type MenuItem = {
 };
 
 export type Menu = {
+  /**
+   * 大会の当日のアップの段取りか。AI ではなくサーバーが入れる（作ったときの種類を、チャットで直すときも保つため。
+   * あとから当日の大会を足しても、練習のメニューがアップに書き換わらない）
+   */
+  meetDay?: boolean;
   summary: string;
   sections: { kind: (typeof SECTION_KINDS)[number]; items: MenuItem[] }[];
   cautions: string[];
@@ -167,6 +172,10 @@ export function menuTotals(menu: Menu): { takeoffs: number; contacts: number; mi
  * （2割までは許す。AI の分の足し算はずれやすい）ものは出さない。超えた理由を返す（作り直させるときに渡す）
  */
 export function checkMenu(menu: Menu, level: MenuLevel, sessionMinutes: number): string | null {
+  // 大会の当日、試合後のクールダウンはアップの時間に数えない
+  const timed = menu.meetDay
+    ? { ...menu, sections: menu.sections.filter((s) => s.kind !== 'cooldown') }
+    : menu;
   const limit = LIMITS[level];
   const items = menu.sections.flatMap((s) => s.items);
   if (items.length === 0) return 'The menu has no items.';
@@ -180,8 +189,9 @@ export function checkMenu(menu: Menu, level: MenuLevel, sessionMinutes: number):
   if (totals.contacts > limit.contacts) {
     return `Total plyometric contacts ${totals.contacts} exceed the limit of ${limit.contacts}.`;
   }
-  if (totals.minutes > sessionMinutes * MINUTES_SLACK) {
-    return `Total minutes ${totals.minutes} exceed the session length of ${sessionMinutes}.`;
+  const minutes = menuTotals(timed).minutes;
+  if (minutes > sessionMinutes * MINUTES_SLACK) {
+    return `Total minutes ${minutes} exceed the session length of ${sessionMinutes}.`;
   }
   return null;
 }
@@ -198,7 +208,6 @@ const LEVEL_TEXT: Record<MenuLevel, string> = {
   normal: 'NORMAL: train as planned.',
 };
 
-/** AI への決まった指示。強さ・上限・禁止事項はここで固定し、材料（menuInput）とは分ける */
 /**
  * 大会の当日の指示（2026-10-12 に本人と決めた）。練習の代わりに、招集時刻から逆算したアップの段取りを作らせる。
  * 招集時刻が無ければ試合開始の MEET_DAY_START_MARGIN_MINUTES 分前を終わりにする（仮決め）

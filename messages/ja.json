@@ -326,6 +326,7 @@
     "send": "送る",
     "thinking": "考え中…",
     "revised": "メニューを更新しました（v{version}）",
-    "warmupMinutes": "アップに使える時間（分）"
+    "warmupMinutes": "アップに使える時間（分）",
+    "outOf": "/{limit}"
   }
 }

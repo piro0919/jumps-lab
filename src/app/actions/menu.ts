@@ -59,8 +59,13 @@ async function menuContext(userId: string, profile: Profile, today: string) {
     listAttemptsBetween(userId, historyFrom, today),
   ]);
   const advice: Readiness = readiness({ today, logs, competitions, birthdate: profile.birthdate });
-  // 今日の大会（あれば、練習ではなくアップの段取りを作る）。開始の早いもの
-  const meet = competitions.find((c) => c.day === today) ?? null;
+  // 今日の大会（あれば、練習ではなくアップの段取りを作る）。招集か開始の早いもの
+  const firstTime = (c: { callRoomTime: string | null; startTime: string | null }) =>
+    c.callRoomTime ?? c.startTime ?? '99:99';
+  const meet =
+    competitions
+      .filter((c) => c.day === today)
+      .toSorted((a, b) => firstTime(a).localeCompare(firstTime(b)))[0] ?? null;
   return {
     advice,
     meetDay: meet !== null,
@@ -152,13 +157,15 @@ export async function createMenuAction(
     for (let attempt = 0; attempt <= RETRIES; attempt += 1) {
       // 呼ぶ前に記録する（失敗しても上限に数える）
       await recordAiCall(viewer.userId, today, 'menu', MENU_MODEL);
-      const menu = await askJson<Menu>({
+      const answer = await askJson<Menu>({
         model: MENU_MODEL,
         instructions,
         input,
         schemaName: 'practice_menu',
         schema: MENU_SCHEMA,
       });
+      // 種類（練習か大会の当日のアップか）はサーバーが入れる
+      const menu: Menu = { ...answer, meetDay };
       const problem = checkMenu(menu, advice.level, parsed.data.minutes);
       if (!problem) {
         await saveMenu(viewer.userId, today, {
@@ -204,7 +211,7 @@ export async function askMenuAction(
     const current = await getMenu(viewer.userId, today);
     if (!current) return { ok: false, error: 'generic' };
     if (await overLimit(viewer.userId, today, 'chat')) return { ok: false, error: 'chatLimit' };
-    const [{ advice, meetDay, data }, history] = await Promise.all([
+    const [{ advice, data }, history] = await Promise.all([
       menuContext(viewer.userId, profile, today),
       listMenuMessages(viewer.userId, today),
     ]);
@@ -219,6 +226,8 @@ export async function askMenuAction(
         .map((m) => ({ role: m.role, text: m.content })),
       athleteMessage: parsed.data.question,
     });
+    // 種類は作ったときのまま（練習のメニューを作ったあとで当日の大会を足しても、アップに書き換えない）
+    const meetDay = current.menu.meetDay ?? false;
     let instructions = revisionInstructions(advice.level, await language(), meetDay);
     // 強さが作ったときから変わっていたら（あとで痛みを記録したなど）、今のメニューのままでは出せない
     const levelChanged = advice.level !== current.level;
@@ -236,13 +245,14 @@ export async function askMenuAction(
         schema: REVISION_SCHEMA,
       });
       // 強さが変わった日は、直したメニューが無ければ出せない
-      const revised = answer.changed || levelChanged ? answer.menu : null;
+      const revised =
+        (answer.changed || levelChanged) && answer.menu ? { ...answer.menu, meetDay } : null;
       const sessionMinutes = Math.min(
         SESSION_MAX_MINUTES,
         Math.max(SESSION_MIN_MINUTES, revised ? answer.sessionMinutes : minutes),
       );
       const problem =
-        (answer.changed || levelChanged) && !revised
+        (answer.changed || levelChanged) && !answer.menu
           ? 'The revised menu is missing.'
           : revised
             ? checkMenu(revised, advice.level, sessionMinutes)

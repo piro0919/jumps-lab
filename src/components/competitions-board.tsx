@@ -84,15 +84,17 @@ export function CompetitionItem({
           )}
         </span>
         {competition.venue && (
-          <span className="flex items-center gap-1 text-sm break-keep text-muted-foreground">
-            <MapPin aria-hidden className="size-3.5 shrink-0" />
+          <span className="flex items-start gap-1 text-sm break-keep wrap-anywhere text-muted-foreground">
+            {/* 長い会場名が折り返しても、印は1行目の横に */}
+            <MapPin aria-hidden className="mt-0.5 size-3.5 shrink-0" />
             {competition.venue}
           </span>
         )}
         {/* 招集と開始は1行ずつ（1行につなげると、スマホで場所の名前の途中で折り返した） */}
         {(competition.callRoomTime || competition.callRoomPlace) && (
-          // 日本語の語の途中で折り返さない（「サブトラッ／ク」になった）。空白の位置で折り返す
-          <span className="text-sm break-keep text-muted-foreground tabular-nums">
+          // 日本語の語の途中で折り返さない（「サブトラッ／ク」になった）。空白の位置で折り返し、
+          // 空白の無い長い名前で収まらないときだけ、どこででも折り返す（はみ出さないように）
+          <span className="text-sm break-keep wrap-anywhere text-muted-foreground tabular-nums">
             {t('callRoom', {
               time: [competition.callRoomTime, competition.callRoomPlace].filter(Boolean).join(' '),
             })}

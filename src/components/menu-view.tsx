@@ -24,12 +24,18 @@ export async function MenuView({ menu, level }: { menu: Menu; level: MenuLevel }
           <div className="flex flex-wrap gap-x-6 gap-y-3">
             <Stat
               size="sm"
-              value={{ value: String(totals.takeoffs), unit: `/${limit.takeoffs}` }}
+              value={{
+                value: String(totals.takeoffs),
+                unit: t('outOf', { limit: limit.takeoffs }),
+              }}
               label={t('takeoffs')}
             />
             <Stat
               size="sm"
-              value={{ value: String(totals.contacts), unit: `/${limit.contacts}` }}
+              value={{
+                value: String(totals.contacts),
+                unit: t('outOf', { limit: limit.contacts }),
+              }}
               label={t('contacts')}
             />
             <Stat
@@ -47,7 +53,7 @@ export async function MenuView({ menu, level }: { menu: Menu; level: MenuLevel }
             </ul>
           )}
           {menu.missing.length > 0 && (
-            <p className="text-xs break-keep text-muted-foreground">
+            <p className="text-xs break-keep wrap-anywhere text-muted-foreground">
               {t('missing', { items: menu.missing.join(' / ') })}
             </p>
           )}
