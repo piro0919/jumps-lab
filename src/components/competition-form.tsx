@@ -18,7 +18,7 @@ import {
 import { cn } from '@/lib/cn';
 import { FormActions } from '@/components/form-actions';
 import type { Competition } from '@/lib/data';
-import { LONG_NOTE_MAX_LENGTH } from '@/lib/limits';
+import { LONG_NOTE_MAX_LENGTH, URL_MAX_LENGTH } from '@/lib/limits';
 
 /**
  * 大会の入力（/competitions/new と /competitions/[id]/edit の画面）。追加と編集で同じものを使う。
@@ -27,9 +27,12 @@ import { LONG_NOTE_MAX_LENGTH } from '@/lib/limits';
 export function CompetitionForm({
   initial,
   defaultDay,
+  defaultEntryUrl,
 }: {
   initial: Competition | null;
   defaultDay: string;
+  /** 新しい大会の申し込みのサイトのはじめの値。日本の人は日本陸連の申し込みサイト、ほかの国は空 */
+  defaultEntryUrl: string;
 }) {
   const router = useRouter();
   const t = useTranslations('calendar');
@@ -89,6 +92,15 @@ export function CompetitionForm({
           ))}
         </div>
       </div>
+      <Field label={t('entryUrl')}>
+        <Input
+          name="entryUrl"
+          type="url"
+          inputMode="url"
+          defaultValue={initial ? (initial.entryUrl ?? '') : defaultEntryUrl}
+          maxLength={URL_MAX_LENGTH}
+        />
+      </Field>
       <Field label={t('notes')}>
         <TextArea
           name="notes"

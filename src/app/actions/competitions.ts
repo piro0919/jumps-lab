@@ -4,7 +4,7 @@ import { refresh } from 'next/cache';
 import { z } from 'zod';
 import { deleteCompetition, saveCompetition } from '@/lib/data';
 import { type ActionResult, optionalText } from '@/lib/form';
-import { LONG_NOTE_MAX_LENGTH } from '@/lib/limits';
+import { LONG_NOTE_MAX_LENGTH, URL_MAX_LENGTH } from '@/lib/limits';
 import { requireViewer } from '@/lib/viewer';
 
 const time = z.preprocess(
@@ -12,6 +12,15 @@ const time = z.preprocess(
   z
     .string()
     .regex(/^\d{2}:\d{2}$/)
+    .nullable(),
+);
+
+// 申し込みのサイト。開くのは http と https だけ（javascript: などを一覧のリンクにしない）
+const entryUrl = z.preprocess(
+  (v) => (typeof v === 'string' && v.trim() !== '' ? v.trim() : null),
+  z
+    .url({ protocol: /^https?$/, error: 'entryUrl' })
+    .max(URL_MAX_LENGTH, 'entryUrl')
     .nullable(),
 );
 
@@ -26,6 +35,7 @@ const schema = z.object({
   notes: optionalText(LONG_NOTE_MAX_LENGTH),
   // 主目標の印。押した札が「true」を送る
   isTarget: z.preprocess((v) => v === 'true', z.boolean()),
+  entryUrl,
 });
 
 /** 大会を足すか書き換える。id があれば書き換え（本人の大会だけ） */
@@ -39,7 +49,10 @@ export async function saveCompetitionAction(
     const message = parsed.error.issues[0]?.message;
     return {
       ok: false,
-      error: message === 'competitionName' || message === 'day' ? message : 'generic',
+      error:
+        message === 'competitionName' || message === 'day' || message === 'entryUrl'
+          ? message
+          : 'generic',
     };
   }
   try {

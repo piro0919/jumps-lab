@@ -8,6 +8,9 @@ export const NOTE_MAX_LENGTH = 500;
 /** その日の練習メモと、大会のメモの字数 */
 export const LONG_NOTE_MAX_LENGTH = 2000;
 
+/** 大会の申し込みのサイトの URL の字数 */
+export const URL_MAX_LENGTH = 2000;
+
 /** 記録（メートル）の下限と上限 */
 export const MARK_MIN_M = 0.01;
 export const MARK_MAX_M = 29.99;

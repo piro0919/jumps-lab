@@ -25,7 +25,7 @@ export default async function EditCompetition({ params }: PageProps<'/competitio
         {t('editCompetition')}
       </PageTitle>
       <Card>
-        <CompetitionForm initial={competition} defaultDay={competition.day} />
+        <CompetitionForm initial={competition} defaultDay={competition.day} defaultEntryUrl="" />
       </Card>
     </main>
   );

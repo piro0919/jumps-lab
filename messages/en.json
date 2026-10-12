@@ -77,7 +77,12 @@
     "past": "Past",
     "noUpcoming": "No upcoming competitions",
     "noPast": "No past competitions",
-    "result": "Result"
+    "result": "Result",
+    "entry": "Enter",
+    "prefectureSchedules": "Meets by prefecture",
+    "prefecture": "Prefecture",
+    "choosePrefecture": "Choose a prefecture",
+    "openSchedule": "Open"
   },
   "profile": {
     "sectionProfile": "Profile",
@@ -115,7 +120,8 @@
     "generic": "Could not save. Try again.",
     "videoFile": "Choose a video up to 60 seconds and 100 MB.",
     "videoQuota": "Video storage is full. Delete a video to add another.",
-    "videoUpload": "Could not upload the video. Try again."
+    "videoUpload": "Could not upload the video. Try again.",
+    "entryUrl": "Enter the entry site as a web address starting with https://."
   },
   "home": {
     "goal": "Season goal",
@@ -196,7 +202,8 @@
     "start": "Start {time}",
     "target": "Main goal",
     "targetBadge": "Main goal",
-    "targetNo": "Regular meet"
+    "targetNo": "Regular meet",
+    "entryUrl": "Entry site"
   },
   "analysis": {
     "all": "All",

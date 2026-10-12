@@ -77,7 +77,12 @@
     "past": "過去の大会",
     "noUpcoming": "これからの大会はありません",
     "noPast": "過去の大会はありません",
-    "result": "結果"
+    "result": "結果",
+    "entry": "エントリー",
+    "prefectureSchedules": "都道府県の大会日程",
+    "prefecture": "都道府県",
+    "choosePrefecture": "都道府県を選ぶ",
+    "openSchedule": "開く"
   },
   "profile": {
     "sectionProfile": "プロフィール",
@@ -115,7 +120,8 @@
     "generic": "保存できませんでした。もう一度お試しください。",
     "videoFile": "60秒・100MB までの動画を選んでください。",
     "videoQuota": "動画の保存量がいっぱいです。動画を削除してから追加してください。",
-    "videoUpload": "動画を送れませんでした。もう一度お試しください。"
+    "videoUpload": "動画を送れませんでした。もう一度お試しください。",
+    "entryUrl": "エントリーサイトは https:// で始まるアドレスで入れてください。"
   },
   "home": {
     "goal": "今季の目標",
@@ -196,7 +202,8 @@
     "start": "開始 {time}",
     "target": "主目標",
     "targetBadge": "主目標",
-    "targetNo": "ふつうの大会"
+    "targetNo": "ふつうの大会",
+    "entryUrl": "エントリーサイト"
   },
   "analysis": {
     "all": "すべて",

@@ -3,6 +3,7 @@ import { CompetitionsBoard } from '@/components/competitions-board';
 import { competitionResults } from '@/lib/competition-results';
 import { listAllAttempts, listCompetitions } from '@/lib/data';
 import { todayIn } from '@/lib/dates';
+import { inJapan } from '@/lib/japan';
 import { requireProfile, requireViewer } from '@/lib/viewer';
 
 /**
@@ -28,6 +29,7 @@ export default async function Competitions() {
         results={Object.fromEntries(competitionResults(attempts))}
         units={profile.units}
         today={today}
+        prefectureLinks={inJapan(profile.timeZone)}
       />
     </main>
   );

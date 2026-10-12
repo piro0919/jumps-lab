@@ -18,6 +18,9 @@ import { ConditionCard } from '@/components/condition-card';
 import { daysBetween, seasonOf, todayIn } from '@/lib/dates';
 import { requireProfile, requireViewer } from '@/lib/viewer';
 
+/** 次の大会がこの日数以内なら、スマホでも画面の一番上に出す */
+const NEXT_MEET_ON_TOP_DAYS = 14;
+
 /**
  * ホーム。幅 1024px 以上は2列：左に種目ごとの色付きのカード、右に次の大会・今日のコンディション・天気。
  * スマホは種目のカードから縦に積む。自分のカード（顔・名前・本数）は外した。顔と名前はユーザーメニューにあり、
@@ -47,10 +50,38 @@ export default async function Home() {
   const t = await getTranslations('home');
   const tNav = await getTranslations('nav');
   const days = competition ? daysBetween(today, competition.day) : null;
+  // 大会が近いときは、スマホでも種目のカードより上に出す（起動画面の代わり。2026-10-12 に本人と決めた）
+  const soon = days !== null && days <= NEXT_MEET_ON_TOP_DAYS;
+  // 次の大会はアプリの青のカード。残りの日数を大きな数字で（黒は怖いと言われた。本人、2026-10-11）
+  const nextCard = (
+    <Link
+      href="/competitions"
+      className="mx-4 flex items-center gap-4 rounded-3xl bg-primary p-5 text-primary-foreground"
+    >
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <SectionTitle inverse="primary">{t('nextCompetition')}</SectionTitle>
+        <span className="truncate text-lg font-extrabold">
+          {competition ? competition.name : t('noCompetition')}
+        </span>
+      </div>
+      {/* 当日は数字を出さず「今日」とだけ出す */}
+      {days === 0 && (
+        <span className="shrink-0 text-lg font-extrabold">{t('daysLeft', { days })}</span>
+      )}
+      {days !== null && days > 0 && (
+        <div className="flex shrink-0 flex-col items-end">
+          <DisplayNumber size="hero">{days}</DisplayNumber>
+          <span className="text-sm font-bold">{t('daysUnit', { days })}</span>
+        </div>
+      )}
+      <ChevronRight aria-hidden className="size-5 shrink-0" />
+    </Link>
+  );
 
   return (
     <main className="flex flex-col gap-3">
       <PageTitle>{tNav('home')}</PageTitle>
+      {soon && <div className="contents lg:hidden">{nextCard}</div>}
 
       <div className={MAIN_SIDE}>
         <div className="flex flex-col gap-3">
@@ -87,29 +118,7 @@ export default async function Home() {
           })}
         </div>
         <div className="flex flex-col gap-3">
-          {/* 次の大会はアプリの青のカード。残りの日数を大きな数字で（黒は怖いと言われた。本人、2026-10-11） */}
-          <Link
-            href="/competitions"
-            className="mx-4 flex items-center gap-4 rounded-3xl bg-primary p-5 text-primary-foreground"
-          >
-            <div className="flex min-w-0 flex-1 flex-col gap-1">
-              <SectionTitle inverse="primary">{t('nextCompetition')}</SectionTitle>
-              <span className="truncate text-lg font-extrabold">
-                {competition ? competition.name : t('noCompetition')}
-              </span>
-            </div>
-            {/* 当日は数字を出さず「今日」とだけ出す */}
-            {days === 0 && (
-              <span className="shrink-0 text-lg font-extrabold">{t('daysLeft', { days })}</span>
-            )}
-            {days !== null && days > 0 && (
-              <div className="flex shrink-0 flex-col items-end">
-                <DisplayNumber size="hero">{days}</DisplayNumber>
-                <span className="text-sm font-bold">{t('daysUnit', { days })}</span>
-              </div>
-            )}
-            <ChevronRight aria-hidden className="size-5 shrink-0" />
-          </Link>
+          {soon ? <div className="hidden lg:contents">{nextCard}</div> : nextCard}
           <AdviceCard readiness={advice} />
           {/* 今日のコンディション。押すと直す画面へ移り、保存したらホームへ戻る */}
           <ConditionCard

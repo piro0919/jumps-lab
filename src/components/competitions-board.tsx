@@ -1,10 +1,11 @@
 'use client';
 
-import { MapPin, Pencil, Plus, Trash2 } from 'lucide-react';
+import { ExternalLink, MapPin, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
 import { deleteCompetitionAction } from '@/app/actions/competitions';
 import { ConfirmDialog } from '@/components/confirm-dialog';
+import { PrefectureLinks } from '@/components/prefecture-links';
 import {
   Badge,
   Card,
@@ -25,7 +26,7 @@ import { EVENT_TEXT } from '@/lib/events';
 import { formatMarkParts, type Units } from '@/lib/units';
 
 /**
- * 大会1件。日付・名前・会場・招集・開始・注意事項。これからの大会には残りの日数を出す。
+ * 大会1件。日付・名前・会場・招集・開始・注意事項。これからの大会には残りの日数と申し込みのサイトを出す。
  * LP の見本の画面でも、見本のデータで使う
  */
 export function CompetitionItem({
@@ -103,6 +104,18 @@ export function CompetitionItem({
             .join(' · ')}
         </span>
         {competition.notes && <p className="text-sm whitespace-pre-wrap">{competition.notes}</p>}
+        {/* 申し込みのサイト。申し込むのは大会の前なので、これからの大会にだけ出す */}
+        {upcoming && competition.entryUrl && (
+          <a
+            href={competition.entryUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="flex w-fit items-center gap-1 text-sm font-bold underline"
+          >
+            {tCompetitions('entry')}
+            <ExternalLink aria-hidden className="size-3.5" />
+          </a>
+        )}
         {results.length > 0 && (
           <div className="mt-2 flex flex-col gap-1">
             <span className={LABEL}>{tCompetitions('result')}</span>
@@ -149,6 +162,7 @@ export function CompetitionsBoard({
   results,
   units,
   today,
+  prefectureLinks,
 }: {
   /** 画面の見出し。追加のボタンをその右端に置くので、見出しごとここで描く */
   title: string;
@@ -158,6 +172,8 @@ export function CompetitionsBoard({
   results: Record<string, CompetitionResult[]>;
   units: Units;
   today: string;
+  /** 都道府県の陸協の大会日程を出すか（日本の人だけ） */
+  prefectureLinks: boolean;
 }) {
   const t = useTranslations('competitions');
   const tCalendar = useTranslations('calendar');
@@ -205,10 +221,13 @@ export function CompetitionsBoard({
         {title}
       </PageTitle>
       <div className={HALVES}>
-        {section(t('upcoming'), upcoming, t('noUpcoming'), {
-          href: '/competitions/new',
-          label: tCalendar('addCompetition'),
-        })}
+        <div className="flex flex-col gap-3">
+          {section(t('upcoming'), upcoming, t('noUpcoming'), {
+            href: '/competitions/new',
+            label: tCalendar('addCompetition'),
+          })}
+          {prefectureLinks && <PrefectureLinks />}
+        </div>
         {section(t('past'), past, t('noPast'))}
       </div>
       <ConfirmDialog

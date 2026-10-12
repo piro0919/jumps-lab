@@ -1,4 +1,5 @@
 import { ISO_MONTH_START, ISO_YEAR_END } from './dates';
+import { inJapan } from './japan';
 import { GRADES, type Grade } from './profile-options';
 
 /**
@@ -46,7 +47,7 @@ function numberOf(grade: Grade): number {
  * ほかの国では欄ごと出さず、学年を持たない（年齢は生年月日でわかる。2026-10-11 に本人と決めた）
  */
 export function usesGrade(timeZone: string): boolean {
-  return timeZone === 'Asia/Tokyo';
+  return inJapan(timeZone);
 }
 
 /**

@@ -348,11 +348,13 @@ export type Competition = {
   notes: string | null;
   /** 主目標の大会か。今日のアドバイスが、この大会の前2週間を調整期にする */
   isTarget: boolean;
+  /** 申し込みのサイト。大会の一覧から開く */
+  entryUrl: string | null;
 };
 
 const competitionColumns = `id, name, to_char(day, 'YYYY-MM-DD') as day, venue, "callRoomPlace",
   to_char("callRoomTime", 'HH24:MI') as "callRoomTime", to_char("startTime", 'HH24:MI') as "startTime", notes,
-  "isTarget"`;
+  "isTarget", "entryUrl"`;
 
 /** today 以降でいちばん近い大会 */
 export async function nextCompetition(userId: string, today: string): Promise<Competition | null> {
@@ -377,19 +379,20 @@ export async function saveCompetition(
     input.startTime,
     input.notes,
     input.isTarget,
+    input.entryUrl,
   ];
   if (input.id) {
     await db().query(
       `update competition set name = $3, day = $4, venue = $5, "callRoomPlace" = $6,
-              "callRoomTime" = $7, "startTime" = $8, notes = $9, "isTarget" = $10
+              "callRoomTime" = $7, "startTime" = $8, notes = $9, "isTarget" = $10, "entryUrl" = $11
         where "userId" = $1 and id = $2`,
       [userId, input.id, ...values],
     );
   } else {
     await db().query(
       `insert into competition ("userId", name, day, venue, "callRoomPlace", "callRoomTime",
-                                "startTime", notes, "isTarget")
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+                                "startTime", notes, "isTarget", "entryUrl")
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
       [userId, ...values],
     );
   }
