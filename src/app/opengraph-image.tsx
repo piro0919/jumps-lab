@@ -47,7 +47,7 @@ export default async function OpengraphImage() {
         alt=""
         width={840}
         height={630}
-        style={{ position: 'absolute', right: -120, top: 0, width: 840, height: 630 }}
+        style={{ position: 'absolute', right: -190, top: 0, width: 840, height: 630 }}
       />
       {/* 写真の左を地の色へ溶かす */}
       <div
@@ -58,7 +58,7 @@ export default async function OpengraphImage() {
           width: 1200,
           height: 630,
           display: 'flex',
-          backgroundImage: `linear-gradient(90deg, ${INK} 38%, rgba(11,13,18,0.8) 54%, rgba(11,13,18,0) 76%)`,
+          backgroundImage: `linear-gradient(90deg, ${INK} 48%, rgba(11,13,18,0.75) 60%, rgba(11,13,18,0) 80%)`,
         }}
       />
       <div
