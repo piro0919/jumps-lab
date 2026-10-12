@@ -193,6 +193,9 @@ Copy the shape of `~/Repository/onigiri` (which itself copies vocafy). Read its 
   - How many production profiles were saved as UTC (reading production was blocked by the permission classifier); remove `TimeZoneRepair` once none are left
   - The analysis page at 3:2 was not looked at after the layout change (home was)
 - Not done:
-  - The AI menu in production (needs a key under the owner's account, the privacy policy entry, and the owner's OK on the cost)
+  - The AI menu in production. Needs, in this order (explained to the owner 2026-10-12):
+    - A key under the owner's account and the owner's OK on the cost (costs are settled with 中元さん later)
+    - Privacy policy section 5 (ja and en) lists OpenAI as a recipient, with what is sent: age, gender, height, weight, events, the last 14 days of condition, fatigue, sleep, pain note, practice note and attempts, the session note and chat messages (never name or email). Not written yet because production sends nothing to OpenAI; writing it early would describe sending that does not happen
+    - Check against official sources before writing it (not yet checked): OpenAI is a US company, and the APPI has rules for giving personal data to a third party abroad (consent or equivalent measures); the pain note may count as special care-required personal information (要配慮個人情報), which may need the person's consent before it is sent. If consent is needed, a consent step is required before the first menu, not only a policy sentence. No lawyer review, like the terms
   - Coach questions (the prototype's hidden coach mode)
 - Dev server runs on port 3110 (`pnpm dev`); local Postgres on 5436 (`pnpm db:up`, then `pnpm migrate`)
