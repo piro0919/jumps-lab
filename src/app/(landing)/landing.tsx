@@ -191,9 +191,11 @@ export async function Landing() {
                 {label}
               </span>
             ) : (
-              <Link key={value} href={href} hrefLang={value} className={segmentClass(false)}>
+              // ページを丸ごと読み直す。Link で移ると、外側のレイアウトが前の言語のまま残り、
+              // ブラウザで描く部品（Google のボタン・同意の文）と <html lang> が切り替わらなかった
+              <a key={value} href={href} hrefLang={value} className={segmentClass(false)}>
                 {label}
-              </Link>
+              </a>
             ),
           )}
         </nav>
