@@ -5,6 +5,7 @@ import { useRef, useState, useTransition } from 'react';
 import { setPlanAction } from '@/app/actions/admin';
 import { ErrorText, SEGMENTS, segmentClass } from '@/components/layout-ui';
 import { PLANS, type Plan } from '@/lib/profile-options';
+import { safely } from '@/lib/safe-action';
 
 /**
  * 管理の画面の1人分のプランの切り替え（Free・Premium）。押した時点で保存する。
@@ -22,12 +23,10 @@ export function PlanSwitch({ userId, name, plan }: { userId: string; name: strin
     sending.current = true;
     setFailed(false);
     startTransition(async () => {
-      // 通信が切れるなどで投げられても、次の押下を受けられるように戻す
+      // 通信が切れるなどで投げられても、誤りを出して次の押下を受けられるように戻す
       try {
-        const result = await setPlanAction({ userId, plan: next });
+        const result = await safely(() => setPlanAction({ userId, plan: next }));
         if (!result?.ok) setFailed(true);
-      } catch {
-        setFailed(true);
       } finally {
         sending.current = false;
       }

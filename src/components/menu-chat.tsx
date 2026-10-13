@@ -4,6 +4,7 @@ import { SendHorizontal } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useActionState, useRef } from 'react';
 import { askMenuAction } from '@/app/actions/menu';
+import { safely } from '@/lib/safe-action';
 import { ActionForm } from '@/components/action-form';
 import { Card, CardTitle, ErrorText, TextArea } from '@/components/layout-ui';
 import { Button } from '@/components/ui/button';
@@ -27,7 +28,7 @@ export function MenuChat({
   const tErrors = useTranslations('errors');
   const formRef = useRef<HTMLFormElement>(null);
   const [state, action, pending] = useActionState(async (previous: unknown, formData: FormData) => {
-    const result = await askMenuAction(null, formData);
+    const result = await safely(() => askMenuAction(null, formData));
     // 送れたら欄を空にする（失敗したら書いた文を残す）
     if (result?.ok) formRef.current?.reset();
     return result;

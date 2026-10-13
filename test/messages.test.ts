@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import en from '../messages/en.json';
 import ja from '../messages/ja.json';
+import { ENGLISH, loadMessages } from '../src/app/global-error-messages';
 
 /** 文言のファイルを、キーの道筋と値の組に平たくする */
 function flatten(value: unknown, path: string[] = []): [string, unknown][] {
@@ -33,5 +34,19 @@ describe('messages', () => {
     for (const [key, value] of flatten(en)) {
       expect(value as string, key).not.toMatch(/[　-ヿ一-鿿＀-￯]/);
     }
+  });
+});
+
+// global-error.tsx は全ページに載るので、英語の文言を写して持つ（src/app/global-error-messages.ts）
+describe('global-error の文言', () => {
+  it('英語の写しが en.json と同じ', () => {
+    expect(ENGLISH).toEqual({ metadata: { title: en.metadata.title }, errorPage: en.errorPage });
+  });
+
+  it('日本語は ja.json から読む', async () => {
+    expect(await loadMessages('ja')).toEqual({
+      metadata: { title: ja.metadata.title },
+      errorPage: ja.errorPage,
+    });
   });
 });

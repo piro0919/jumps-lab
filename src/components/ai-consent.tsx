@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useActionState } from 'react';
 import { consentAiAction } from '@/app/actions/menu';
+import { safely } from '@/lib/safe-action';
 import { ActionForm } from '@/components/action-form';
 import { FormActions } from '@/components/form-actions';
 import { ErrorText } from '@/components/layout-ui';
@@ -14,7 +15,7 @@ import { ErrorText } from '@/components/layout-ui';
 export function AiConsentForm() {
   const t = useTranslations('aiConsent');
   const tErrors = useTranslations('errors');
-  const [state, action, pending] = useActionState(() => consentAiAction(), null);
+  const [state, action, pending] = useActionState(() => safely(() => consentAiAction()), null);
 
   return (
     <ActionForm action={action}>

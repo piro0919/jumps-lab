@@ -128,6 +128,7 @@ Copy the shape of `~/Repository/onigiri` (which itself copies vocafy). Read its 
 - Every Server Action resolves the signed-in user itself; never trust an id from the browser. Apply the same input limits as the form
 - Files that read secrets import `server-only`
 - Return user-facing errors as values; production hides thrown messages
+- Client code calls a Server Action only through `safely(() => xAction(...))` (`src/lib/safe-action.ts`): a call that throws on bad signal becomes `{ ok: false, error: 'generic' }` shown in the form, instead of a silent reset (nagara-kaigo fixed this six times). redirect and notFound are rethrown. `test/client-actions.test.ts` fails on any other use, except fire-and-forget `startTransition(() => xAction(id))` (deletes, language; a throw reaches error.tsx) and `.catch(...)`
 - If loading initial values fails, do not open an empty form that can overwrite saved data
 - Guard submits against double press, including Enter, with a ref; let a primary key or unique constraint take the slot once, and treat only `23505` as "already exists"
 - Personal API responses are `private, no-store`. Do not scope cookies to `.kkweb.io`
@@ -161,6 +162,7 @@ Copy the shape of `~/Repository/onigiri` (which itself copies vocafy). Read its 
 - Minimum width 375px, `viewportFit: 'cover'` with safe-area insets for the bottom tabs
 - No explanatory text or notes on screens. The one exception is the AI consent card, whose text is required by the APPI (2026-10-14)
 - PWA: `app/manifest.ts` with `id: '/'`, no service worker. `favicon.ico` must be RGBA
+- Error pages (2026-10-14): `(app)/error.tsx` and `(app)/not-found.tsx` keep the header and tabs (notFound() for a missing or someone else's id lands here); `app/error.tsx` and `app/not-found.tsx` cover the rest with the icon and wordmark on top; `global-error.tsx` draws its own html with the locale cookie or browser language and the saved theme; it is loaded on every page, so it keeps an English copy of its text (`global-error-messages.ts`, checked against en.json by `test/messages.test.ts`) and loads ja.json only when shown (importing the json files put all 40KB of text on every page). All use `ErrorScreen` (title, one card, Home and Try again), text in `errorPage`. Network failures get their own sentence. Errors are not sent to Sentry from the browser (server errors only, as the privacy policy says); the digest is shown small to match server logs
 - Vercel image optimization is billed; avoid it for user content
 
 ## Release checklist

@@ -363,5 +363,16 @@
     "planOf": "Plan for {name}",
     "free": "Free",
     "premium": "Premium"
+  },
+  "errorPage": {
+    "title": "Something went wrong",
+    "body": "This screen couldn't be shown. Try again, and go back to Home if it keeps happening.",
+    "offlineTitle": "Can't connect",
+    "offlineBody": "Check your connection and try again.",
+    "retry": "Try again",
+    "home": "Go to Home",
+    "code": "Error ID: {digest}",
+    "notFoundTitle": "Page not found",
+    "notFoundBody": "This page doesn't exist, or the record was deleted."
   }
 }

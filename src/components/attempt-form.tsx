@@ -5,6 +5,7 @@ import { useRouter } from '@bprogress/next/app';
 import { useTranslations } from 'next-intl';
 import { useActionState, useState } from 'react';
 import { saveAttemptAction } from '@/app/actions/today';
+import { safely } from '@/lib/safe-action';
 import { ActionForm } from '@/components/action-form';
 import { ErrorText, Field, FieldLabel, segmentClass, TextArea } from '@/components/layout-ui';
 import { MarkInput, WindInput } from '@/components/measure-inputs';
@@ -76,7 +77,7 @@ export function AttemptForm({
   const [event, setEvent] = useState<JumpEvent>(initialEvent);
   const [kind, setKind] = useState<'practice' | 'competition'>(initial?.kind ?? 'practice');
   const [state, action, pending] = useActionState(async (previous: unknown, formData: FormData) => {
-    const result = await saveAttemptAction(null, formData);
+    const result = await safely(() => saveAttemptAction(null, formData));
     if (result?.ok) router.push(backHref);
     return result;
   }, null);

@@ -9,6 +9,7 @@ import {
   finishVideoUploadAction,
   startVideoUploadAction,
 } from '@/app/actions/videos';
+import { safely } from '@/lib/safe-action';
 import { ActionForm } from '@/components/action-form';
 import { Segmented } from '@/components/attempt-form';
 import { FormActions } from '@/components/form-actions';
@@ -136,23 +137,27 @@ export function VideoForm({
   const [state, action, pending] = useActionState(
     async (_previous: unknown, formData: FormData) => {
       if (!chosen) return { ok: false as const, error: 'videoFile' };
-      const started = await startVideoUploadAction({
-        day,
-        event,
-        kind,
-        attemptId: String(formData.get('attemptId') ?? ''),
-        note: String(formData.get('note') ?? ''),
-        sizeBytes: chosen.file.size,
-        contentType: chosen.type,
-      });
+      // 3つの呼び出しは、電波が切れるなどで投げられても誤りの値で戻る（src/lib/safe-action.ts）
+      const started = await safely(() =>
+        startVideoUploadAction({
+          day,
+          event,
+          kind,
+          attemptId: String(formData.get('attemptId') ?? ''),
+          note: String(formData.get('note') ?? ''),
+          sizeBytes: chosen.file.size,
+          contentType: chosen.type,
+        }),
+      );
       if (!started.ok) return started;
       setProgress(0);
       const sent = await put(started.url, chosen.file, started.contentType, setProgress);
-      const finished = sent ? await finishVideoUploadAction(started.id) : { ok: false };
+      const finished = sent ? await safely(() => finishVideoUploadAction(started.id)) : null;
       setProgress(null);
-      if (!finished.ok) {
-        // 取った枠をすぐ外す（残すと合計を食い、やり直すたびに1本分ずつ減っていく）
-        await cancelVideoUploadAction(started.id);
+      if (!finished?.ok) {
+        // 取った枠をすぐ外す（残すと合計を食い、やり直すたびに1本分ずつ減っていく）。
+        // 外す呼び出しも届かなければ、3時間たった枠は次の追加のときに消える
+        await safely(() => cancelVideoUploadAction(started.id));
         return { ok: false as const, error: 'videoUpload' };
       }
       router.push(backHref);

@@ -5,6 +5,7 @@ import { useRouter } from '@bprogress/next/app';
 import { useTranslations } from 'next-intl';
 import { useActionState, useState } from 'react';
 import { saveCompetitionAction } from '@/app/actions/competitions';
+import { safely } from '@/lib/safe-action';
 import { ActionForm } from '@/components/action-form';
 import {
   ErrorText,
@@ -40,7 +41,7 @@ export function CompetitionForm({
   const tProfile = useTranslations('profile');
   const [isTarget, setIsTarget] = useState(initial?.isTarget ?? false);
   const [state, action, pending] = useActionState(async (previous: unknown, formData: FormData) => {
-    const result = await saveCompetitionAction(null, formData);
+    const result = await safely(() => saveCompetitionAction(null, formData));
     if (result?.ok) router.push('/competitions');
     return result;
   }, null);

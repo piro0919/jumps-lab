@@ -363,5 +363,16 @@
     "planOf": "{name}さんのプラン",
     "free": "Free",
     "premium": "Premium"
+  },
+  "errorPage": {
+    "title": "表示できませんでした",
+    "body": "この画面を表示できませんでした。もう一度試して、続くときはホームに戻ってください。",
+    "offlineTitle": "接続できません",
+    "offlineBody": "電波のよい所で、もう一度試してください。",
+    "retry": "もう一度試す",
+    "home": "ホームへ",
+    "code": "エラー ID: {digest}",
+    "notFoundTitle": "ページが見つかりません",
+    "notFoundBody": "このページは無いか、記録が消されています。"
   }
 }

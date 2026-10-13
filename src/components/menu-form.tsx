@@ -5,6 +5,7 @@ import { useRouter } from '@bprogress/next/app';
 import { useTranslations } from 'next-intl';
 import { useActionState } from 'react';
 import { createMenuAction } from '@/app/actions/menu';
+import { safely } from '@/lib/safe-action';
 import { ActionForm } from '@/components/action-form';
 import { FormActions } from '@/components/form-actions';
 import { ErrorText, Field, Input, TextArea } from '@/components/layout-ui';
@@ -24,7 +25,7 @@ export function MenuForm({ meetDay }: { meetDay: boolean }) {
   const t = useTranslations('menu');
   const tErrors = useTranslations('errors');
   const [state, action, pending] = useActionState(async (previous: unknown, formData: FormData) => {
-    const result = await createMenuAction(null, formData);
+    const result = await safely(() => createMenuAction(null, formData));
     if (result?.ok) router.push('/log/today/menu');
     return result;
   }, null);

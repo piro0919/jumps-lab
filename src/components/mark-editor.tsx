@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { ActionForm } from '@/components/action-form';
 import { useActionState, useState } from 'react';
 import { saveTargetAction } from '@/app/actions/targets';
+import { safely } from '@/lib/safe-action';
 import { MarkInput } from '@/components/measure-inputs';
 import { Badge, ErrorText, Stat } from '@/components/layout-ui';
 import { Sheet } from '@/components/sheet';
@@ -44,7 +45,7 @@ export function MarkEditor({
   const tErrors = useTranslations('errors');
   const [editing, setEditing] = useState(false);
   const [state, action, pending] = useActionState(async (previous: unknown, formData: FormData) => {
-    const result = await saveTargetAction(null, formData);
+    const result = await safely(() => saveTargetAction(null, formData));
     if (result?.ok) setEditing(false);
     return result;
   }, null);

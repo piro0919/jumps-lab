@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { ActionForm } from '@/components/action-form';
 import { useActionState, useState } from 'react';
 import { saveDayLogAction } from '@/app/actions/today';
+import { safely } from '@/lib/safe-action';
 import { ErrorText, Field, LABEL, TextArea } from '@/components/layout-ui';
 import { FormActions } from '@/components/form-actions';
 import type { DayLog } from '@/lib/data';
@@ -77,7 +78,7 @@ export function DayLogForm({
   const tErrors = useTranslations('errors');
   const router = useRouter();
   const [state, action, pending] = useActionState(async (previous: unknown, formData: FormData) => {
-    const result = await saveDayLogAction(null, formData);
+    const result = await safely(() => saveDayLogAction(null, formData));
     if (result?.ok) router.push(backHref);
     return result;
   }, null);

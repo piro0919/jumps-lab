@@ -9,6 +9,7 @@ import {
   saveProfileDetailsAction,
   saveRecordSettingsAction,
 } from '@/app/actions/profile';
+import { safely } from '@/lib/safe-action';
 import { HeightInput, MarkInput, WeightInput } from '@/components/measure-inputs';
 import {
   Card,
@@ -50,6 +51,14 @@ const GENDERS = ['', 'male', 'female', 'other'] as const;
 
 /** 変わらない値の購読（ブラウザでしか読めない値を、サーバーの描画と食い違わずに読むため） */
 const never = () => () => {};
+
+/** 3つの保存。電波が切れるなどで投げられたら、誤りの値にして保存の横に出す（src/lib/safe-action.ts） */
+const saveProfile = (previous: ActionResult, formData: FormData) =>
+  safely(() => saveProfileAction(previous, formData));
+const saveProfileDetails = (previous: ActionResult, formData: FormData) =>
+  safely(() => saveProfileDetailsAction(previous, formData));
+const saveRecordSettings = (previous: ActionResult, formData: FormData) =>
+  safely(() => saveRecordSettingsAction(previous, formData));
 
 /** いまのブラウザの時間帯。サーバーで描くときは initial */
 function useBrowserTimeZone(initial: string) {
@@ -319,7 +328,7 @@ function useEvents(initial: Profile | null) {
 /** 初回（ようこそ画面）。1枚のカードに2つを見出しで分けて並べ、一度に保存してホームへ */
 export function ProfileForm({ defaultName, locale }: { defaultName: string; locale: string }) {
   const t = useTranslations('profile');
-  const [state, action, pending] = useActionState(saveProfileAction, null);
+  const [state, action, pending] = useActionState(saveProfile, null);
   const [units, setUnits] = useState<Units>('metric');
   const [events, toggle] = useEvents(null);
   // 週の始まりは、選ぶまではブラウザの地域から決めた値（src/lib/week.ts。サーバーで描くときは日曜）
@@ -378,7 +387,7 @@ export function ProfileSettingsForm({
   initialGrade: string | null;
 }) {
   const t = useTranslations('profile');
-  const [state, action, pending] = useActionState(saveProfileDetailsAction, null);
+  const [state, action, pending] = useActionState(saveProfileDetails, null);
 
   return (
     <ActionForm action={action}>
@@ -402,7 +411,7 @@ export function ProfileSettingsForm({
 /** 設定の画面の「記録」の区画 */
 export function RecordSettingsForm({ initial, locale }: { initial: Profile; locale: string }) {
   const t = useTranslations('profile');
-  const [state, action, pending] = useActionState(saveRecordSettingsAction, null);
+  const [state, action, pending] = useActionState(saveRecordSettings, null);
   const [units, setUnits] = useState<Units>(initial.units);
   const [events, toggle] = useEvents(initial);
   const [weekStart, setWeekStart] = useState<0 | 1>(initial.weekStart);
