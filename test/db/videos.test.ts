@@ -12,6 +12,7 @@ import {
   releaseStaleVideos,
   releaseVideo,
   reserveVideo,
+  setVideoMark,
   videoUsage,
 } from '@/lib/data';
 import { addProfile, query } from './seed';
@@ -249,5 +250,78 @@ describe('見比べる動画', () => {
 
     const list = await listComparableVideos(owner, 'long_jump', base.id);
     expect(list.map((v) => v.id)).toEqual([sameDayLater.id, older.id]);
+  });
+});
+
+describe('setVideoMark', () => {
+  /** 本人の届いた動画を1本足す */
+  async function readyVideo(userId: string) {
+    const v = video(userId, 100);
+    await reserveVideo(userId, v, 10_000, KEEP_DAYS);
+    await completeVideo(userId, v.id);
+    return v;
+  }
+
+  it('置いた目印をミリ秒まで残し、置き直すと上書きし、ほかの目印は残す', async () => {
+    const userId = await addProfile();
+    const v = await readyVideo(userId);
+    expect((await getVideo(userId, v.id))?.marks).toEqual({});
+
+    expect(await setVideoMark(userId, v.id, 'step1', 1.234)).toEqual({ step1: 1.234 });
+    expect(await setVideoMark(userId, v.id, 'takeoff', 1.5)).toEqual({
+      step1: 1.234,
+      takeoff: 1.5,
+    });
+    expect(await setVideoMark(userId, v.id, 'step1', 1.267)).toEqual({
+      step1: 1.267,
+      takeoff: 1.5,
+    });
+
+    expect((await getVideo(userId, v.id))?.marks).toEqual({ step1: 1.267, takeoff: 1.5 });
+    const [onDay] = await listVideosOnDay(userId, DAY);
+    expect(onDay?.marks).toEqual({ step1: 1.267, takeoff: 1.5 });
+  });
+
+  it('null で外す。置いていない目印を外しても何も変わらない', async () => {
+    const userId = await addProfile();
+    const v = await readyVideo(userId);
+    await setVideoMark(userId, v.id, 'step1', 1);
+    await setVideoMark(userId, v.id, 'takeoff', 1.25);
+    expect(await setVideoMark(userId, v.id, 'step1', null)).toEqual({ takeoff: 1.25 });
+    expect(await setVideoMark(userId, v.id, 'landing', null)).toEqual({ takeoff: 1.25 });
+  });
+
+  it('ほかの人の動画、届いていない動画、期限を過ぎた動画には置けない', async () => {
+    const [owner, other] = await Promise.all([addProfile(), addProfile()]);
+    const mine = await readyVideo(owner);
+    const pending = video(owner, 100);
+    await reserveVideo(owner, pending, 10_000, KEEP_DAYS);
+    const expired = await addExpired(owner, 100);
+
+    expect(await setVideoMark(other, mine.id, 'takeoff', 1)).toBeNull();
+    expect(await setVideoMark(owner, pending.id, 'takeoff', 1)).toBeNull();
+    expect(await setVideoMark(owner, expired.id, 'takeoff', 1)).toBeNull();
+
+    const rows = await query<{ marks: unknown }>(
+      `select marks from video where id = any($1::uuid[])`,
+      [[mine.id, pending.id, expired.id]],
+    );
+    expect(rows.map((r) => r.marks)).toEqual([{}, {}, {}]);
+  });
+
+  it('目印は動画と一緒に消える', async () => {
+    const userId = await addProfile();
+    const v = await readyVideo(userId);
+    await setVideoMark(userId, v.id, 'takeoff', 2);
+    await deleteVideo(userId, v.id);
+    expect(await query(`select 1 from video where id = $1`, [v.id])).toEqual([]);
+  });
+
+  it('目印の列は、形が object でない値を受けない', async () => {
+    const userId = await addProfile();
+    const v = await readyVideo(userId);
+    await expect(
+      query(`update video set marks = '[1]'::jsonb where id = $1`, [v.id]),
+    ).rejects.toThrow();
   });
 });

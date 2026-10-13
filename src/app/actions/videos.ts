@@ -10,6 +10,7 @@ import {
   releaseStaleVideos,
   releaseVideo,
   reserveVideo,
+  setVideoMark,
 } from '@/lib/data';
 import { isDay, todayIn } from '@/lib/dates';
 import { EVENTS } from '@/lib/events';
@@ -23,6 +24,7 @@ import {
   VIDEO_TYPES,
   videoKey,
 } from '@/lib/videos';
+import { markInputSchema, type MarkInput, type Marks } from '@/lib/video-marks';
 import { requireViewer } from '@/lib/viewer';
 
 /**
@@ -120,6 +122,26 @@ export async function cancelVideoUploadAction(id: string): Promise<void> {
   if (!z.uuid().safeParse(id).success) return;
   const key = await releaseVideo(viewer.userId, id);
   if (key) await deleteObject(key).catch((error) => console.error(error));
+}
+
+/**
+ * 動画に時間の目印を1つ置く（time が null なら外す）。本人の、届いていて期限の過ぎていない動画だけ。
+ * 置いたあとの目印を返し、画面はそれで描き直す（見比べる画面はその場で描くので refresh しない）
+ */
+export async function setVideoMarkAction(
+  input: MarkInput,
+): Promise<{ ok: true; marks: Marks } | { ok: false; error: 'generic' }> {
+  const viewer = await requireViewer();
+  const parsed = markInputSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: 'generic' };
+  const { videoId, mark, time } = parsed.data;
+  try {
+    const marks = await setVideoMark(viewer.userId, videoId, mark, time);
+    return marks ? { ok: true, marks } : { ok: false, error: 'generic' };
+  } catch (error) {
+    console.error(error);
+    return { ok: false, error: 'generic' };
+  }
 }
 
 export async function deleteVideoAction(id: string): Promise<void> {

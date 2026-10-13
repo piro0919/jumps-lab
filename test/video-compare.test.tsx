@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 /**
  * 2本の動画を見比べる部品（video-compare.tsx）。見せ方の切り替え（並べる・重ねる）、速さの切り替え、
- * 読み込めなかった動画の誤りの文。文言はキーのまま出す
+ * 読み込めなかった動画の誤りの文、時間の目印を置く・外すと、あいだの時間。文言はキーのまま出す
  */
 
 vi.mock('next-intl', () => ({
@@ -13,14 +13,51 @@ vi.mock('next-intl', () => ({
   useFormatter: () => ({ number: (value: number) => String(value) }),
 }));
 
+/** 目印の保存。置いた後の目印を返す（DB の代わりに、ここで持つ） */
+const saved: Record<string, Record<string, number>> = {};
+const setVideoMarkAction = vi.fn(
+  async ({ videoId, mark, time }: { videoId: string; mark: string; time: number | null }) => {
+    const marks = { ...saved[videoId] };
+    if (time === null) delete marks[mark];
+    else marks[mark] = time;
+    saved[videoId] = marks;
+    return { ok: true as const, marks };
+  },
+);
+vi.mock('@/app/actions/videos', () => ({ setVideoMarkAction }));
+
 const { VideoCompare } = await import('@/components/video-compare');
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  setVideoMarkAction.mockClear();
+});
 
-const a = { id: 'a', url: 'https://example.com/a.mp4', label: 'Oct 1', detail: 'practice' };
-const b = { id: 'b', url: 'https://example.com/b.mp4', label: 'Oct 2', detail: 'competition' };
+const a = {
+  id: 'a',
+  url: 'https://example.com/a.mp4',
+  label: 'Oct 1',
+  detail: 'practice',
+  marks: {},
+};
+const b = {
+  id: 'b',
+  url: 'https://example.com/b.mp4',
+  label: 'Oct 2',
+  detail: 'competition',
+  marks: {},
+};
 
-const show = () => render(createElement(VideoCompare, { a, b }));
+const show = (marks: { a?: Record<string, number>; b?: Record<string, number> } = {}) => {
+  saved.a = { ...marks.a };
+  saved.b = { ...marks.b };
+  return render(
+    createElement(VideoCompare, {
+      a: { ...a, marks: marks.a ?? {} },
+      b: { ...b, marks: marks.b ?? {} },
+    }),
+  );
+};
 const opacity = () => screen.queryByRole('slider', { name: 'opacity' });
 
 describe('VideoCompare', () => {
@@ -76,5 +113,56 @@ describe('VideoCompare', () => {
     expect(screen.queryByText('loadFailed')).toBeNull();
     fireEvent.error(screen.getByTestId('compare-video-b'));
     expect(screen.getAllByText('loadFailed')).toHaveLength(1);
+  });
+
+  it('選んだ目印を今の位置に置き、両方にあるあいだの時間と B − A を出す', async () => {
+    show({ a: { step1: 1 }, b: { step1: 1.1, takeoff: 1.35 } });
+    // B にしかないあいだは、A を空にして出す
+    expect(screen.getByTestId('interval-step1-takeoff').textContent).toContain('—');
+
+    const video = screen.getByTestId('compare-video-a') as HTMLVideoElement;
+    video.currentTime = 1.2344;
+    const [selectA] = screen.getAllByRole('combobox', { name: 'markOf' });
+    fireEvent.change(selectA!, { target: { value: 'takeoff' } });
+    const [markA] = screen.getAllByRole('button', { name: 'setMark' });
+    await act(async () => markA!.click());
+
+    expect(setVideoMarkAction).toHaveBeenCalledWith({ videoId: 'a', mark: 'takeoff', time: 1.234 });
+    const row = screen.getByTestId('interval-step1-takeoff');
+    expect(row.textContent).toContain('0.234');
+    expect(row.textContent).toContain('0.25');
+    expect(row.textContent).toContain('0.016');
+    // 置いたあとは、次のまだ置いていない目印を選んでおく
+    expect(
+      (screen.getAllByRole('combobox', { name: 'markOf' })[0] as HTMLSelectElement).value,
+    ).toBe('landing');
+  });
+
+  it('目印を外すと、そのあいだの時間を消す', async () => {
+    show({ a: { step1: 1, takeoff: 1.25 } });
+    expect(screen.getByTestId('interval-step1-takeoff').textContent).toContain('0.25');
+    const [remove] = screen.getAllByRole('button', { name: 'removeMark' });
+    await act(async () => remove!.click());
+    expect(setVideoMarkAction).toHaveBeenCalledWith({ videoId: 'a', mark: 'step1', time: null });
+    expect(screen.queryByTestId('interval-step1-takeoff')).toBeNull();
+    expect(screen.getByText('noTiming')).not.toBeNull();
+  });
+
+  it('保存している間の2回目の押下は送らない', async () => {
+    show();
+    const [markA] = screen.getAllByRole('button', { name: 'setMark' });
+    await act(async () => {
+      markA!.click();
+      markA!.click();
+    });
+    expect(setVideoMarkAction).toHaveBeenCalledTimes(1);
+  });
+
+  it('保存できなかったら誤りを出す', async () => {
+    show();
+    setVideoMarkAction.mockRejectedValueOnce(new Error('offline'));
+    const [markA] = screen.getAllByRole('button', { name: 'setMark' });
+    await act(async () => markA!.click());
+    expect(screen.getByText('generic')).not.toBeNull();
   });
 });

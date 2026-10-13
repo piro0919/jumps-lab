@@ -299,7 +299,24 @@
     "setSync": "Set {video} here",
     "syncAt": "Sync point {time}",
     "clearSync": "Clear sync",
-    "loadFailed": "Could not play this video."
+    "loadFailed": "Could not play this video.",
+    "markOf": "Mark for {video}",
+    "setMark": "Mark here",
+    "removeMark": "Remove {mark} from {video}",
+    "marks": {
+      "start": "Approach start",
+      "step3": "3rd-last step",
+      "step2": "2nd-last step",
+      "step1": "Last step",
+      "takeoff": "Take-off",
+      "landing": "Landing"
+    },
+    "timing": "Timing",
+    "noTiming": "No times yet.",
+    "interval": "{from} → {to}",
+    "approach": "Approach",
+    "difference": "B − A",
+    "secondsUnit": "s"
   },
   "advice": {
     "title": "Today's advice",

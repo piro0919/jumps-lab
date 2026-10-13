@@ -103,6 +103,7 @@ export default async function CompareVideos({ searchParams }: PageProps<'/videos
     url,
     label: dayLabel(video.day),
     detail: detail(video),
+    marks: video.marks,
   });
 
   return (

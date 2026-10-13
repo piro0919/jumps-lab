@@ -7,6 +7,7 @@ import type { Menu, MenuLevel } from '@/lib/menu';
 import type { PushTarget } from '@/lib/push-endpoint';
 import type { Grade, Plan } from '@/lib/profile-options';
 import type { Units } from '@/lib/units';
+import { toMarks, type MarkName, type Marks } from '@/lib/video-marks';
 
 /**
  * DB の読み書き。どの関数も userId を引数に取り、その人の行だけを触る。
@@ -511,10 +512,15 @@ export type Video = {
   sizeBytes: number;
   /** 消える時刻（ISO 8601） */
   expiresAt: string;
+  /** 時間の目印（src/lib/video-marks.ts） */
+  marks: Marks;
 };
 
 const videoColumns = `id, to_char(day, 'YYYY-MM-DD') as day, event, kind, "attemptId", note, "objectKey", "sizeBytes",
-  to_char("expiresAt" at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as "expiresAt"`;
+  to_char("expiresAt" at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as "expiresAt", marks`;
+
+/** 読んだ行の目印を、知っている名前と数だけにする */
+const toVideo = (row: Video): Video => ({ ...row, marks: toMarks(row.marks) });
 
 /** 期限の過ぎていない動画（期限を過ぎた行は、R2 の本体がもう無いか、まもなく消える） */
 const LIVE_VIDEO = `"expiresAt" > now()`;
@@ -621,7 +627,7 @@ export async function listVideosOnDay(userId: string, day: string): Promise<Vide
       order by "createdAt"`,
     [userId, day],
   );
-  return rows;
+  return rows.map(toVideo);
 }
 
 /** 本人の見られる1本（届いていて、期限の過ぎていないもの）。ほかの人の動画や消えた動画は null */
@@ -631,7 +637,7 @@ export async function getVideo(userId: string, id: string): Promise<Video | null
       where "userId" = $1 and id = $2 and status = 'ready' and ${LIVE_VIDEO}`,
     [userId, id],
   );
-  return rows[0] ?? null;
+  return rows[0] ? toVideo(rows[0]) : null;
 }
 
 /**
@@ -649,7 +655,29 @@ export async function listComparableVideos(
       order by day desc, "createdAt" desc`,
     [userId, event, exceptId],
   );
-  return rows;
+  return rows.map(toVideo);
+}
+
+/**
+ * 本人の見られる1本（届いていて、期限の過ぎていないもの）に、目印を1つ置く（time が null なら外す）。
+ * 置き直すと上書きする。1つずつ書き換えるので、別の画面で置いたほかの目印を古い値で消さない。
+ * 置けたら置いたあとの目印を、置けなかった（ほかの人の動画・消えた動画）なら null を返す
+ */
+export async function setVideoMark(
+  userId: string,
+  id: string,
+  mark: MarkName,
+  time: number | null,
+): Promise<Marks | null> {
+  const { rows } = await db().query<{ marks: unknown }>(
+    `update video
+        set marks = case when $4::numeric is null then marks - $3::text
+                         else marks || jsonb_build_object($3::text, $4::numeric) end
+      where "userId" = $1 and id = $2 and status = 'ready' and ${LIVE_VIDEO}
+      returning marks`,
+    [userId, id, mark, time],
+  );
+  return rows[0] ? toMarks(rows[0].marks) : null;
 }
 
 /** 送れなかった枠を外し、R2 から消すための置き場所を返す */

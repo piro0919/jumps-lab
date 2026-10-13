@@ -1,11 +1,32 @@
 'use client';
 
-import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pause, Play, X } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Badge, Card, ErrorText, LABEL, SEGMENTS, segmentClass } from '@/components/layout-ui';
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
+import { setVideoMarkAction } from '@/app/actions/videos';
+import {
+  Badge,
+  Card,
+  CardTitle,
+  EmptyState,
+  ErrorText,
+  LABEL,
+  SEGMENTS,
+  Select,
+  Stat,
+  segmentClass,
+} from '@/components/layout-ui';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/cn';
+import { safely } from '@/lib/safe-action';
+import {
+  MARKS,
+  compareIntervals,
+  nextMark,
+  roundToMs,
+  type MarkName,
+  type Marks,
+} from '@/lib/video-marks';
 import {
   DEFAULT_FPS,
   align,
@@ -18,8 +39,14 @@ import {
   type Alignment,
 } from '@/lib/video-sync';
 
-/** 見比べる1本。label は日付、detail は練習か試合とメモ（画面に出す文） */
-export type CompareVideo = { id: string; url: string; label: string; detail: string };
+/** 見比べる1本。label は日付、detail は練習か試合とメモ（画面に出す文）、marks は保存してある時間の目印 */
+export type CompareVideo = {
+  id: string;
+  url: string;
+  label: string;
+  detail: string;
+  marks: Marks;
+};
 
 type Key = 'a' | 'b';
 const KEYS = ['a', 'b'] as const;
@@ -57,6 +84,7 @@ const TIME_DIGITS = 2;
  */
 export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
   const t = useTranslations('compare');
+  const tErrors = useTranslations('errors');
   const format = useFormatter();
   const videos = { a, b };
   const refA = useRef<HTMLVideoElement>(null);
@@ -73,6 +101,15 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
   const [syncs, setSyncs] = useState<Record<Key, number | null>>({ a: null, b: null });
   const [failed, setFailed] = useState<Record<Key, boolean>>({ a: false, b: false });
   const [landscape, setLandscape] = useState<Record<Key, boolean>>({ a: false, b: false });
+  const [marks, setMarks] = useState<Record<Key, Marks>>({ a: a.marks, b: b.marks });
+  const [chosen, setChosen] = useState<Record<Key, MarkName>>({
+    a: nextMark(a.marks),
+    b: nextMark(b.marks),
+  });
+  const [markFailed, setMarkFailed] = useState<Record<Key, boolean>>({ a: false, b: false });
+  const [marking, startMarking] = useTransition();
+  /** 目印を保存している間は次の押下を受けない（連打や Enter で2回送らないように） */
+  const sendingMark = useRef(false);
 
   const alignment = useMemo(
     () =>
@@ -274,6 +311,38 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
     seekAll(toShared(video.currentTime, startOf(key, al)), al);
   };
 
+  /**
+   * 目印を置く（time が null なら外す）。置き直すと上書きする。保存できたら、保存した後の目印で描き直し、
+   * 置いたときは次の目印を選んでおく（助走の始まりから順に置いていけるように）
+   */
+  const saveMark = (key: Key, mark: MarkName, time: number | null) => {
+    if (sendingMark.current) return;
+    sendingMark.current = true;
+    setMarkFailed((f) => ({ ...f, [key]: false }));
+    startMarking(async () => {
+      try {
+        const result = await safely(() =>
+          setVideoMarkAction({ videoId: videos[key].id, mark, time }),
+        );
+        if (result.ok) {
+          setMarks((m) => ({ ...m, [key]: result.marks }));
+          if (time !== null) setChosen((c) => ({ ...c, [key]: nextMark(result.marks, mark) }));
+        } else {
+          setMarkFailed((f) => ({ ...f, [key]: true }));
+        }
+      } finally {
+        sendingMark.current = false;
+      }
+    });
+  };
+
+  const placeMark = (key: Key) => {
+    const video = videoOf(key);
+    if (!video) return;
+    if (playing) pause();
+    saveMark(key, chosen[key], roundToMs(video.currentTime));
+  };
+
   const clearSync = () => {
     if (playing) pause();
     const cleared = { a: null, b: null };
@@ -292,6 +361,20 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
     });
 
   const name = (key: Key) => t(key === 'a' ? 'videoA' : 'videoB');
+  const markName = (mark: MarkName) => t(`marks.${mark}`);
+  const rows = compareIntervals(marks.a, marks.b);
+  /** あいだの時間の数（Stat に渡す）。差は + と − を付ける */
+  const timeValue = (value: number | null, signed = false) =>
+    value === null
+      ? null
+      : {
+          value: format.number(value, {
+            minimumFractionDigits: TIME_DIGITS,
+            maximumFractionDigits: TIME_DIGITS,
+            signDisplay: signed ? 'exceptZero' : 'auto',
+          }),
+          unit: t('secondsUnit'),
+        };
 
   const videoElement = (key: Key, className: string, style?: { opacity: number }) => (
     <video
@@ -506,6 +589,66 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
                   {syncs[key] !== null && (
                     <Badge tone="accent">{t('syncAt', { time: seconds(syncs[key] ?? 0) })}</Badge>
                   )}
+                  <div className="flex items-center gap-2">
+                    <Select
+                      aria-label={t('markOf', { video: name(key) })}
+                      value={chosen[key]}
+                      onChange={(e) =>
+                        setChosen((c) => ({ ...c, [key]: e.target.value as MarkName }))
+                      }
+                    >
+                      {MARKS.map((mark) => (
+                        <option key={mark} value={mark}>
+                          {markName(mark)}
+                        </option>
+                      ))}
+                    </Select>
+                    <Button
+                      variant="secondary"
+                      type="button"
+                      disabled={marking}
+                      onClick={() => placeMark(key)}
+                    >
+                      {t('setMark')}
+                    </Button>
+                  </div>
+                  {MARKS.some((mark) => marks[key][mark] !== undefined) && (
+                    <ul className="flex flex-col divide-y divide-border">
+                      {MARKS.map((mark) => {
+                        const time = marks[key][mark];
+                        if (time === undefined) return null;
+                        return (
+                          <li key={mark} className="flex items-center gap-2">
+                            {/* 押すとその目印の位置へ動かす（置き直す前に確かめられるように） */}
+                            <button
+                              type="button"
+                              className="flex min-w-0 flex-1 items-center justify-between gap-2 py-2 text-left"
+                              onClick={() => seekOne(key, time)}
+                            >
+                              <span className="truncate text-sm font-bold">{markName(mark)}</span>
+                              <span className="text-xs text-muted-foreground tabular-nums">
+                                {seconds(time)}
+                              </span>
+                            </button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              type="button"
+                              aria-label={t('removeMark', {
+                                mark: markName(mark),
+                                video: name(key),
+                              })}
+                              disabled={marking}
+                              onClick={() => saveMark(key, mark, null)}
+                            >
+                              <X aria-hidden />
+                            </Button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                  <ErrorText>{markFailed[key] ? tErrors('generic') : null}</ErrorText>
                 </>
               )}
             </div>
@@ -521,6 +664,35 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
           >
             {t('clearSync')}
           </Button>
+        )}
+      </Card>
+
+      <Card className="flex flex-col gap-4">
+        <CardTitle>{t('timing')}</CardTitle>
+        {rows.length === 0 ? (
+          <EmptyState message={t('noTiming')} />
+        ) : (
+          <ul className="flex flex-col gap-4" aria-label={t('timing')}>
+            {rows.map((row) => (
+              // PC では1行に「あいだの名前・A・B・B − A」を並べる（3つの数だけをカードの幅に広げると間が空きすぎる）
+              <li
+                key={row.key}
+                data-testid={`interval-${row.key}`}
+                className="flex flex-col gap-2 lg:grid lg:grid-cols-4 lg:items-center lg:gap-3"
+              >
+                <span className="text-sm font-bold">
+                  {row.key === 'approach'
+                    ? t('approach')
+                    : t('interval', { from: markName(row.from), to: markName(row.to) })}
+                </span>
+                <div className="grid grid-cols-3 gap-3 lg:col-span-3">
+                  <Stat size="sm" value={timeValue(row.a)} label={name('a')} />
+                  <Stat size="sm" value={timeValue(row.b)} label={name('b')} />
+                  <Stat size="sm" value={timeValue(row.diff, true)} label={t('difference')} />
+                </div>
+              </li>
+            ))}
+          </ul>
         )}
       </Card>
     </div>
