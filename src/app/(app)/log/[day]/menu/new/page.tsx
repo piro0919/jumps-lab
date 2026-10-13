@@ -16,7 +16,7 @@ export default async function NewMenu({ params }: PageProps<'/log/[day]/menu/new
   const profile = await requireProfile(viewer.userId);
   const today = todayIn(profile.timeZone);
   const requested = (await params).day;
-  if (!aiEnabled() || (requested !== 'today' && requested !== today)) redirect('/');
+  if (!aiEnabled(profile) || (requested !== 'today' && requested !== today)) redirect('/');
   const [menu, meets] = await Promise.all([
     getMenu(viewer.userId, today),
     listCompetitionsBetween(viewer.userId, today, today),

@@ -29,7 +29,11 @@ export type Profile = {
   /** 週の始まり。0 が日曜、1 が月曜 */
   weekStart: 0 | 1;
   timeZone: string;
+  /** プラン。AI の機能は premium だけ（src/lib/ai.ts の aiEnabled）。プロフィールの保存では変えない */
+  plan: Plan;
 };
+
+type Plan = 'free' | 'premium';
 
 type ProfileRow = Omit<Profile, 'heightCm' | 'weightKg'> & {
   heightCm: string | null;
@@ -39,7 +43,7 @@ type ProfileRow = Omit<Profile, 'heightCm' | 'weightKg'> & {
 export async function getProfile(userId: string): Promise<Profile | null> {
   const { rows } = await db().query<ProfileRow>(
     `select u.name, p.grade, p."gradeOffset", to_char(p.birthdate, 'YYYY-MM-DD') as birthdate, p.gender, p."heightCm", p."weightKg", p.events,
-            p.units, p."seasonStartMonth", p."weekStart", p."timeZone"
+            p.units, p."seasonStartMonth", p."weekStart", p."timeZone", p.plan
        from profile p join "user" u on u.id = p."userId"
       where p."userId" = $1`,
     [userId],
@@ -49,7 +53,7 @@ export async function getProfile(userId: string): Promise<Profile | null> {
   return { ...row, heightCm: num(row.heightCm), weightKg: num(row.weightKg) };
 }
 
-export type ProfileInput = Profile & { goalM: number | null };
+export type ProfileInput = Omit<Profile, 'plan'> & { goalM: number | null };
 
 /**
  * プロフィールを保存する。名前は Better Auth の user 表に持つ。

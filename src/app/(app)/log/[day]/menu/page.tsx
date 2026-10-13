@@ -47,7 +47,7 @@ export default async function MenuPage({ params }: PageProps<'/log/[day]/menu'>)
       </PageTitle>
       <MenuView menu={saved.menu} level={saved.level} />
       {/* 相談して直せるのは今日のメニューだけ。過去の日はやりとりを見るだけ */}
-      {day === today && aiEnabled() ? (
+      {day === today && aiEnabled(profile) ? (
         <MenuChat messages={messages} />
       ) : (
         messages.length > 0 && <MenuChat messages={messages} readOnly />

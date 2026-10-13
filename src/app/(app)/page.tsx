@@ -37,7 +37,7 @@ export default async function Home() {
     listAllAttempts(viewer.userId),
     listConditionsBetween(viewer.userId, readinessFrom(today), today),
     listCompetitionsBetween(viewer.userId, today, readinessUntil(today)),
-    aiEnabled() ? hasMenu(viewer.userId, today) : null,
+    aiEnabled(profile) ? hasMenu(viewer.userId, today) : null,
   ]);
   // 今日の体調と次の大会は、アドバイスのために読んだ範囲から取る（DB への問い合わせを減らす）。
   // 8週より先の大会だけは範囲の外なので、そのときだけ読み直す

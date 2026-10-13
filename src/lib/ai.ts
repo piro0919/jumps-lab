@@ -1,5 +1,6 @@
 import 'server-only';
 import { env } from '@/env';
+import type { Profile } from '@/lib/data';
 
 /**
  * AI を呼ぶところ。モデルへの問い合わせはここだけを通す（あとで Anthropic に替えたり、2社を比べたりできるように。
@@ -9,9 +10,12 @@ import { env } from '@/env';
 /** 返事を待つ上限（ミリ秒）。メニュー1つで十数秒かかることがある */
 const TIMEOUT_MS = 60_000;
 
-/** AI の機能を出すか。キーが無ければ出さない（本番は名義が決まるまでキーを入れない） */
-export function aiEnabled(): boolean {
-  return Boolean(env.OPENAI_API_KEY);
+/**
+ * この人に AI の機能を出すか。キーが無ければ誰にも出さない。
+ * キーがあっても Premium の人だけ（AI の費用を持つ中元さんが、まずテスターだけに出すと決めた。2026-10-14）
+ */
+export function aiEnabled(profile: Pick<Profile, 'plan'>): boolean {
+  return Boolean(env.OPENAI_API_KEY) && profile.plan === 'premium';
 }
 
 type ResponsesOutput = {
