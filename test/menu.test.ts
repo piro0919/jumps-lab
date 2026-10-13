@@ -64,10 +64,11 @@ describe('checkMenu', () => {
 
   it('強さが下がるほど上限は増えない', () => {
     const order = ['normal', 'lighter', 'preMeet', 'protect'] as const;
-    for (let i = 1; i < order.length; i += 1) {
-      expect(LIMITS[order[i]!].takeoffs).toBeLessThanOrEqual(LIMITS[order[i - 1]!].takeoffs);
-      expect(LIMITS[order[i]!].contacts).toBeLessThanOrEqual(LIMITS[order[i - 1]!].contacts);
-    }
+    const descending = (values: number[]) => [...values].sort((a, b) => b - a);
+    const takeoffs = order.map((level) => LIMITS[level].takeoffs);
+    const contacts = order.map((level) => LIMITS[level].contacts);
+    expect(takeoffs).toEqual(descending(takeoffs));
+    expect(contacts).toEqual(descending(contacts));
   });
 
   it('負の数と、空のメニューは出さない', () => {

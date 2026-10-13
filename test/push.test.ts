@@ -110,14 +110,14 @@ describe('大会の前日の知らせを送る相手', () => {
       'America/Los_Angeles',
       'UTC',
     ];
-    for (const day of ['2026-10-14', '2026-01-15', '2026-07-01']) {
-      for (const zone of zones) {
-        expect(
-          runs(day).filter((now) => inReminderWindow(zone, now)).length,
-          `${zone} ${day}`,
-        ).toBe(1);
-      }
-    }
+    const hits = ['2026-10-14', '2026-01-15', '2026-07-01'].flatMap((day) =>
+      zones.map((zone) => [
+        `${zone} ${day}`,
+        runs(day).filter((now) => inReminderWindow(zone, now)).length,
+      ]),
+    );
+    expect(hits).toHaveLength(zones.length * 3);
+    expect(hits.filter(([, count]) => count !== 1)).toEqual([]);
   });
 
   it('窓に入っている人の、手元の明日の大会だけを選ぶ', () => {
@@ -163,16 +163,21 @@ describe('大会の前日の知らせを送る相手', () => {
   });
 
   it('読む大会の日付の幅は、どの時間帯の明日も含む', () => {
-    for (const now of runs('2026-10-14')) {
+    const zones = ['Pacific/Kiritimati', 'Etc/GMT+12', 'Asia/Tokyo'];
+    const outside = runs('2026-10-14').flatMap((now) => {
       const { from, to } = candidateDays(now);
-      for (const zone of ['Pacific/Kiritimati', 'Etc/GMT+12', 'Asia/Tokyo']) {
-        const tomorrow = new Date(now);
-        const local = new Intl.DateTimeFormat('en-CA', { timeZone: zone }).format(now);
-        tomorrow.setTime(Date.parse(`${local}T00:00:00Z`) + 24 * 60 * 60 * 1000);
-        const day = tomorrow.toISOString().slice(0, 10);
-        expect(day >= from && day <= to, `${zone} ${now.toISOString()}`).toBe(true);
-      }
-    }
+      return zones
+        .map((zone) => {
+          const local = new Intl.DateTimeFormat('en-CA', { timeZone: zone }).format(now);
+          const day = new Date(Date.parse(`${local}T00:00:00Z`) + 24 * 60 * 60 * 1000)
+            .toISOString()
+            .slice(0, 10);
+          return { zone, now: now.toISOString(), day, inside: day >= from && day <= to };
+        })
+        .filter((result) => !result.inside);
+    });
+    expect(runs('2026-10-14').length).toBeGreaterThan(0);
+    expect(outside).toEqual([]);
   });
 });
 

@@ -17,10 +17,10 @@ describe('messages', () => {
     ['en', en],
     ['ja', ja],
   ])('%s のすべての文言が空でない文字列である', (_, messages) => {
-    for (const [key, value] of flatten(messages)) {
-      expect(typeof value, key).toBe('string');
-      expect((value as string).trim(), key).not.toBe('');
-    }
+    const entries = flatten(messages);
+    expect(entries.length).toBeGreaterThan(0);
+    const blank = entries.filter(([, value]) => typeof value !== 'string' || value.trim() === '');
+    expect(blank.map(([key]) => key)).toEqual([]);
   });
 
   // 片方の言語にだけある文言を作らない
@@ -31,9 +31,10 @@ describe('messages', () => {
 
   // 英語の画面に和文の記号や文字が混ざらないようにする（spatto で踏んだ）
   it('英語の文言に全角の文字が無い', () => {
-    for (const [key, value] of flatten(en)) {
-      expect(value as string, key).not.toMatch(/[　-ヿ一-鿿＀-￯]/);
-    }
+    const entries = flatten(en);
+    expect(entries.length).toBeGreaterThan(0);
+    const wide = entries.filter(([, value]) => /[　-ヿ一-鿿＀-￯]/.test(String(value)));
+    expect(wide.map(([key]) => key)).toEqual([]);
   });
 });
 

@@ -28,9 +28,11 @@ describe('年度入りのリンク', () => {
   // 年度が替わったら SCHEDULE_YEAR を上げ、ここで落ちたリンクを新年度の URL に差し替える
   it('年度入りの URL は一覧の年度を含む（4桁か下2桁）', () => {
     const short = String(SCHEDULE_YEAR % 100);
-    for (const { ja, url, yearly } of PREFECTURE_LINKS) {
-      if (!yearly) continue;
-      expect(url.includes(String(SCHEDULE_YEAR)) || url.includes(short), ja).toBe(true);
-    }
+    const yearly = PREFECTURE_LINKS.filter((link) => link.yearly);
+    expect(yearly.length).toBeGreaterThan(0);
+    const stale = yearly
+      .filter(({ url }) => !url.includes(String(SCHEDULE_YEAR)) && !url.includes(short))
+      .map(({ ja }) => ja);
+    expect(stale).toEqual([]);
   });
 });

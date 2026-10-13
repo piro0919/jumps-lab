@@ -4,6 +4,7 @@ import nextTs from 'eslint-config-next/typescript';
 import prettier from 'eslint-config-prettier';
 import magicNumbers from '@piro0919/eslint-config';
 import tailwind from '@piro0919/eslint-config/tailwind';
+import hollowTests from 'eslint-plugin-hollow-tests';
 
 const eslintConfig = defineConfig([
   ...nextVitals,
@@ -30,8 +31,14 @@ const eslintConfig = defineConfig([
   ...magicNumbers({
     files: ['src/**/*.{ts,tsx}'],
     level: 'error',
-    ignores: ['src/app/opengraph-image.tsx', 'src/app/share-image.tsx', 'src/app/**/opengraph-image.tsx'],
+    ignores: [
+      'src/app/opengraph-image.tsx',
+      'src/app/share-image.tsx',
+      'src/app/**/opengraph-image.tsx',
+    ],
   }),
+  // 何も確かめずに通るテスト（確かめる文が無い・条件や繰り返しの中にしか無い）を落とす（eslint-plugin-hollow-tests。vocafy と同じ）
+  { ...hollowTests.configs.recommended, files: ['test/**/*.{ts,tsx}', 'e2e/**/*.ts'] },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:

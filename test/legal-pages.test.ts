@@ -56,9 +56,9 @@ function updatedIn(source: string): string | null {
 describe('規約とプライバシーポリシー', () => {
   // 見出しの拾い方が壊れて0件どうしになっても揃って見えるので、数の下限を置く
   it('見出しを拾えている', () => {
-    for (const [name, source] of Object.entries(docs)) {
-      expect(headings(source).length, name).toBeGreaterThanOrEqual(8);
-    }
+    const counts = Object.entries(docs).map(([name, source]) => [name, headings(source).length]);
+    expect(counts).toHaveLength(4);
+    expect(counts.filter(([, count]) => Number(count) < 8)).toEqual([]);
   });
 
   it.each([

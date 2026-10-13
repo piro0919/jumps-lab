@@ -10,8 +10,19 @@ export default defineConfig({
     },
   },
   test: {
-    include: ['test/**/*.test.ts'],
+    include: ['test/**/*.test.{ts,tsx}'],
+    // 部品のテストだけ、ファイルの頭の `// @vitest-environment happy-dom` で DOM を使う（vocafy と同じ）。
+    // 外のファイルや埋め込みを取りに行かない
     environment: 'node',
+    environmentOptions: {
+      happyDOM: {
+        settings: {
+          disableIframePageLoading: true,
+          disableJavaScriptFileLoading: true,
+          disableCSSFileLoading: true,
+        },
+      },
+    },
     env: {
       // 本番（Vercel）と同じ世界標準時で走らせる。「今日」やシーズンの境目を本人の時間帯で数えるので、
       // 日本時間の手元で走らせると UTC でだけ起きる食い違いがすり抜ける（鯉魂の vitest.config.mts と同じ）
