@@ -6,6 +6,7 @@ import { Barlow_Condensed, Kanit } from 'next/font/google';
 import { Progress } from '@/components/progress';
 import { ThemeProvider } from '@/components/theme-provider';
 import { WindowSize } from '@/components/window-size';
+import { SITE_URL } from '@/lib/site';
 import './globals.css';
 
 // 記録の数字と英字の見出しの字（手本の Nike Run Club の、細長く太い斜体の数字）。
@@ -29,7 +30,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('metadata');
 
   return {
-    metadataBase: new URL('https://jumpslab.kkweb.io'),
+    metadataBase: new URL(SITE_URL),
     title: { default: t('title'), template: `%s | ${t('title')}` },
     description: t('description'),
     alternates: { canonical: './' },

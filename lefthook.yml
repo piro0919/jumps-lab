@@ -1,3 +1,7 @@
+# worktree で lefthook が走るたび、フックがそのツリーの node_modules を指すように書き換わる（kk-web で起きた）。
+# 暗黙の入れ直しを止める。lefthook.yml を変えたときは pnpm lefthook:install を手で叩く
+no_auto_install: true
+
 pre-commit:
   parallel: true
   commands:
@@ -5,12 +9,11 @@ pre-commit:
       glob: '**/*.{ts,tsx,mjs,js}'
       run: npx eslint --fix {staged_files}
       stage_fixed: true
+    # glob の '**/*' はリポジトリの直下のファイル（CLAUDE.md など）に当たらないので、指定しない（onigiri で CI の書式の検査が落ちた。2026-10-12）
     prettier:
-      glob: '**/*'
       run: npx prettier --write --ignore-unknown {staged_files}
       stage_fixed: true
     secretlint:
-      glob: '**/*'
       run: npx secretlint --maskSecrets {staged_files}
     # ルートの型（.next/types）を作り直してから確かめる
     typescript:

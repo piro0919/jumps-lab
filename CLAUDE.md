@@ -28,7 +28,7 @@ The owner will make this app usable worldwide (said 2026-10-11). Do not design a
 - Units: store meters internally. Display and input switch between meters and feet/inches. Height and weight follow the same switch. Wind stays in m/s.
 - Sign-in: Google only, and required. No signed-out use, no local-only mode
 - Storage: Neon (Singapore). Vercel functions in sin1. Both on the owner's own accounts.
-- Legal: privacy policy and terms in Japanese and English at /privacy, /terms, /en/privacy, /en/terms. Operator "kk-web", contact kk.web.kawamura@gmail.com, address the owner's virtual office (privacy section 1). Japanese is the authoritative text, English is a translation with matching sections (spatto)
+- Legal: privacy policy and terms in Japanese and English at /privacy, /terms, /en/privacy, /en/terms. Operator "kk-web", contact kk.web.kawamura@gmail.com, address the owner's virtual office (privacy section 1). Japanese is the authoritative text, English is a translation with matching sections (spatto) `test/legal-pages.test.ts` checks that ja and en have the same section numbers and the same last-updated date (from spatto)
 - Features in v1 (same as the prototype):
   - Profile: name, grade, date of birth (replaced age, agreed 2026-10-11), gender, height, weight, events, goal
   - Home: season goal, PB / SB / practice best, weather (Open-Meteo, location permission), days until next competition
@@ -95,13 +95,13 @@ Copy the shape of `~/Repository/onigiri` (which itself copies vocafy). Read its 
 - No ORM (decided 2026-10-11): the data layer is one file of raw SQL in `src/lib/data.ts`; catch mistakes with tests instead of code generation
 - `pnpm-workspace.yaml`: `allowBuilds` and `minimumReleaseAge: 4320`
 - Prettier: singleQuote, trailingComma all, printWidth 100. ESLint and Prettier ignore `.claude/**` and `.playwright-mcp/**`
-- lefthook: pre-commit eslint --fix, prettier, secretlint, typecheck (`next typegen && tsc --noEmit`); commit-msg commitlint (conventional, lower-case subject); pre-push vitest. Never bypass hooks
+- lefthook: pre-commit eslint --fix, prettier, secretlint, typecheck (`next typegen && tsc --noEmit`); commit-msg commitlint (conventional, lower-case subject); pre-push vitest. Never bypass hooks `no_auto_install: true` (worktrees rewrote the hooks in kk-web; run `pnpm lefthook:install` after editing lefthook.yml), and prettier and secretlint take no glob: `**/*` misses root files such as CLAUDE.md (onigiri's CI format check failed, 2026-10-12)
 - knip, vitest (TZ=UTC like Vercel, `server-only` stubbed). `test/server-guards.test.ts` (spatto's three guards): every Server Action calls `requireViewer`, every export in a "use server" file is async, every file that reads secrets imports `server-only`
-- Playwright e2e (`pnpm test:e2e`) on the production build for desktop and Pixel 7, built into `.next-e2e` (vocafy). Sign-in skips Google: `e2e/session.ts` runs `scripts/dev-session.ts --fresh --user=e2e-…` and sets the signed cookie, so local runs never touch `dev-user`. The journey test caught pages crashing before the layout's welcome redirect; pages now use `requireProfile`
+- Playwright e2e (`pnpm test:e2e`) on the production build for desktop and Pixel 7, built into `.next-e2e` (vocafy). Sign-in skips Google: `e2e/session.ts` runs `scripts/dev-session.ts --fresh --user=e2e-…` and sets the signed cookie, so local runs never touch `dev-user`. The journey test caught pages crashing before the layout's welcome redirect; pages now use `requireProfile` The e2e server runs with TZ=UTC like Vercel (comic-time)
 - squawk-cli on staged `db/migrations/*.sql` (`.squawk.toml`, koidamashii) and a hook that refuses edits to committed migrations
 - Siblings' runtime packages in use: `@bprogress/next` (page progress bar; navigate in code with its `useRouter`), `use-pwa` + `react-ios-pwa-prompt` (Add to Home Screen button in the header), `use-show-window-size` (dev only). Considered and left out on 2026-10-11: sonner (forms navigate back, so no success toast), Speed Insights (owner does not want to pay), Lighthouse CI (pages are behind sign-in), boring-avatars, schema-dts, sharp
 - CI on push to main and on PRs: `check` (Postgres service, typecheck, lint, format:check, secretlint, test, knip, migrate, build) and `e2e` (migrate, Playwright on `next start` inside GitHub Actions; no Vercel build, no Neon). Renovate PRs are only checked here
-- `src/env.ts` with t3-env, imported from `next.config.ts`. Secrets are optional at build time and throw by name when used. Track `.env.local.example`
+- `src/env.ts` with t3-env, imported from `next.config.ts`. Secrets are optional at build time and throw by name when used. Track `.env.local.example` Every value is trimmed (`test/env.test.ts`): a trailing newline from `vercel env add … < file` broke spatto's live Stripe key
 - `vercel.json`: `framework: "nextjs"`, `regions: ["sin1"]`, `buildCommand` runs `migrate.ts --check` before `pnpm build`. Stop Renovate branch builds with Ignored Build Step
 - next.config: security headers (frame-ancestors none, X-Frame-Options DENY, nosniff, Referrer-Policy), `allowedDevOrigins: ['*.local']`
 - `metadataBase` explicit, `alternates.canonical: './'`, no `openGraph.description` in the root layout
@@ -166,7 +166,7 @@ Copy the shape of `~/Repository/onigiri` (which itself copies vocafy). Read its 
 ## Release checklist
 
 - Vercel project under team `kkweb`, created with CLI or REST (the MCP returns 403). Check that framework is nextjs. New projects have Vercel Authentication on by default
-- The proxy must leave open: sign-in, legal pages, manifest, icons, opengraph-image, robots, sitemap
+- The proxy must leave open: sign-in, legal pages, manifest, icons, opengraph-image, robots, sitemap. `src/app/robots.ts` keeps crawlers off the app and API (crawlers kept koidamashii's Neon awake, 2026-10-13); `src/app/sitemap.ts` lists the LP and legal pages with hreflang (x-default on the LP only)
 - DNS in Cloudflare: CNAME (proxy off) and `_vercel` TXT
 - Remove the `*.vercel.app` domain and confirm the custom domain returns 200
 - `gh repo edit --homepage https://jumpslab.kkweb.io`

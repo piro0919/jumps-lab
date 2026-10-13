@@ -21,7 +21,8 @@ export default defineConfig({
   webServer: {
     command: `pnpm build && pnpm start -p ${port}`,
     // 手元の開発サーバー（.next）を上書きしないよう、別のフォルダにビルドする（next.config.ts の distDir）
-    env: { NEXT_DIST_DIR: '.next-e2e', BETTER_AUTH_URL: baseURL },
+    // サーバーは Vercel と同じ UTC で動かす（手元の日本時間のままだと、時間帯の取り違えが手元で出ない。comic-time と同じ）
+    env: { NEXT_DIST_DIR: '.next-e2e', BETTER_AUTH_URL: baseURL, TZ: 'UTC' },
     url: `${baseURL}/sign-in`,
     reuseExistingServer: !process.env.CI,
     timeout: 300_000,
