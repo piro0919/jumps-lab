@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 /** プライバシーポリシーの英訳。節は日本語版（/privacy）と1対1 */
 export default function PrivacyEn() {
   return (
-    <Legal title="Privacy Policy" doc="privacy" locale="en" updated="October 12, 2026">
+    <Legal title="Privacy Policy" doc="privacy" locale="en" updated="October 14, 2026">
       <h2>1. Operator</h2>
       <dl>
         <dt>Operator</dt>
@@ -44,6 +44,11 @@ export default function PrivacyEn() {
           Your practice and competition videos (the video files with their date, event, practice or
           competition, linked attempt and note)
         </li>
+        <li>Your plan (Free or Premium)</li>
+        <li>
+          If you use the AI coach: the menus it made, your conversations with it, when you agreed to
+          it, and when and how often you used AI
+        </li>
       </ul>
       <p>
         Grade, date of birth, gender, height, weight and the injury field are optional. Write only
@@ -57,6 +62,10 @@ export default function PrivacyEn() {
         <li>
           To suggest how hard to train each day from your condition, sleep, injuries and competition
           schedule
+        </li>
+        <li>
+          To make the day&apos;s practice menu and answer your questions when you use the AI coach
+          on Premium
         </li>
         <li>To sign you in and confirm who you are</li>
       </ol>
@@ -94,6 +103,39 @@ export default function PrivacyEn() {
           Used to learn which pages are viewed and how often. It counts the page viewed, the
           referring site, country or region, and device, operating system and browser type, in a
           form that does not identify you. It uses no cookies
+        </dd>
+        <dt>OpenAI</dt>
+        <dd>
+          Only if you use the AI coach, and only after you agree, we send the following to make your
+          menu and answer your questions: the date; your age, gender, height, weight and events;
+          your condition, fatigue, sleep, injuries or discomfort and practice notes for the last 14
+          days; your attempts in the last 14 days (event, practice or competition, mark, wind and
+          note); the days left to each competition in the next 8 weeks and which one is your main
+          goal meet; the day&apos;s training level and its reasons; the practice time and note you
+          enter; your messages and the current menu; and on a competition day, that meet&apos;s
+          venue, call room place and time, start time and notes. We never send your name or email
+          address. OpenAI is a US company. The United States has no single federal privacy law;
+          sector-specific federal laws and state laws apply (
+          <a
+            href="https://www.ppc.go.jp/enforcement/infoprovision/laws/offshore_report_america/"
+            target="_blank"
+            rel="noreferrer"
+            className="underline"
+          >
+            summary by Japan&apos;s Personal Information Protection Commission
+          </a>
+          , as of October 2021). OpenAI says it does not use data sent to its API to train its
+          models unless the account opts in, and keeps abuse monitoring logs for up to 30 days
+          unless the law requires longer (
+          <a
+            href="https://developers.openai.com/api/docs/guides/your-data"
+            target="_blank"
+            rel="noreferrer"
+            className="underline"
+          >
+            OpenAI: Data controls
+          </a>
+          ). Jumps Lab asks OpenAI not to store the replies for later retrieval
         </dd>
         <dt>Sentry</dt>
         <dd>

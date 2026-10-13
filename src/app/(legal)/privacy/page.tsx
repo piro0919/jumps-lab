@@ -10,12 +10,13 @@ export const metadata: Metadata = {
 /**
  * プライバシーポリシー。中身はコードから拾った事実で書く。
  * 預かる項目は db/migrations/、外へ渡すものは src/components/weather-card.tsx、src/lib/auth.ts、src/lib/r2.ts（動画）、
- * src/lib/monitoring.ts（Sentry）と src/app/layout.tsx（Web Analytics）。
+ * src/lib/monitoring.ts（Sentry）、src/app/layout.tsx（Web Analytics）、src/app/actions/menu.ts（OpenAI）。
+ * OpenAI の段は、AI コーチの同意の画面（src/app/(app)/log/[day]/menu/new/page.tsx）と同じ中身にそろえる。
  * 画面や表を足したら、ここと英語版（/en/privacy）の両方に足し、改定日を動かす
  */
 export default function Privacy() {
   return (
-    <Legal title="プライバシーポリシー" doc="privacy" locale="ja" updated="2026年10月12日">
+    <Legal title="プライバシーポリシー" doc="privacy" locale="ja" updated="2026年10月14日">
       <h2>1. 運営者</h2>
       <dl>
         <dt>運営者</dt>
@@ -42,6 +43,11 @@ export default function Privacy() {
         </li>
         <li>目標の記録と、手で入れたベスト記録</li>
         <li>練習と試合の動画（動画ファイルと、日付・種目・練習か大会か・結び付けた試技・メモ）</li>
+        <li>プラン（Free か Premium か）</li>
+        <li>
+          AI コーチを使った場合、作ったメニュー・相談のやりとり・AI コーチに同意した日時・AI
+          を使った日時と回数
+        </li>
       </ul>
       <p>
         学年・生年月日・性別・身長・体重とケガや違和感の欄は、入れなくても使えます。
@@ -53,6 +59,9 @@ export default function Privacy() {
         <li>記録を保存し、ご自身に表示するため</li>
         <li>自己ベスト・シーズンベスト・記録の推移を計算して表示するため</li>
         <li>体調・睡眠・ケガの記録と大会の予定から、その日の練習の強さの目安を出すため</li>
+        <li>
+          Premium の方が AI コーチを使ったときに、その日の練習メニューを作り、相談に答えるため
+        </li>
         <li>ログインと本人確認のため</li>
       </ol>
       <p>これ以外には使いません。広告に使うことも、他社に売ることもありません。</p>
@@ -86,6 +95,37 @@ export default function Privacy() {
         <dd>
           どのページがどれくらい見られているかを知るために使います。見たページ・参照元・国や地域・端末と
           OS とブラウザの種類を、個人を特定しない形で集計します。クッキーは使いません
+        </dd>
+        <dt>OpenAI</dt>
+        <dd>
+          AI
+          コーチを使う場合だけ、使う前に同意をいただいたうえで、メニューを作り相談に答えるために次の情報を送ります。
+          日付、年齢・性別・身長・体重・種目、直近14日の体調・疲労度・睡眠時間・ケガや違和感・練習メモ、
+          直近14日の試技（種目・練習か大会か・記録・風速・メモ）、8週間以内の大会までの日数と主目標の大会かどうか、
+          その日の練習の強さとその理由、入力した練習時間とメモ、相談のメッセージと今のメニュー、
+          大会の当日はその大会の会場・招集場所と時間・試合開始時間・注意事項。名前とメールアドレスは送りません。
+          OpenAI
+          は米国の会社です。米国には連邦全体に及ぶ包括的な個人情報保護の法律はなく、分野ごとの連邦法と州法があります（
+          <a
+            href="https://www.ppc.go.jp/enforcement/infoprovision/laws/offshore_report_america/"
+            target="_blank"
+            rel="noreferrer"
+            className="underline"
+          >
+            個人情報保護委員会のまとめ
+          </a>
+          、2021年10月時点）。OpenAI は、API
+          に送られた情報を、アカウントが許可しない限りモデルの学習に使わず、
+          不正利用の監視の記録を、法律でより長く求められない限り最長30日保存するとしています（
+          <a
+            href="https://developers.openai.com/api/docs/guides/your-data"
+            target="_blank"
+            rel="noreferrer"
+            className="underline"
+          >
+            OpenAI のデータの扱い
+          </a>
+          ）。Jumps Lab は、返答をあとで取り出すための保存をしないよう OpenAI に求めています
         </dd>
         <dt>Sentry</dt>
         <dd>
