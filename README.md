@@ -64,7 +64,8 @@ pnpm typecheck
 pnpm lint
 pnpm format:check
 pnpm knip
-pnpm test       # Vitest
+pnpm test       # Vitest, no database
+pnpm test:db    # Vitest against a throwaway jumpslab_test database on the local Postgres (pnpm db:up)
 pnpm test:e2e   # Playwright, on a production build, at desktop and mobile widths
 ```
 

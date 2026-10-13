@@ -61,6 +61,9 @@ jobs:
       # db/migrations/ が空の DB に頭から当たるか
       - run: pnpm migrate
 
+      # src/lib/data.ts の SQL を本物の Postgres で確かめる。同じサーバーの中にテスト用の DB（jumpslab_test）を作って使う（test/db/）
+      - run: pnpm test:db
+
       - run: pnpm build
 
   # 本番の組み立てを GitHub の上で起動して、最初の登録から試技を足すまでをパソコンとスマホの幅で通す
