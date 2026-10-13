@@ -37,3 +37,6 @@ next-env.d.ts
 /.next-e2e/
 /test-results/
 /playwright-report/
+
+# 手元だけに置く動画（中元さんにもらった走高跳の5本など）。人が映っているので公開のリポジトリに入れない
+/fixtures/videos/
