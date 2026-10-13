@@ -100,6 +100,10 @@
   --height-phone: 620px;
   --radius-phone: 2.75rem;
   --radius-phone-screen: 2.25rem;
+  /* 見比べる画面（/videos/compare）の動画の高さの上限。縦長の動画が PC で画面からはみ出さないように */
+  --max-height-compare-video: 70vh;
+  /* スマホで2本を縦に積むときは、2本とも1画面に入るように低くする */
+  --max-height-compare-video-stacked: 40vh;
   /* LP の締めの写真の高さ（スマホと PC）と、選手の顔が切れない位置 */
   --height-landing-photo: 420px;
   --height-landing-photo-wide: 520px;

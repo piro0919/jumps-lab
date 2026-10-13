@@ -624,6 +624,34 @@ export async function listVideosOnDay(userId: string, day: string): Promise<Vide
   return rows;
 }
 
+/** 本人の見られる1本（届いていて、期限の過ぎていないもの）。ほかの人の動画や消えた動画は null */
+export async function getVideo(userId: string, id: string): Promise<Video | null> {
+  const { rows } = await db().query<Video>(
+    `select ${videoColumns} from video
+      where "userId" = $1 and id = $2 and status = 'ready' and ${LIVE_VIDEO}`,
+    [userId, id],
+  );
+  return rows[0] ?? null;
+}
+
+/**
+ * 1本と見比べられる、本人のほかの動画（同じ種目で、届いていて、期限の過ぎていないもの）。新しい順。
+ * 種目が違う跳躍は並べても比べようがないので出さない
+ */
+export async function listComparableVideos(
+  userId: string,
+  event: JumpEvent,
+  exceptId: string,
+): Promise<Video[]> {
+  const { rows } = await db().query<Video>(
+    `select ${videoColumns} from video
+      where "userId" = $1 and event = $2 and id <> $3 and status = 'ready' and ${LIVE_VIDEO}
+      order by day desc, "createdAt" desc`,
+    [userId, event, exceptId],
+  );
+  return rows;
+}
+
 /** 送れなかった枠を外し、R2 から消すための置き場所を返す */
 export async function releaseVideo(userId: string, id: string): Promise<string | null> {
   const { rows } = await db().query<{ objectKey: string }>(

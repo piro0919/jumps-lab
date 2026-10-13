@@ -5,6 +5,8 @@ import {
   completeVideo,
   deleteVideo,
   getPendingVideo,
+  getVideo,
+  listComparableVideos,
   listAttemptsBetween,
   listVideosOnDay,
   releaseStaleVideos,
@@ -203,5 +205,49 @@ describe('枠から見せるまで', () => {
     expect(await listVideosOnDay(owner, DAY)).toHaveLength(1);
     expect(await deleteVideo(owner, v.id)).toBe(v.objectKey);
     expect(await videoUsage(owner)).toBe(0);
+  });
+});
+
+describe('見比べる動画', () => {
+  /** 届いた1本を足す（種目と日を変えられる） */
+  async function addReady(
+    userId: string,
+    extra: { event?: 'long_jump' | 'triple_jump'; day?: string } = {},
+  ) {
+    const v = { ...video(userId, 100), ...extra };
+    await reserveVideo(userId, v, 10_000, KEEP_DAYS);
+    await completeVideo(userId, v.id);
+    return v;
+  }
+
+  it('getVideo は本人の届いた、期限の過ぎていない1本だけを返す', async () => {
+    const [owner, other] = await Promise.all([addProfile(), addProfile()]);
+    const ready = await addReady(owner);
+    const pending = video(owner, 100);
+    await reserveVideo(owner, pending, 10_000, KEEP_DAYS);
+    const expired = await addExpired(owner, 100);
+
+    expect(await getVideo(owner, ready.id)).toMatchObject({ id: ready.id, event: 'long_jump' });
+    expect(await getVideo(other, ready.id)).toBeNull();
+    expect(await getVideo(owner, pending.id)).toBeNull();
+    expect(await getVideo(owner, expired.id)).toBeNull();
+  });
+
+  it('listComparableVideos は本人の同じ種目のほかの動画を新しい順に返す', async () => {
+    const [owner, other] = await Promise.all([addProfile(), addProfile()]);
+    const base = await addReady(owner);
+    const older = await addReady(owner, { day: '2026-10-01' });
+    const sameDayLater = await addReady(owner);
+    await addReady(owner, { event: 'triple_jump' });
+    await addReady(other);
+    await addExpired(owner, 100);
+    const pending = video(owner, 100);
+    await reserveVideo(owner, pending, 10_000, KEEP_DAYS);
+    await query(`update video set "createdAt" = now() - interval '1 minute' where id = $1`, [
+      base.id,
+    ]);
+
+    const list = await listComparableVideos(owner, 'long_jump', base.id);
+    expect(list.map((v) => v.id)).toEqual([sameDayLater.id, older.id]);
   });
 });

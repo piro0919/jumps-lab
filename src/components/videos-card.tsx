@@ -1,6 +1,6 @@
 'use client';
 
-import { Download, Plus, Trash2 } from 'lucide-react';
+import { Columns2, Download, Plus, Trash2 } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useState, useTransition } from 'react';
@@ -101,6 +101,14 @@ export function VideosCard({
                     })}
                   </span>
                 </div>
+                {/* 同じ種目のほかの動画と見比べる画面へ（相手はそこで選ぶ） */}
+                <Link
+                  href={`/videos/compare?a=${video.id}`}
+                  aria-label={t('compare')}
+                  className={buttonVariants({ variant: 'ghost', size: 'icon' })}
+                >
+                  <Columns2 aria-hidden />
+                </Link>
                 <a
                   href={video.downloadUrl}
                   download
