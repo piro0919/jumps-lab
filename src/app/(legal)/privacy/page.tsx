@@ -21,6 +21,8 @@ export default function Privacy() {
       <dl>
         <dt>運営者</dt>
         <dd>kk-web</dd>
+        <dt>住所</dt>
+        <dd>〒103-0026 東京都中央区日本橋兜町17-2 兜町第6葉山ビル4F</dd>
         <dt>サービス名</dt>
         <dd>Jumps Lab（jumpslab.kkweb.io）</dd>
         <dt>連絡先</dt>
@@ -79,7 +81,7 @@ export default function Privacy() {
         <dt>利用目的</dt>
         <dd>3. に挙げた目的と、プランの管理のため</dd>
         <dt>管理について責任を有する者</dt>
-        <dd>kk-web（連絡先は 1. のとおり）</dd>
+        <dd>kk-web（住所と連絡先は 1. のとおり）</dd>
       </dl>
 
       <h2>5. 外部のサービスに渡すもの</h2>

@@ -15,6 +15,11 @@ export default function PrivacyEn() {
       <dl>
         <dt>Operator</dt>
         <dd>kk-web</dd>
+        <dt>Address</dt>
+        <dd>
+          4F Kabutocho No. 6 Hayama Building, 17-2 Nihonbashi Kabutocho, Chuo-ku, Tokyo 103-0026,
+          Japan
+        </dd>
         <dt>Service</dt>
         <dd>Jumps Lab (jumpslab.kkweb.io)</dd>
         <dt>Contact</dt>
@@ -86,7 +91,7 @@ export default function PrivacyEn() {
         <dt>Purposes</dt>
         <dd>The purposes in section 3, and managing plans</dd>
         <dt>Responsible for managing it</dt>
-        <dd>kk-web (contact in section 1)</dd>
+        <dd>kk-web (address and contact in section 1)</dd>
       </dl>
 
       <h2>5. What we share with other services</h2>

@@ -28,7 +28,7 @@ The owner will make this app usable worldwide (said 2026-10-11). Do not design a
 - Units: store meters internally. Display and input switch between meters and feet/inches. Height and weight follow the same switch. Wind stays in m/s.
 - Sign-in: Google only, and required. No signed-out use, no local-only mode
 - Storage: Neon (Singapore). Vercel functions in sin1. Both on the owner's own accounts.
-- Legal: privacy policy and terms in Japanese and English at /privacy, /terms, /en/privacy, /en/terms. Operator "kk-web", contact kk.web.kawamura@gmail.com. Japanese is the authoritative text, English is a translation with matching sections (spatto)
+- Legal: privacy policy and terms in Japanese and English at /privacy, /terms, /en/privacy, /en/terms. Operator "kk-web", contact kk.web.kawamura@gmail.com, address the owner's virtual office (privacy section 1). Japanese is the authoritative text, English is a translation with matching sections (spatto)
 - Features in v1 (same as the prototype):
   - Profile: name, grade, date of birth (replaced age, agreed 2026-10-11), gender, height, weight, events, goal
   - Home: season goal, PB / SB / practice best, weather (Open-Meteo, location permission), days until next competition
@@ -202,6 +202,6 @@ Copy the shape of `~/Repository/onigiri` (which itself copies vocafy). Read its 
   - The AI menu went live on 2026-10-12 because the owner asked for it with the items below set aside ("規約とか諸々一回置いといて"). Still open, in this order:
     - A key under the owner's account (production uses 中元さん's key for now, so user data goes through their account and they pay)
     - Done and live 2026-10-14: the privacy policy lists OpenAI (sections 2, 3 and 5, ja and en) and a consent step comes before the first menu, after checking the PPC's guidance on providing to a third party abroad (see the consent bullet). No lawyer review, like the terms
-    - Joint use (共同利用, APPI Art. 27(5)(iii); PPC general guideline): section 4 (ja and en) lists the items (everything in section 2, so the later R2 and Neon move fits; items and joint users cannot in principle be changed later), joint users "kk-web, れんれん", purposes and kk-web as the one responsible. "れんれん" is a placeholder the owner chose on 2026-10-14 until 中元さん's full name or trade name is agreed (a surname alone may not identify them). Still open: the responsible person's address, which the APPI requires to be published (kk-web's address is not decided). Not pushed yet
+    - Joint use (共同利用, APPI Art. 27(5)(iii); PPC general guideline): section 4 (ja and en) lists the items (everything in section 2, so the later R2 and Neon move fits; items and joint users cannot in principle be changed later), joint users "kk-web, れんれん", purposes and kk-web as the one responsible. "れんれん" is a placeholder the owner chose on 2026-10-14 until 中元さん's full name or trade name is agreed (a surname alone may not identify them). kk-web's address in section 1 (ja and en) is the owner's virtual office (METS Office light plan, no mail receiving, from 2026-10-01; the same one spatto's promo emails use), agreed 2026-10-14
   - Coach questions (the prototype's hidden coach mode)
 - Dev server runs on port 3110 (`pnpm dev`); local Postgres on 5436 (`pnpm db:up`, then `pnpm migrate`)
