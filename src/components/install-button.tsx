@@ -3,38 +3,46 @@
 import { Download } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
-import { useState, useSyncExternalStore } from 'react';
+import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { usePwa } from 'use-pwa';
 import { Button } from '@/components/ui/button';
 
 const PWAPrompt = dynamic(() => import('react-ios-pwa-prompt'), { ssr: false });
 
-/** iOS / iPadOS か。iPad の Safari は Mac を名乗るので、触れる Mac は iPad とみなす */
-function isAppleDevice(): boolean {
-  const agent = window.navigator.userAgent.toLowerCase();
-  return (
-    /iphone|ipad|ipod/.test(agent) ||
-    (agent.includes('macintosh') && window.navigator.maxTouchPoints > 1)
+/**
+ * iPhone と iPad で、共有ボタンからホーム画面に追加する手順の案内（react-ios-pwa-prompt）。
+ * ヘッダーの追加のボタンと、設定の通知のカード（iOS はホーム画面に置かないと通知を受け取れない）が使う
+ */
+export function InstallGuide({ shown, onClose }: { shown: boolean; onClose: () => void }) {
+  const t = useTranslations('nav');
+  return createPortal(
+    <PWAPrompt
+      isShown={shown}
+      onClose={onClose}
+      appIconPath="/apple-icon.png"
+      copyTitle={t('install')}
+      copyDescription={t('installDescription')}
+      copyShareStep={t('installShareStep')}
+      copyAddToHomeScreenStep={t('installAddStep')}
+      delay={100}
+    />,
+    document.body,
   );
 }
 
-/** 端末の種類は変わらないので、知らせることは無い */
-const subscribeNothing = () => () => {};
-
 /**
  * ホーム画面に置くための入り口（鯉魂・spatto・vocafy と同じ use-pwa と react-ios-pwa-prompt）。
- * Chrome 系はブラウザの確認を出す。iOS は API が無いので、共有ボタンから追加する手順を案内する。
+ * Chrome 系はブラウザの確認を出す。iOS / iPadOS は API が無いので、共有ボタンから追加する手順を案内する
+ * （use-pwa の needsManualInstall。iPad の Safari が Mac を名乗るのも見分ける）。
  * 入れた後と、どちらもできない端末では何も出さない。一度押せば済む操作なので、アイコンだけにして場所を取らない
  */
 export function InstallButton() {
   const t = useTranslations('nav');
-  const { canInstall, install, isInstalled } = usePwa();
+  const { canInstall, install, isInstalled, needsManualInstall } = usePwa();
   const [guide, setGuide] = useState(false);
-  // 端末の判定は window を見る。サーバー側では決まらないので、載ってから読む
-  const isApple = useSyncExternalStore(subscribeNothing, isAppleDevice, () => false);
 
-  if (isInstalled || (!canInstall && !isApple)) return null;
+  if (isInstalled || (!canInstall && !needsManualInstall)) return null;
 
   return (
     <>
@@ -48,21 +56,7 @@ export function InstallButton() {
       >
         <Download aria-hidden />
       </Button>
-      {isApple && !canInstall
-        ? createPortal(
-            <PWAPrompt
-              isShown={guide}
-              onClose={() => setGuide(false)}
-              appIconPath="/apple-icon.png"
-              copyTitle={t('install')}
-              copyDescription={t('installDescription')}
-              copyShareStep={t('installShareStep')}
-              copyAddToHomeScreenStep={t('installAddStep')}
-              delay={100}
-            />,
-            document.body,
-          )
-        : null}
+      {needsManualInstall ? <InstallGuide shown={guide} onClose={() => setGuide(false)} /> : null}
     </>
   );
 }

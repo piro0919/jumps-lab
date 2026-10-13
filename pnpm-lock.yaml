@@ -23,6 +23,9 @@ importers:
       '@meteocons/svg':
         specifier: 3.0.0-next.10
         version: 3.0.0-next.10
+      '@piro0919/next-push':
+        specifier: 2.0.0
+        version: 2.0.0(next@16.3.8(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(@types/node@24.19.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)
       '@sentry/nextjs':
         specifier: ^11.5.0
         version: 11.5.0(@babel/core@7.29.7)(next@16.3.8(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(@types/node@24.19.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)
@@ -81,8 +84,8 @@ importers:
         specifier: ^1.4.0
         version: 1.4.0
       use-pwa:
-        specifier: 3.1.0
-        version: 3.1.0(react@19.2.8)
+        specifier: 4.0.0
+        version: 4.0.0(react@19.2.8)
       use-show-window-size:
         specifier: 1.0.1
         version: 1.0.1(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -1624,6 +1627,16 @@ packages:
       tailwindcss:
         optional: true
 
+  '@piro0919/next-push@2.0.0':
+    resolution: {integrity: sha512-os0JZl2EA/PSy20AijvcCPjki+3F2TLMN0LsdM59lf5DKxFb2gNMnGW7j8ptUGxSYbnwwkm/jwHB0jebD/yUmQ==}
+    hasBin: true
+    peerDependencies:
+      next: '>=15.5.26'
+      react: '>=18.3.1'
+    peerDependenciesMeta:
+      next:
+        optional: true
+
   '@pkgr/core@0.3.6':
     resolution: {integrity: sha512-SEeaJLb3qBNF/OaXnaR1NmmBbFYk1zC0ZH/52fATcRPLFg/p791YrcyFFy44Bo9sLaGuSuLp5Q6axbb/O+v/RA==}
     engines: {node: ^14.18.0 || >=16.0.0}
@@ -2947,6 +2960,10 @@ packages:
   commander@14.0.3:
     resolution: {integrity: sha512-H+y0Jo/T1RZ9qPP4Eh1pkcQcLRglraJaSLoyOtHxu6AapkjWVCy2Sit1QQ4x3Dng8qDlSsZEet7g5Pq06MvTgw==}
     engines: {node: '>=20'}
+
+  commander@15.0.0:
+    resolution: {integrity: sha512-z67u4ZhzCL/Tydu1lJARtEZYWbWaN7oYLHbsuzocr6y4N6WZAagG3RQ4FW61V1/0+jImpj293XfrcYnd1qxtPg==}
+    engines: {node: '>=22.12.0'}
 
   commondir@1.0.1:
     resolution: {integrity: sha512-W9pAhw0ja1Edb5GVdIF1mjZw/ASI0AlShXM83UUGe2DVr5TdAPEA1OA8m/g8zWp9x6On7gqufY+FatDbC3MDQg==}
@@ -5350,10 +5367,11 @@ packages:
       '@types/react':
         optional: true
 
-  use-pwa@3.1.0:
-    resolution: {integrity: sha512-oDLBfxkjCwua8sR7NW2BA6n8GLleMgM1eAfqNTh3Pct2h5G9XJ7hOGy2R+0gzBYh6QxEvB09cZrkPH16fAQnGg==}
+  use-pwa@4.0.0:
+    resolution: {integrity: sha512-3r1omXQ767o5PUOgLdQbNP4MLdHBXHz+AaOkm7AT5Te3QOY6Wm3rZIBJDGWvI+pAI5B7dQgD5LzJrvJCjHGbYQ==}
+    engines: {node: '>=18'}
     peerDependencies:
-      react: '>=17.0.0'
+      react: ^18.0.0 || ^19.0.0
 
   use-show-window-size@1.0.1:
     resolution: {integrity: sha512-b9CnOKa0v2NVhnm9vOtRRyir/mn7yBzQrY3OTTmJ3mrwwEAVHiQAKiXOJ8P3fCR2k5dHHgBuxAp7FTGoZ4dqYw==}
@@ -6899,6 +6917,14 @@ snapshots:
       - supports-color
       - typescript
 
+  '@piro0919/next-push@2.0.0(next@16.3.8(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(@types/node@24.19.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)':
+    dependencies:
+      commander: 15.0.0
+      prompts: 2.4.2
+      react: 19.2.8
+    optionalDependencies:
+      next: 16.3.8(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(@types/node@24.19.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+
   '@pkgr/core@0.3.6': {}
 
   '@playwright/test@1.63.0':
@@ -8044,6 +8070,8 @@ snapshots:
   commander@11.1.0: {}
 
   commander@14.0.3: {}
+
+  commander@15.0.0: {}
 
   commondir@1.0.1: {}
 
@@ -10767,7 +10795,7 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.3.0
 
-  use-pwa@3.1.0(react@19.2.8):
+  use-pwa@4.0.0(react@19.2.8):
     dependencies:
       react: 19.2.8
 

@@ -54,6 +54,10 @@ export default function PrivacyEn() {
           If you use the AI coach: the menus it made, your conversations with it, when you agreed to
           it, and when and how often you used AI
         </li>
+        <li>
+          If you turn notifications on: where to deliver them on that device (the push service
+          address and its encryption keys) and the language of the notification text
+        </li>
       </ul>
       <p>
         Grade, date of birth, gender, height, weight and the injury field are optional. Write only
@@ -72,6 +76,7 @@ export default function PrivacyEn() {
           To make the day&apos;s practice menu and answer your questions when you use the AI coach
           on Premium
         </li>
+        <li>To remind you the day before a competition, if you turn notifications on</li>
         <li>To sign you in and confirm who you are</li>
       </ol>
       <p>We use it for nothing else. We do not use it for advertising or sell it to anyone.</p>
@@ -155,6 +160,13 @@ export default function PrivacyEn() {
           </a>
           ). Jumps Lab asks OpenAI not to store the replies for later retrieval
         </dd>
+        <dt>Browser and OS push services (Google, Apple, Mozilla, Microsoft)</dt>
+        <dd>
+          Only if you turn notifications on: the notification (that a competition is tomorrow and
+          its name) is delivered to your device through the push service your browser uses. It is
+          sent encrypted. Notifications never include your marks, notes, condition, injuries or
+          discomfort
+        </dd>
         <dt>Sentry</dt>
         <dd>
           Used to notice errors on our server. We send only the error and the address of the page
@@ -168,8 +180,10 @@ export default function PrivacyEn() {
       <h2>7. How long we keep it</h2>
       <p>
         We delete each video 90 days after you upload it, and show the date under each video. We
-        keep the rest of the information until you delete your account. When you do, we delete all
-        of the information above.
+        delete where to deliver notifications when you turn them off, when you sign out on that
+        device, when the push service reports it no longer works, or when you delete your account.
+        We keep the rest of the information until you delete your account. When you do, we delete
+        all of the information above.
       </p>
 
       <h2>8. Access, correction and deletion</h2>

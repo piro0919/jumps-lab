@@ -5,7 +5,7 @@ import { LogOut } from 'lucide-react';
 import { useRouter } from '@bprogress/next/app';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
-import { authClient } from '@/lib/auth-client';
+import { signOut } from '@/lib/sign-out';
 
 /** 設定の画面のアカウントの区画のログアウト。自分のアイコンのメニューにも同じものがある */
 export function SignOutButton() {
@@ -18,7 +18,7 @@ export function SignOutButton() {
       size="sm"
       type="button"
       onClick={async () => {
-        await authClient.signOut();
+        await signOut();
         router.replace('/sign-in');
         router.refresh();
       }}

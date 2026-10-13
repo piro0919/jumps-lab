@@ -46,3 +46,15 @@ export function localeFromAcceptLanguage(header: string | null): Locale {
   }
   return DEFAULT_LOCALE;
 }
+
+/**
+ * 要求の言語。画面（src/i18n/request.ts）と同じ順で、本人が設定で選んだ言語（Cookie）、ブラウザの言語、英語。
+ * 通知の受け口（src/app/api/push）が、宛先に残す言語を決めるのに使う
+ */
+export function localeOfRequest(headers: Headers): Locale {
+  const chosen = (headers.get('cookie') ?? '')
+    .split(';')
+    .map((part) => part.trim().split('='))
+    .find(([name]) => name === LOCALE_COOKIE)?.[1];
+  return isLocale(chosen) ? chosen : localeFromAcceptLanguage(headers.get('accept-language'));
+}

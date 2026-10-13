@@ -4,7 +4,7 @@ import { LogOut, Settings, ShieldCheck } from 'lucide-react';
 // 線（components/progress.tsx）を出すため、移るのは @bprogress の useRouter で
 import { useRouter } from '@bprogress/next/app';
 import { useTranslations } from 'next-intl';
-import { authClient } from '@/lib/auth-client';
+import { signOut } from '@/lib/sign-out';
 import { Badge, Stat } from '@/components/layout-ui';
 import { EVENT_BG, type JumpEvent } from '@/lib/events';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -99,7 +99,7 @@ export function AccountMenu({
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={async () => {
-            await authClient.signOut();
+            await signOut();
             router.replace('/sign-in');
             router.refresh();
           }}

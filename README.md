@@ -17,6 +17,7 @@ https://jumpslab.kkweb.io
 - Today's practice menu written by AI inside that intensity, with capped jump counts, and a chat to adjust it, for people on the Premium plan after they agree to sending their data to OpenAI (only when `OPENAI_API_KEY` is set)
 - An admin screen at `/admin` to switch people between the Free and Premium plans (only for the emails in `ADMIN_EMAILS`)
 - Analysis per event: count, average, monthly best and the trend of the last 10
+- A push notification the evening before each competition, in each athlete's own time zone, turned on per device in Settings (only when the VAPID keys are set; on iPhone and iPad after adding the app to the Home Screen)
 - The local weather on the home screen (Open-Meteo)
 - Meters or feet and inches, English or Japanese, light or dark, weeks starting on Sunday or Monday
 
@@ -41,17 +42,20 @@ pnpm dev       # http://localhost:3110
 
 Copy `.env.local.example` to `.env.local`:
 
-| name                                       | value                                                         |
-| ------------------------------------------ | ------------------------------------------------------------- |
-| `DATABASE_URL`                             | `postgres://jumpslab:jumpslab@localhost:5436/jumpslab`        |
-| `BETTER_AUTH_SECRET`                       | `openssl rand -base64 32`                                     |
-| `BETTER_AUTH_URL`                          | `http://localhost:3110`                                       |
-| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google OAuth client, redirecting to port 3110                 |
-| `SENTRY_DSN`                               | production only; leave empty locally                          |
-| `R2_ENDPOINT`, `R2_BUCKET`                 | Cloudflare R2 account endpoint and the `jumps-lab-dev` bucket |
-| `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` | an R2 API token limited to the dev bucket                     |
+| name                                                | value                                                         |
+| --------------------------------------------------- | ------------------------------------------------------------- |
+| `DATABASE_URL`                                      | `postgres://jumpslab:jumpslab@localhost:5436/jumpslab`        |
+| `BETTER_AUTH_SECRET`                                | `openssl rand -base64 32`                                     |
+| `BETTER_AUTH_URL`                                   | `http://localhost:3110`                                       |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`          | Google OAuth client, redirecting to port 3110                 |
+| `SENTRY_DSN`                                        | production only; leave empty locally                          |
+| `R2_ENDPOINT`, `R2_BUCKET`                          | Cloudflare R2 account endpoint and the `jumps-lab-dev` bucket |
+| `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`          | an R2 API token limited to the dev bucket                     |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | `pnpm exec next-push keys:generate`                           |
+| `VAPID_SUBJECT`                                     | `https://jumpslab.kkweb.io`                                   |
+| `CRON_SECRET`                                       | `openssl rand -base64 32`; the meet-reminder cron checks it   |
 
-Without the R2 keys, everything except videos works.
+Without the R2 keys, everything except videos works. Without the VAPID keys, notifications are hidden.
 
 To sign in locally without Google, `pnpm exec tsx --env-file=.env.local scripts/dev-session.ts` prints a session cookie for a test user (local database only).
 

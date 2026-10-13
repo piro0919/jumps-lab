@@ -4,16 +4,19 @@ import { Card, CardTitle, LABEL, PageTitle, FORM_PAGE } from '@/components/layou
 import { SignOutButton } from '@/components/sign-out-button';
 import { ThemeSetting } from '@/components/theme-setting';
 import { LanguageSetting } from '@/components/language-setting';
+import { PushSetting } from '@/components/push-setting';
 import { isLocale, LOCALE_COOKIE } from '@/i18n/locales';
 import { cookies } from 'next/headers';
 import { todayIn } from '@/lib/dates';
 import { videoUsage } from '@/lib/data';
 import { currentGrade } from '@/lib/grade';
+import { pushPublicKey } from '@/lib/push';
 import { GIB, MIB, USER_VIDEO_BYTES } from '@/lib/videos';
 import { requireProfile, requireViewer } from '@/lib/viewer';
 
 /**
  * 設定。プロフィールと記録はカードごとに保存し、表示（配色）はその場で切り替わる。
+ * 通知（鍵が揃っているときだけ。src/lib/push.ts の pushPublicKey）、
  * 最後にアカウント（ログインしている Google アカウントとログアウト、動画に使った量）。
  * プロフィールの欄だけを並べていて「設定がプロフィールっぽい」と言われ、区画に分けた（本人、2026-10-11）
  */
@@ -29,6 +32,8 @@ export default async function Settings() {
   const tVideos = await getTranslations('videos');
   const chosenLocale = (await cookies()).get(LOCALE_COOKIE)?.value;
   const format = await getFormatter();
+  const locale = await getLocale();
+  const vapidPublicKey = pushPublicKey();
   // 動画に使った量。1人 1GB まで（src/lib/videos.ts）。MB は 1024 の倍で数える
   const megabytes = (bytes: number) =>
     format.number(bytes / MIB, {
@@ -50,7 +55,7 @@ export default async function Settings() {
           todayIn(profile.timeZone),
         )}
       />
-      <RecordSettingsForm initial={profile} locale={await getLocale()} />
+      <RecordSettingsForm initial={profile} locale={locale} />
       <Card>
         <CardTitle>{tProfile('sectionDisplay')}</CardTitle>
         <div className="flex flex-col gap-1.5">
@@ -62,6 +67,7 @@ export default async function Settings() {
           <LanguageSetting current={isLocale(chosenLocale) ? chosenLocale : 'auto'} />
         </div>
       </Card>
+      {vapidPublicKey && <PushSetting vapidPublicKey={vapidPublicKey} locale={locale} />}
       <Card>
         <CardTitle>{tProfile('sectionAccount')}</CardTitle>
         <div className="flex flex-wrap items-center justify-between gap-3">

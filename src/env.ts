@@ -32,8 +32,17 @@ export const env = createEnv({
     OPENAI_API_KEY: z.string().trim().min(1).optional(),
     // 管理の画面（/admin）に入れる人の Google のメール。カンマで区切る。無ければ誰も入れない（src/lib/admin.ts）
     ADMIN_EMAILS: z.string().trim().min(1).optional(),
+    // 通知（Web Push）の VAPID の秘密鍵と、送り主（サイトの URL）。公開鍵（下の NEXT_PUBLIC_）と3つ揃わなければ
+    // 通知の設定を出さず、送らない（src/lib/push.ts の pushReady）
+    VAPID_PRIVATE_KEY: z.string().trim().min(1).optional(),
+    VAPID_SUBJECT: z.string().trim().pipe(z.url()).optional(),
+    // Vercel の Cron が付けてくる鍵（Authorization: Bearer）。無ければ Cron の受け口は 503 を返す
+    CRON_SECRET: z.string().trim().min(1).optional(),
   },
-  client: {},
+  client: {
+    // 通知の VAPID の公開鍵。ブラウザが購読するときに渡す
+    NEXT_PUBLIC_VAPID_PUBLIC_KEY: z.string().trim().min(1).optional(),
+  },
   runtimeEnv: {
     DATABASE_URL: process.env.DATABASE_URL,
     BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
@@ -47,6 +56,10 @@ export const env = createEnv({
     R2_BUCKET: process.env.R2_BUCKET,
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     ADMIN_EMAILS: process.env.ADMIN_EMAILS,
+    VAPID_PRIVATE_KEY: process.env.VAPID_PRIVATE_KEY,
+    VAPID_SUBJECT: process.env.VAPID_SUBJECT,
+    CRON_SECRET: process.env.CRON_SECRET,
+    NEXT_PUBLIC_VAPID_PUBLIC_KEY: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
   },
   emptyStringAsUndefined: true,
 });

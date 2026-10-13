@@ -50,9 +50,10 @@ export function proxy(request: NextRequest) {
   return pass();
 }
 
-// ログインの受け口、Next の配信物、アイコンや OG 画像（日本語の LP の /ja/opengraph-image も）、LP の写真（public/landing）などは通す
+// ログインの受け口、Next の配信物、アイコンや OG 画像（日本語の LP の /ja/opengraph-image も）、LP の写真（public/landing）などは通す。
+// 通知の Service Worker（sw.js）は、ログインの画面へ送ると登録が落ちる。Cron（api/cron）は Cookie を持たず、鍵で確かめる
 export const config = {
   matcher: [
-    '/((?!api/auth|_next/|landing/|favicon\\.ico|icon|apple-icon|manifest\\.webmanifest|opengraph-image|ja/opengraph-image|robots\\.txt|sitemap\\.xml).*)',
+    '/((?!api/auth|api/cron/|sw\\.js|_next/|landing/|favicon\\.ico|icon|apple-icon|manifest\\.webmanifest|opengraph-image|ja/opengraph-image|robots\\.txt|sitemap\\.xml).*)',
   ],
 };

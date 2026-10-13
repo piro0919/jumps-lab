@@ -23,6 +23,11 @@ const nextConfig: NextConfig = {
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
         ],
       },
+      {
+        // 通知の Service Worker（public/sw.js）。ブラウザやCDNに古い版を持たせず、直したら次に開いたときに入れ替わるように
+        source: '/sw.js',
+        headers: [{ key: 'Cache-Control', value: 'no-cache' }],
+      },
     ];
   },
 };

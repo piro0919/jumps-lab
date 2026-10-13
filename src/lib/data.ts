@@ -1,7 +1,10 @@
 import 'server-only';
 import { db } from '@/lib/db';
 import type { JumpEvent } from '@/lib/events';
+import type { Locale } from '@/i18n/locales';
+import type { ReminderRow } from '@/lib/meet-reminder';
 import type { Menu, MenuLevel } from '@/lib/menu';
+import type { PushTarget } from '@/lib/push-endpoint';
 import type { Grade, Plan } from '@/lib/profile-options';
 import type { Units } from '@/lib/units';
 
@@ -789,6 +792,73 @@ export async function countAiCalls(
     [userId, day, kind],
   );
   return { today: Number(rows[0]!.today), month: Number(rows[0]!.month) };
+}
+
+/**
+ * 通知の宛先を保存する。同じ宛先がもうあれば、鍵と言語と持ち主を今の人で置き換える
+ * （宛先はブラウザのもの。前の人がログアウトの片付けをできずに残った行も、今ログインしている人のものにする）
+ */
+export async function savePushSubscription(
+  userId: string,
+  target: PushTarget,
+  locale: Locale,
+): Promise<void> {
+  await db().query(
+    `insert into push_subscription (endpoint, "userId", p256dh, auth, locale)
+     values ($1, $2, $3, $4, $5)
+     on conflict (endpoint) do update set "userId" = excluded."userId", p256dh = excluded.p256dh,
+       auth = excluded.auth, locale = excluded.locale`,
+    [target.endpoint, userId, target.keys.p256dh, target.keys.auth, locale],
+  );
+}
+
+/** 本人の宛先を1つ消す（通知を切ったとき、この端末でログアウトするとき） */
+export async function deletePushSubscription(userId: string, endpoint: string): Promise<void> {
+  await db().query(`delete from push_subscription where "userId" = $1 and endpoint = $2`, [
+    userId,
+    endpoint,
+  ]);
+}
+
+/*
+ * 大会の前日の知らせの Cron（src/app/api/cron/meet-reminder）だけが使う。本人を決めずに、全員の行を読み書きする
+ */
+
+/** 通知を入れている人の、from から to までの大会を、宛先ごとに読む（誰に送るかは src/lib/meet-reminder.ts が選ぶ） */
+export async function listReminderRows(from: string, to: string): Promise<ReminderRow[]> {
+  const { rows } = await db().query<ReminderRow>(
+    `select s.endpoint, s.p256dh, s.auth, s.locale, s."userId", p."timeZone",
+            c.id as "competitionId", c.name, to_char(c.day, 'YYYY-MM-DD') as day
+       from push_subscription s
+       join profile p on p."userId" = s."userId"
+       join competition c on c."userId" = s."userId" and c.day between $1 and $2
+      order by s."createdAt"`,
+    [from, to],
+  );
+  return rows;
+}
+
+/** 送った印の残す日数。前日の知らせの印は、大会が過ぎれば要らない */
+const PUSH_SENT_KEEP_DAYS = 30;
+
+/**
+ * 知らせの印を付ける。初めて付けられた key だけを返す（送る前に付け、付けられたものだけ送る。二度送らない）。
+ * 古い印は同じ文で消す（DB への往復を増やさない）
+ */
+export async function claimPushKeys(keys: string[]): Promise<Set<string>> {
+  if (keys.length === 0) return new Set();
+  const { rows } = await db().query<{ key: string }>(
+    `with old as (delete from push_sent where "sentAt" < now() - make_interval(days => $2))
+     insert into push_sent (key) select unnest($1::text[]) on conflict (key) do nothing returning key`,
+    [keys, PUSH_SENT_KEEP_DAYS],
+  );
+  return new Set(rows.map((row) => row.key));
+}
+
+/** 通知サービスが無効と返した宛先を消す */
+export async function deletePushEndpoints(endpoints: string[]): Promise<void> {
+  if (endpoints.length === 0) return;
+  await db().query(`delete from push_subscription where endpoint = any($1::text[])`, [endpoints]);
 }
 
 /*

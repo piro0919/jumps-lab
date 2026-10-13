@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 /**
  * プライバシーポリシー。中身はコードから拾った事実で書く。
  * 預かる項目は db/migrations/、外へ渡すものは src/components/weather-card.tsx、src/lib/auth.ts、src/lib/r2.ts（動画）、
- * src/lib/monitoring.ts（Sentry）、src/app/layout.tsx（Web Analytics）、src/app/actions/menu.ts（OpenAI）。
+ * src/lib/monitoring.ts（Sentry）、src/app/layout.tsx（Web Analytics）、src/app/actions/menu.ts（OpenAI）、src/lib/push.ts（通知）。
  * OpenAI の段は、AI コーチの同意の画面（src/app/(app)/log/[day]/menu/new/page.tsx）と同じ中身にそろえる。
  * 画面や表を足したら、ここと英語版（/en/privacy）の両方に足し、改定日を動かす
  */
@@ -50,6 +50,9 @@ export default function Privacy() {
           AI コーチを使った場合、作ったメニュー・相談のやりとり・AI コーチに同意した日時・AI
           を使った日時と回数
         </li>
+        <li>
+          通知をオンにした場合、その端末の通知の宛先（通知サービスのアドレスと暗号の鍵）と、通知の文の言語
+        </li>
       </ul>
       <p>
         学年・生年月日・性別・身長・体重とケガや違和感の欄は、入れなくても使えます。
@@ -64,6 +67,7 @@ export default function Privacy() {
         <li>
           Premium の方が AI コーチを使ったときに、その日の練習メニューを作り、相談に答えるため
         </li>
+        <li>通知をオンにした方に、大会の前日に知らせを送るため</li>
         <li>ログインと本人確認のため</li>
       </ol>
       <p>これ以外には使いません。広告に使うことも、他社に売ることもありません。</p>
@@ -140,6 +144,11 @@ export default function Privacy() {
           </a>
           ）。Jumps Lab は、返答をあとで取り出すための保存をしないよう OpenAI に求めています
         </dd>
+        <dt>ブラウザと OS の通知サービス（Google・Apple・Mozilla・Microsoft）</dt>
+        <dd>
+          通知をオンにした場合だけ、通知の中身（大会の前日であることと大会名）を、お使いのブラウザが決めた通知サービスを通して端末へ届けます。
+          中身は暗号にして送ります。記録・メモ・体調・ケガや違和感は通知に入れません
+        </dd>
         <dt>Sentry</dt>
         <dd>
           サーバーで起きた不具合に気づくために使います。送るのは不具合の内容と、それが起きたページのアドレスだけです。
@@ -153,7 +162,8 @@ export default function Privacy() {
       <h2>7. 保存する期間</h2>
       <p>
         動画は、送っていただいた日から90日で削除します。削除する日は、それぞれの動画の下に表示します。
-        動画を除く情報は、アカウントを削除するまで保存します。アカウントを削除すると、上記の情報をすべて削除します。
+        通知の宛先は、通知をオフにしたとき、その端末でログアウトしたとき、通知サービスから使えなくなったと返されたとき、アカウントを削除したときに削除します。
+        動画と通知の宛先を除く情報は、アカウントを削除するまで保存します。アカウントを削除すると、上記の情報をすべて削除します。
       </p>
 
       <h2>8. 開示・訂正・削除の求め</h2>
