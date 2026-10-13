@@ -22,6 +22,7 @@ export async function SiteHeader({
   image,
   minimal = false,
   profile,
+  admin = false,
 }: {
   name: string;
   email: string;
@@ -29,6 +30,8 @@ export async function SiteHeader({
   minimal?: boolean;
   /** ユーザーメニューに出す種目と数（ようこその画面ではまだ無い） */
   profile?: AccountSummary;
+  /** ユーザーメニューに管理の画面への入口を出すか */
+  admin?: boolean;
 }) {
   const tMeta = await getTranslations('metadata');
   const tLog = await getTranslations('log');
@@ -51,7 +54,7 @@ export async function SiteHeader({
           </Link>
         )}
         <InstallButton />
-        <AccountMenu name={name} email={email} image={image} summary={profile} />
+        <AccountMenu name={name} email={email} image={image} summary={profile} admin={admin} />
       </div>
     </header>
   );

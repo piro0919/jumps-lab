@@ -59,7 +59,8 @@
     "theme": "テーマ",
     "themeSystem": "自動",
     "themeLight": "ライト",
-    "themeDark": "ダーク"
+    "themeDark": "ダーク",
+    "admin": "管理"
   },
   "log": {
     "today": "今日",
@@ -346,5 +347,15 @@
     "medical": "AI コーチは、けがや病気の診断・判断をしません。痛みがあるときは医師に診てもらってください。",
     "agree": "同意して進む",
     "agreeing": "保存中…"
+  },
+  "admin": {
+    "searchPlaceholder": "名前かメール",
+    "search": "探す",
+    "recent": "最近登録した人",
+    "results": "{count, plural, other {#人}}",
+    "empty": "該当する人はいません",
+    "planOf": "{name}さんのプラン",
+    "free": "Free",
+    "premium": "Premium"
   }
 }

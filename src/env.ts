@@ -29,6 +29,8 @@ export const env = createEnv({
     // AI コーチ（OpenAI）。無ければ AI の機能を出さない（src/lib/ai.ts）。
     // 今は中元さんから借りたキーを手元だけに置く。本番に入れるのは、払う名義が決まってから（2026-10-12）
     OPENAI_API_KEY: z.string().min(1).optional(),
+    // 管理の画面（/admin）に入れる人の Google のメール。カンマで区切る。無ければ誰も入れない（src/lib/admin.ts）
+    ADMIN_EMAILS: z.string().min(1).optional(),
   },
   client: {},
   runtimeEnv: {
@@ -43,6 +45,7 @@ export const env = createEnv({
     R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY,
     R2_BUCKET: process.env.R2_BUCKET,
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    ADMIN_EMAILS: process.env.ADMIN_EMAILS,
   },
   emptyStringAsUndefined: true,
 });

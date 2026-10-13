@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { SiteHeader } from '@/components/site-header';
 import { TabBar } from '@/components/tab-bar';
 import { TimeZoneRepair } from '@/components/time-zone-repair';
+import { isAdmin } from '@/lib/admin';
 import { getActivityCounts, getProfile } from '@/lib/data';
 import { requireViewer } from '@/lib/viewer';
 
@@ -23,6 +24,7 @@ export default async function AppLayout({ children }: LayoutProps<'/'>) {
         email={viewer.email}
         image={viewer.image}
         profile={{ events: profile.events, ...activity }}
+        admin={isAdmin(viewer.email)}
       />
       <div className="mx-auto min-h-page-body max-w-lg pb-tab-bar lg:max-w-6xl lg:px-4 lg:pb-10">
         {children}

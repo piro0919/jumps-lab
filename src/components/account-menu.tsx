@@ -1,6 +1,6 @@
 'use client';
 
-import { LogOut, Settings } from 'lucide-react';
+import { LogOut, Settings, ShieldCheck } from 'lucide-react';
 // 線（components/progress.tsx）を出すため、移るのは @bprogress の useRouter で
 import { useRouter } from '@bprogress/next/app';
 import { useTranslations } from 'next-intl';
@@ -19,7 +19,7 @@ import {
 /**
  * ヘッダーの右端の、自分のアイコン（Google の顔写真）。押すとメニューが開く（Vercel のアカウントメニューの形）：
  * 上に顔・名前・メール、その下に種目と、跳んだ本数・記録した日（ホームの自分のカードから移した。本人、2026-10-11）。
- * 続けて設定、ログアウト。設定への入口はここだけ（配色は設定の画面で選ぶ）。
+ * 続けて設定、管理者には管理の画面、ログアウト。設定への入口はここだけ（配色は設定の画面で選ぶ）。
  * 写真が無い・読めないときは名前の頭文字を出す
  */
 export type AccountSummary = { events: JumpEvent[]; jumps: number; daysLogged: number };
@@ -29,11 +29,14 @@ export function AccountMenu({
   email,
   image,
   summary,
+  admin = false,
 }: {
   name: string;
   email: string;
   image: string | null;
   summary?: AccountSummary;
+  /** 管理の画面（/admin）への入口を出すか */
+  admin?: boolean;
 }) {
   const tEvents = useTranslations('events');
   const t = useTranslations('profile');
@@ -87,6 +90,12 @@ export function AccountMenu({
           <Settings aria-hidden />
           {tNav('settings')}
         </DropdownMenuItem>
+        {admin && (
+          <DropdownMenuItem onClick={() => router.push('/admin')}>
+            <ShieldCheck aria-hidden />
+            {tNav('admin')}
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={async () => {

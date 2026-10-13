@@ -2,7 +2,7 @@ import 'server-only';
 import { db } from '@/lib/db';
 import type { JumpEvent } from '@/lib/events';
 import type { Menu, MenuLevel } from '@/lib/menu';
-import type { Grade } from '@/lib/profile-options';
+import type { Grade, Plan } from '@/lib/profile-options';
 import type { Units } from '@/lib/units';
 
 /**
@@ -34,8 +34,6 @@ export type Profile = {
   /** AI コーチを使うことに同意した時刻。null はまだ（src/lib/ai.ts の aiUsable）。プロフィールの保存では変えない */
   aiConsentAt: Date | null;
 };
-
-type Plan = 'free' | 'premium';
 
 type ProfileRow = Omit<Profile, 'heightCm' | 'weightKg'> & {
   heightCm: string | null;
@@ -788,4 +786,37 @@ export async function countAiCalls(
     [userId, day, kind],
   );
   return { today: Number(rows[0]!.today), month: Number(rows[0]!.month) };
+}
+
+/*
+ * 管理の画面（/admin）だけが使う。ほかの関数と違い、本人以外の行を読み書きする。
+ * 呼ぶ前に、ログインしている人が管理者か（src/lib/admin.ts の isAdmin）を必ず確かめる
+ */
+
+export type AdminUser = { id: string; name: string; email: string; plan: Plan };
+
+/**
+ * プロフィールを作った人を、登録の新しい順に読む。query があれば、メールか名前にその語を含む人だけ。
+ * % と _ は語のまま探す（LIKE の記号として効かせない）
+ */
+export async function listUsersForAdmin(query: string | null, limit: number): Promise<AdminUser[]> {
+  const pattern = query === null ? null : `%${query.replace(/[\\%_]/g, '\\$&')}%`;
+  const { rows } = await db().query<AdminUser>(
+    `select u.id, u.name, u.email, p.plan
+       from profile p join "user" u on u.id = p."userId"
+      where $1::text is null or u.email ilike $1 escape '\\' or u.name ilike $1 escape '\\'
+      order by u."createdAt" desc, u.id
+      limit $2`,
+    [pattern, limit],
+  );
+  return rows;
+}
+
+/** 1人のプランを変える。プロフィールが無ければ何もせず false */
+export async function setPlan(userId: string, plan: Plan): Promise<boolean> {
+  const { rowCount } = await db().query(
+    `update profile set plan = $2, "updatedAt" = now() where "userId" = $1`,
+    [userId, plan],
+  );
+  return rowCount === 1;
 }

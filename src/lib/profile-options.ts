@@ -14,3 +14,8 @@ export const GRADES = [
 ] as const;
 
 export type Grade = (typeof GRADES)[number];
+
+/** プラン。AI の機能は premium だけ（src/lib/ai.ts の aiEnabled）。名前の Free / Premium は仮 */
+export const PLANS = ['free', 'premium'] as const;
+
+export type Plan = (typeof PLANS)[number];

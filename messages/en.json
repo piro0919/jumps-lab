@@ -59,7 +59,8 @@
     "theme": "Theme",
     "themeSystem": "System",
     "themeLight": "Light",
-    "themeDark": "Dark"
+    "themeDark": "Dark",
+    "admin": "Admin"
   },
   "log": {
     "today": "Today",
@@ -346,5 +347,15 @@
     "medical": "The AI coach does not diagnose or judge injuries or illness. If something hurts, see a doctor.",
     "agree": "Agree and continue",
     "agreeing": "Saving…"
+  },
+  "admin": {
+    "searchPlaceholder": "Name or email",
+    "search": "Search",
+    "recent": "Recently joined",
+    "results": "{count, plural, one {# result} other {# results}}",
+    "empty": "No users found",
+    "planOf": "Plan for {name}",
+    "free": "Free",
+    "premium": "Premium"
   }
 }
