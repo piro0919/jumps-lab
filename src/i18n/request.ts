@@ -1,6 +1,6 @@
-import { headers } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { getRequestConfig } from 'next-intl/server';
-import { isLocale, localeOfRequest, PAGE_LOCALE_HEADER } from './locales';
+import { chooseLocale, isLocale, LOCALE_COOKIE, PAGE_LOCALE_HEADER } from './locales';
 
 /**
  * 画面の言語と、その言語の文言。言語を URL に含めない（ログインの中のアプリなので、spatto と同じ）。
@@ -11,8 +11,12 @@ import { isLocale, localeOfRequest, PAGE_LOCALE_HEADER } from './locales';
 export default getRequestConfig(async () => {
   const requestHeaders = await headers();
   const page = requestHeaders.get(PAGE_LOCALE_HEADER);
-  // Cookie と Accept-Language の順は、通知の宛先に残す言語（src/app/api/push）と同じ関数で決める
-  const locale = isLocale(page) ? page : localeOfRequest(requestHeaders);
+  // Cookie と Accept-Language の順は、通知の宛先に残す言語（src/app/api/push）と同じ関数で決める。
+  // Cookie は cookies() から読む（言語を切り替えた Server Action が書いた値が、その場の描画に効くように）
+  const chosen = (await cookies()).get(LOCALE_COOKIE)?.value;
+  const locale = isLocale(page)
+    ? page
+    : chooseLocale(chosen, requestHeaders.get('accept-language'));
 
   return {
     locale,

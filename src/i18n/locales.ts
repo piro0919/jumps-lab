@@ -48,13 +48,22 @@ export function localeFromAcceptLanguage(header: string | null): Locale {
 }
 
 /**
- * 要求の言語。画面（src/i18n/request.ts）と同じ順で、本人が設定で選んだ言語（Cookie）、ブラウザの言語、英語。
- * 通知の受け口（src/app/api/push）が、宛先に残す言語を決めるのに使う
+ * 言語を決める順。本人が設定で選んだ言語（Cookie）、ブラウザの言語、英語。
+ * 画面（src/i18n/request.ts）と通知の受け口（src/app/api/push）が同じ順で決めるために共有する
+ */
+export function chooseLocale(chosen: string | undefined, acceptLanguage: string | null): Locale {
+  return isLocale(chosen) ? chosen : localeFromAcceptLanguage(acceptLanguage);
+}
+
+/**
+ * 要求の言語。通知の受け口（src/app/api/push）が、宛先に残す言語を決めるのに使う。
+ * 画面は Cookie を cookies() から読む: 要求の Cookie ヘッダーには、同じ要求の Server Action が
+ * 書いた Cookie が載らず、言語を切り替えた直後の描画が前の言語のままになる（e2e が 2026-10-14 に捕まえた）
  */
 export function localeOfRequest(headers: Headers): Locale {
   const chosen = (headers.get('cookie') ?? '')
     .split(';')
     .map((part) => part.trim().split('='))
     .find(([name]) => name === LOCALE_COOKIE)?.[1];
-  return isLocale(chosen) ? chosen : localeFromAcceptLanguage(headers.get('accept-language'));
+  return chooseLocale(chosen, headers.get('accept-language'));
 }
