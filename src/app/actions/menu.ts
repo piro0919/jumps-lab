@@ -3,8 +3,9 @@
 import { refresh } from 'next/cache';
 import { getLocale } from 'next-intl/server';
 import { z } from 'zod';
-import { aiEnabled, askJson } from '@/lib/ai';
+import { aiEnabled, aiUsable, askJson } from '@/lib/ai';
 import {
+  consentToAi,
   countAiCalls,
   getMenu,
   getProfile,
@@ -123,6 +124,24 @@ async function language(): Promise<'en' | 'ja'> {
   return (await getLocale()) === 'ja' ? 'ja' : 'en';
 }
 
+/**
+ * AI コーチを使うことに同意する（/log/[day]/menu/new の同意の画面）。時刻は初めて同意したときのまま残す。
+ * 同意したら同じ画面を描き直し、メニューの入力を出す
+ */
+export async function consentAiAction(): Promise<ActionResult> {
+  const viewer = await requireViewer();
+  const profile = await getProfile(viewer.userId);
+  if (!profile || !aiEnabled(profile)) return { ok: false, error: 'generic' };
+  try {
+    await consentToAi(viewer.userId);
+  } catch (error) {
+    console.error(error);
+    return { ok: false, error: 'generic' };
+  }
+  refresh();
+  return { ok: true };
+}
+
 const createSchema = z.object({
   minutes: z.coerce.number().int().min(SESSION_MIN_MINUTES).max(SESSION_MAX_MINUTES),
   note: optionalText(NOTE_MAX_LENGTH),
@@ -140,7 +159,7 @@ export async function createMenuAction(
   const parsed = createSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { ok: false, error: 'menuMinutes' };
   const profile = await getProfile(viewer.userId);
-  if (!profile || !aiEnabled(profile)) return { ok: false, error: 'generic' };
+  if (!profile || !aiUsable(profile)) return { ok: false, error: 'generic' };
   const today = todayIn(profile.timeZone);
 
   try {
@@ -202,7 +221,7 @@ export async function askMenuAction(
   const parsed = askSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { ok: false, error: 'generic' };
   const profile = await getProfile(viewer.userId);
-  if (!profile || !aiEnabled(profile)) return { ok: false, error: 'generic' };
+  if (!profile || !aiUsable(profile)) return { ok: false, error: 'generic' };
   const today = todayIn(profile.timeZone);
 
   try {

@@ -31,6 +31,8 @@ export type Profile = {
   timeZone: string;
   /** プラン。AI の機能は premium だけ（src/lib/ai.ts の aiEnabled）。プロフィールの保存では変えない */
   plan: Plan;
+  /** AI コーチを使うことに同意した時刻。null はまだ（src/lib/ai.ts の aiUsable）。プロフィールの保存では変えない */
+  aiConsentAt: Date | null;
 };
 
 type Plan = 'free' | 'premium';
@@ -43,7 +45,7 @@ type ProfileRow = Omit<Profile, 'heightCm' | 'weightKg'> & {
 export async function getProfile(userId: string): Promise<Profile | null> {
   const { rows } = await db().query<ProfileRow>(
     `select u.name, p.grade, p."gradeOffset", to_char(p.birthdate, 'YYYY-MM-DD') as birthdate, p.gender, p."heightCm", p."weightKg", p.events,
-            p.units, p."seasonStartMonth", p."weekStart", p."timeZone", p.plan
+            p.units, p."seasonStartMonth", p."weekStart", p."timeZone", p.plan, p."aiConsentAt"
        from profile p join "user" u on u.id = p."userId"
       where p."userId" = $1`,
     [userId],
@@ -53,7 +55,7 @@ export async function getProfile(userId: string): Promise<Profile | null> {
   return { ...row, heightCm: num(row.heightCm), weightKg: num(row.weightKg) };
 }
 
-export type ProfileInput = Omit<Profile, 'plan'> & { goalM: number | null };
+export type ProfileInput = Omit<Profile, 'plan' | 'aiConsentAt'> & { goalM: number | null };
 
 /**
  * プロフィールを保存する。名前は Better Auth の user 表に持つ。
@@ -164,6 +166,15 @@ export async function repairTimeZone(
     [userId, timeZone, grade.grade, grade.gradeOffset],
   );
   return rowCount === 1;
+}
+
+/** AI コーチを使うことに同意した時刻を入れる。もう同意していれば、初めの時刻を残す */
+export async function consentToAi(userId: string): Promise<void> {
+  await db().query(
+    `update profile set "aiConsentAt" = now(), "updatedAt" = now()
+      where "userId" = $1 and "aiConsentAt" is null`,
+    [userId],
+  );
 }
 
 /** 設定の画面の「記録」の区画で保存するもの */

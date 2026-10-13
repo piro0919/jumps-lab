@@ -3,7 +3,7 @@ import { getFormatter, getTranslations } from 'next-intl/server';
 import { PageTitle, FORM_PAGE } from '@/components/layout-ui';
 import { MenuChat } from '@/components/menu-chat';
 import { MenuView } from '@/components/menu-view';
-import { aiEnabled } from '@/lib/ai';
+import { aiEnabled, aiUsable } from '@/lib/ai';
 import { getMenu, listMenuMessages } from '@/lib/data';
 import { resolveLogDay, todayIn } from '@/lib/dates';
 import { requireProfile, requireViewer } from '@/lib/viewer';
@@ -21,6 +21,8 @@ export default async function MenuPage({ params }: PageProps<'/log/[day]/menu'>)
     listMenuMessages(viewer.userId, day),
   ]);
   if (!saved) notFound();
+  // 同意する前に作った今日のメニュー（同意の画面ができる前）。相談を出す前に同意の画面を通す
+  if (day === today && aiEnabled(profile) && !aiUsable(profile)) redirect('/log/today/menu/new');
   const t = await getTranslations('menu');
   const tLog = await getTranslations('log');
   const tNav = await getTranslations('nav');
@@ -47,7 +49,7 @@ export default async function MenuPage({ params }: PageProps<'/log/[day]/menu'>)
       </PageTitle>
       <MenuView menu={saved.menu} level={saved.level} />
       {/* 相談して直せるのは今日のメニューだけ。過去の日はやりとりを見るだけ */}
-      {day === today && aiEnabled(profile) ? (
+      {day === today && aiUsable(profile) ? (
         <MenuChat messages={messages} />
       ) : (
         messages.length > 0 && <MenuChat messages={messages} readOnly />

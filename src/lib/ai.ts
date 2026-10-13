@@ -18,6 +18,14 @@ export function aiEnabled(profile: Pick<Profile, 'plan'>): boolean {
   return Boolean(env.OPENAI_API_KEY) && profile.plan === 'premium';
 }
 
+/**
+ * この人の材料を AI に送ってよいか。機能を出す人（aiEnabled）のうち、送るものを読んで同意した人だけ
+ * （/log/[day]/menu/new の同意の画面。2026-10-14 に本人・中元さんと決めた）。Server Action はこれで断る
+ */
+export function aiUsable(profile: Pick<Profile, 'plan' | 'aiConsentAt'>): boolean {
+  return aiEnabled(profile) && profile.aiConsentAt !== null;
+}
+
 type ResponsesOutput = {
   output?: { type: string; content?: { type: string; text?: string }[] }[];
   error?: { message: string } | null;

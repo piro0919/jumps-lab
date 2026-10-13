@@ -328,5 +328,23 @@
     "revised": "Menu updated (v{version})",
     "warmupMinutes": "Warm-up time (minutes)",
     "outOf": "/{limit}"
+  },
+  "aiConsent": {
+    "title": "Before you use the AI coach",
+    "intro": "To make and revise your menu, the AI coach sends the following to OpenAI, a company in the United States.",
+    "sentProfile": "Your age, gender, height, weight and events",
+    "sentCondition": "Your condition, fatigue, sleep, pain notes and practice notes from the last 14 days",
+    "sentAttempts": "Your attempts from the last 14 days: event, practice or competition, mark, wind and note",
+    "sentCompetitions": "How many days are left to your competitions in the next 8 weeks, and which one is your main goal",
+    "sentSession": "Today's intensity and its reasons, the practice time and note you enter, and in the chat the current menu and your messages",
+    "sentMeet": "On a competition day, that meet's venue, call room place and time, start time and notes",
+    "notSent": "Your name and email address are not sent.",
+    "abroadTitle": "Where the data goes",
+    "country": "Country: the United States.",
+    "system": "Its privacy rules: there is no single federal privacy law; sector-specific federal laws and state laws apply. <link>Summary by Japan's Personal Information Protection Commission (as of October 2021)</link>",
+    "measures": "OpenAI's measures: data sent to its API is not used to train its models unless the account opts in, and abuse monitoring logs are kept for up to 30 days unless the law requires longer. Jumps Lab asks OpenAI not to store the replies for later retrieval. <link>OpenAI: Data controls</link>",
+    "medical": "The AI coach does not diagnose or judge injuries or illness. If something hurts, see a doctor.",
+    "agree": "Agree and continue",
+    "agreeing": "Saving…"
   }
 }
