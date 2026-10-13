@@ -18,6 +18,7 @@ const OPENAI_DATA_URL = 'https://developers.openai.com/api/docs/guides/your-data
 const SENT = [
   'sentDate',
   'sentProfile',
+  'sentBests',
   'sentCondition',
   'sentAttempts',
   'sentCompetitions',

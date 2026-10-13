@@ -335,6 +335,7 @@
     "intro": "To make and revise your menu, the AI coach sends the following to OpenAI, a company in the United States.",
     "sentDate": "Today's date",
     "sentProfile": "Your age, gender, height, weight and events",
+    "sentBests": "Your personal best and season best for each event",
     "sentCondition": "Your condition, fatigue, sleep, pain notes and practice notes from the last 14 days",
     "sentAttempts": "Your attempts from the last 14 days: event, practice or competition, mark, wind and note",
     "sentCompetitions": "How many days are left to your competitions in the next 8 weeks, and which one is your main goal",

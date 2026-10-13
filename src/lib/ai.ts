@@ -19,11 +19,18 @@ export function aiEnabled(profile: Pick<Profile, 'plan'>): boolean {
 }
 
 /**
+ * AI コーチの同意の画面の版。送る項目を変えたら（src/app/actions/menu.ts の menuContext）上げる。
+ * 前の版に同意した人には、もう一度同意の画面を出す。
+ * 2: 自己ベストと今季ベストを足した（2026-10-14）
+ */
+export const AI_CONSENT_VERSION = 2;
+
+/**
  * この人の材料を AI に送ってよいか。機能を出す人（aiEnabled）のうち、送るものを読んで同意した人だけ
  * （/log/[day]/menu/new の同意の画面。2026-10-14 に本人・中元さんと決めた）。Server Action はこれで断る
  */
-export function aiUsable(profile: Pick<Profile, 'plan' | 'aiConsentAt'>): boolean {
-  return aiEnabled(profile) && profile.aiConsentAt !== null;
+export function aiUsable(profile: Pick<Profile, 'plan' | 'aiConsentVersion'>): boolean {
+  return aiEnabled(profile) && profile.aiConsentVersion === AI_CONSENT_VERSION;
 }
 
 type ResponsesOutput = {

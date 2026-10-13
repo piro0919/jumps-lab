@@ -3,12 +3,15 @@
 import { refresh } from 'next/cache';
 import { getLocale } from 'next-intl/server';
 import { z } from 'zod';
-import { aiEnabled, aiUsable, askJson } from '@/lib/ai';
+import { AI_CONSENT_VERSION, aiEnabled, aiUsable, askJson } from '@/lib/ai';
+import { computeBests } from '@/lib/bests';
 import {
   consentToAi,
   countAiCalls,
   getMenu,
   getProfile,
+  getTargets,
+  listAllAttempts,
   listAttemptsBetween,
   listCompetitionsBetween,
   listConditionsBetween,
@@ -54,11 +57,30 @@ const CHAT_HISTORY_MESSAGES = 10;
  */
 async function menuContext(userId: string, profile: Profile, today: string) {
   const historyFrom = addDays(today, 1 - HISTORY_DAYS);
-  const [logs, competitions, attempts] = await Promise.all([
+  const [logs, competitions, attempts, targets, allAttempts] = await Promise.all([
     listConditionsBetween(userId, readinessFrom(today), today),
     listCompetitionsBetween(userId, today, readinessUntil(today)),
     listAttemptsBetween(userId, historyFrom, today),
+    getTargets(userId, profile.events),
+    listAllAttempts(userId),
   ]);
+  // 種目ごとの自己ベストと今季ベスト。ホームと同じ数え方（記録と手で入れた値の高い方、追い風参考は除く）。
+  // 中元さんの案（2026-10-14 のお返事で合意）。練習ベストと目標は渡さない
+  const bests = profile.events.map((event) => {
+    const target = targets.get(event);
+    const { pbM, sbM } = computeBests(
+      allAttempts.filter((a) => a.event === event),
+      {
+        pbM: target?.manualPbM ?? null,
+        sbM: target?.manualSbM ?? null,
+        sbSeason: target?.manualSbSeason ?? null,
+        practiceBestM: target?.manualPracticeBestM ?? null,
+      },
+      today,
+      profile.seasonStartMonth,
+    );
+    return { event, personalBestM: pbM, seasonBestM: sbM };
+  });
   const advice: Readiness = readiness({ today, logs, competitions, birthdate: profile.birthdate });
   // 今日の大会（あれば、練習ではなくアップの段取りを作る）。招集か開始の早いもの
   const firstTime = (c: { callRoomTime: string | null; startTime: string | null }) =>
@@ -79,6 +101,7 @@ async function menuContext(userId: string, profile: Profile, today: string) {
         heightCm: profile.heightCm,
         weightKg: profile.weightKg,
       },
+      bests,
       intensity: { level: advice.level, reasons: advice.reasons },
       last14Days: logs
         .filter((log) => log.day >= historyFrom)
@@ -133,7 +156,7 @@ export async function consentAiAction(): Promise<ActionResult> {
   const profile = await getProfile(viewer.userId);
   if (!profile || !aiEnabled(profile)) return { ok: false, error: 'generic' };
   try {
-    await consentToAi(viewer.userId);
+    await consentToAi(viewer.userId, AI_CONSENT_VERSION);
   } catch (error) {
     console.error(error);
     return { ok: false, error: 'generic' };

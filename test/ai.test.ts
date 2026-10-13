@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 const env = vi.hoisted(() => ({ OPENAI_API_KEY: undefined as string | undefined }));
 vi.mock('@/env', () => ({ env }));
 
-const { aiEnabled, aiUsable } = await import('@/lib/ai');
+const { AI_CONSENT_VERSION, aiEnabled, aiUsable } = await import('@/lib/ai');
 
 describe('aiEnabled', () => {
   afterEach(() => {
@@ -30,24 +30,29 @@ describe('aiUsable', () => {
     env.OPENAI_API_KEY = undefined;
   });
 
-  const consented = new Date('2026-10-14T00:00:00Z');
+  const consented = AI_CONSENT_VERSION;
 
   it('Premium でも同意する前は送らない', () => {
     env.OPENAI_API_KEY = 'sk-test';
-    expect(aiUsable({ plan: 'premium', aiConsentAt: null })).toBe(false);
+    expect(aiUsable({ plan: 'premium', aiConsentVersion: null })).toBe(false);
   });
 
   it('Premium で同意した人は使える', () => {
     env.OPENAI_API_KEY = 'sk-test';
-    expect(aiUsable({ plan: 'premium', aiConsentAt: consented })).toBe(true);
+    expect(aiUsable({ plan: 'premium', aiConsentVersion: consented })).toBe(true);
   });
 
   it('同意していても Free の人は使えない', () => {
     env.OPENAI_API_KEY = 'sk-test';
-    expect(aiUsable({ plan: 'free', aiConsentAt: consented })).toBe(false);
+    expect(aiUsable({ plan: 'free', aiConsentVersion: consented })).toBe(false);
+  });
+
+  it('前の版に同意した人には、もう一度聞く', () => {
+    env.OPENAI_API_KEY = 'sk-test';
+    expect(aiUsable({ plan: 'premium', aiConsentVersion: AI_CONSENT_VERSION - 1 })).toBe(false);
   });
 
   it('キーが無ければ同意した Premium の人も使えない', () => {
-    expect(aiUsable({ plan: 'premium', aiConsentAt: consented })).toBe(false);
+    expect(aiUsable({ plan: 'premium', aiConsentVersion: consented })).toBe(false);
   });
 });
