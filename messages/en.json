@@ -126,7 +126,9 @@
     "menuMinutes": "Enter the practice time in minutes (15 to 240).",
     "menuLimit": "You've reached the limit for making menus.",
     "menuFailed": "Couldn't make the menu. Try again later.",
-    "chatLimit": "You've reached the limit for questions."
+    "chatLimit": "You've reached the limit for questions.",
+    "aiUnavailable": "The AI coach is unavailable right now. Logging still works.",
+    "aiBusy": "The AI coach is busy. Try again in a moment."
   },
   "home": {
     "goal": "Season goal",

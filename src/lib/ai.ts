@@ -35,8 +35,84 @@ export function aiUsable(profile: Pick<Profile, 'plan' | 'aiConsentVersion'>): b
 
 type ResponsesOutput = {
   output?: { type: string; content?: { type: string; text?: string }[] }[];
-  error?: { message: string } | null;
+  error?: { message?: string; type?: string; code?: string | null } | null;
 };
+
+/**
+ * AI が答えられなかった理由の種類。選手に出す文言を分けるため（ながら介護の NK-2517 にならった。
+ * 理由が1つの文言だけだと、残高切れでも「電波のせい」と思われた）。
+ * - auth: キーが無い・効かない・その国から使えない（待っても直らない）
+ * - quota: OpenAI の残高や上限を使い切った（待っても直らない）
+ * - busy: 混雑・OpenAI 側の不調・時間切れ・通信の失敗（少し待てば直りうる）
+ * - unknown: それ以外（こちらの送り方の誤り、返事が読めないなど）
+ * アプリが自分で決めた回数の上限（AI_CALL_LIMITS）はこれとは別で、menu.ts が先に断る
+ */
+export type AiErrorKind = 'auth' | 'quota' | 'busy' | 'unknown';
+
+/** AI の呼び出しの失敗。message は記録（console.error → Sentry）にだけ使い、画面には kind だけを返す */
+export class AiError extends Error {
+  readonly kind: AiErrorKind;
+
+  constructor(kind: AiErrorKind, message: string, options?: { cause?: unknown }) {
+    super(message, options);
+    this.name = 'AiError';
+    this.kind = kind;
+  }
+}
+
+const HTTP_UNAUTHORIZED = 401;
+const HTTP_FORBIDDEN = 403;
+const HTTP_TOO_MANY_REQUESTS = 429;
+const HTTP_SERVER_ERROR_MIN = 500;
+
+/**
+ * 429 のうち、残高や上限を使い切ったもの。混雑（rate_limit_error, slow_down）と同じ 429 で返るため、
+ * 本文の error.type と error.code で分ける。OpenAI の Error codes のページで確かめた（2026-10-14）:
+ * https://developers.openai.com/api/docs/guides/error-codes
+ * insufficient_quota は type に入ることがあり、billing_hard_limit_reached は古い返し方
+ */
+const QUOTA_CODES: ReadonlySet<string> = new Set([
+  'insufficient_quota',
+  'credit_balance_exhausted',
+  'organization_spend_limit_exceeded',
+  'project_spend_limit_exceeded',
+  'organization_usage_limit_exceeded',
+  'billing_hard_limit_reached',
+]);
+
+/**
+ * 失敗の種類を決める。status と body は返事が来たとき、thrown は fetch そのものが投げたとき。
+ * 401/403 → auth、429 は本文で quota か busy、5xx と時間切れ・通信の失敗 → busy、ほかは unknown
+ */
+export function classifyAiFailure({
+  status,
+  body,
+  thrown,
+}: {
+  status?: number;
+  body?: unknown;
+  thrown?: unknown;
+}): AiErrorKind {
+  if (status === undefined) {
+    // AbortSignal.timeout は TimeoutError、手で止めたときは AbortError、通信の失敗は fetch の TypeError
+    if (thrown instanceof Error) {
+      if (thrown.name === 'TimeoutError' || thrown.name === 'AbortError') return 'busy';
+      if (thrown instanceof TypeError) return 'busy';
+    }
+    return 'unknown';
+  }
+  if (status === HTTP_UNAUTHORIZED || status === HTTP_FORBIDDEN) return 'auth';
+  if (status === HTTP_TOO_MANY_REQUESTS) {
+    const error =
+      typeof body === 'object' && body !== null
+        ? (body as { error?: { type?: unknown; code?: unknown } | null }).error
+        : undefined;
+    const marks = [error?.type, error?.code].filter((v): v is string => typeof v === 'string');
+    return marks.some((mark) => QUOTA_CODES.has(mark)) ? 'quota' : 'busy';
+  }
+  if (status >= HTTP_SERVER_ERROR_MIN) return 'busy';
+  return 'unknown';
+}
 
 /**
  * 指示（instructions）と材料（input）を渡し、schema の形の JSON を受け取る。
@@ -56,27 +132,44 @@ export async function askJson<T>({
   schema: Record<string, unknown>;
 }): Promise<T> {
   const key = env.OPENAI_API_KEY;
-  if (!key) throw new Error('AI のキーがありません: OPENAI_API_KEY を入れてください');
-  const response = await fetch('https://api.openai.com/v1/responses', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model,
-      instructions,
-      input,
-      // 会話を OpenAI 側に残さない
-      store: false,
-      text: { format: { type: 'json_schema', name: schemaName, schema, strict: true } },
-    }),
-    signal: AbortSignal.timeout(TIMEOUT_MS),
-  });
-  const data = (await response.json()) as ResponsesOutput;
+  if (!key) throw new AiError('auth', 'AI のキーがありません: OPENAI_API_KEY を入れてください');
+  let response: Response;
+  try {
+    response = await fetch('https://api.openai.com/v1/responses', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model,
+        instructions,
+        input,
+        // 会話を OpenAI 側に残さない
+        store: false,
+        text: { format: { type: 'json_schema', name: schemaName, schema, strict: true } },
+      }),
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
+  } catch (thrown) {
+    throw new AiError(classifyAiFailure({ thrown }), 'AI に届きませんでした', { cause: thrown });
+  }
+  // 混雑や不調のときは JSON でない本文（HTML など）が返ることもある
+  let data: ResponsesOutput;
+  try {
+    data = (await response.json()) as ResponsesOutput;
+  } catch (thrown) {
+    const kind = response.ok ? 'unknown' : classifyAiFailure({ status: response.status });
+    throw new AiError(kind, `AI の返事が読めません (${response.status})`, { cause: thrown });
+  }
   if (!response.ok || data.error) {
-    throw new Error(`AI の呼び出しに失敗しました (${response.status}): ${data.error?.message}`);
+    const kind = classifyAiFailure({ status: response.status, body: data });
+    const { type, code, message } = data.error ?? {};
+    throw new AiError(
+      kind,
+      `AI の呼び出しに失敗しました (${response.status} ${type ?? '-'}/${code ?? '-'}): ${message}`,
+    );
   }
   const text = data.output
     ?.flatMap((item) => item.content ?? [])
     .find((part) => part.type === 'output_text')?.text;
-  if (!text) throw new Error('AI の返事に本文がありません');
+  if (!text) throw new AiError('unknown', 'AI の返事に本文がありません');
   return JSON.parse(text) as T;
 }

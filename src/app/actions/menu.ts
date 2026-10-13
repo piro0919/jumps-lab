@@ -3,7 +3,7 @@
 import { refresh } from 'next/cache';
 import { getLocale } from 'next-intl/server';
 import { z } from 'zod';
-import { AI_CONSENT_VERSION, aiEnabled, aiUsable, askJson } from '@/lib/ai';
+import { AI_CONSENT_VERSION, AiError, aiEnabled, aiUsable, askJson } from '@/lib/ai';
 import { eventBests } from '@/lib/bests';
 import {
   consentToAi,
@@ -138,6 +138,23 @@ async function overLimit(userId: string, today: string, kind: 'menu' | 'chat'): 
   return used.today >= limit.perDay || used.month >= limit.perMonth;
 }
 
+/**
+ * AI が答えられなかったときに画面へ返すエラー。理由は種類だけで伝え、キーや支払いのことは選手に言わない
+ * （残高切れも「今は使えない、記録はつけられる」と出す）。分からないものは今までどおり menuFailed
+ */
+function aiFailure(error: unknown): string {
+  if (!(error instanceof AiError)) return 'menuFailed';
+  switch (error.kind) {
+    case 'auth':
+    case 'quota':
+      return 'aiUnavailable';
+    case 'busy':
+      return 'aiBusy';
+    case 'unknown':
+      return 'menuFailed';
+  }
+}
+
 async function language(): Promise<'en' | 'ja'> {
   return (await getLocale()) === 'ja' ? 'ja' : 'en';
 }
@@ -218,7 +235,7 @@ export async function createMenuAction(
     return { ok: false, error: 'menuFailed' };
   } catch (error) {
     console.error(error);
-    return { ok: false, error: 'menuFailed' };
+    return { ok: false, error: aiFailure(error) };
   }
 }
 
@@ -312,6 +329,6 @@ export async function askMenuAction(
     return { ok: false, error: 'menuFailed' };
   } catch (error) {
     console.error(error);
-    return { ok: false, error: 'menuFailed' };
+    return { ok: false, error: aiFailure(error) };
   }
 }
