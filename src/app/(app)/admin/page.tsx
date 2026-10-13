@@ -45,7 +45,13 @@ export default async function Admin({ searchParams }: PageProps<'/admin'>) {
         </Form>
       </Card>
       <Card>
-        <CardTitle>{query === '' ? t('recent') : t('results', { count: users.length })}</CardTitle>
+        <CardTitle>
+          {query === ''
+            ? t('recent')
+            : users.length === ADMIN_LIST_LIMIT
+              ? t('resultsCapped', { count: users.length })
+              : t('results', { count: users.length })}
+        </CardTitle>
         {users.length === 0 ? (
           <EmptyState message={t('empty')} />
         ) : (

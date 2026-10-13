@@ -333,6 +333,7 @@
   "aiConsent": {
     "title": "AI コーチを使う前に",
     "intro": "AI コーチは、メニューを作ったり直したりするために、次の情報を米国の会社 OpenAI に送ります。",
+    "sentDate": "今日の日付",
     "sentProfile": "年齢・性別・身長・体重・種目",
     "sentCondition": "直近14日の体調・疲労・睡眠・痛みのメモ・練習メモ",
     "sentAttempts": "直近14日の試技（種目、練習か試合か、記録、風、メモ）",
@@ -353,6 +354,7 @@
     "search": "探す",
     "recent": "最近登録した人",
     "results": "{count, plural, other {#人}}",
+    "resultsCapped": "最初の{count}人を表示しています",
     "empty": "該当する人はいません",
     "planOf": "{name}さんのプラン",
     "free": "Free",

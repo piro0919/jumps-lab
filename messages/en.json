@@ -333,6 +333,7 @@
   "aiConsent": {
     "title": "Before you use the AI coach",
     "intro": "To make and revise your menu, the AI coach sends the following to OpenAI, a company in the United States.",
+    "sentDate": "Today's date",
     "sentProfile": "Your age, gender, height, weight and events",
     "sentCondition": "Your condition, fatigue, sleep, pain notes and practice notes from the last 14 days",
     "sentAttempts": "Your attempts from the last 14 days: event, practice or competition, mark, wind and note",
@@ -353,6 +354,7 @@
     "search": "Search",
     "recent": "Recently joined",
     "results": "{count, plural, one {# result} other {# results}}",
+    "resultsCapped": "Showing the first {count}",
     "empty": "No users found",
     "planOf": "Plan for {name}",
     "free": "Free",

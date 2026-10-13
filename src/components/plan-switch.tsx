@@ -22,9 +22,15 @@ export function PlanSwitch({ userId, name, plan }: { userId: string; name: strin
     sending.current = true;
     setFailed(false);
     startTransition(async () => {
-      const result = await setPlanAction({ userId, plan: next });
-      sending.current = false;
-      if (!result?.ok) setFailed(true);
+      // 通信が切れるなどで投げられても、次の押下を受けられるように戻す
+      try {
+        const result = await setPlanAction({ userId, plan: next });
+        if (!result?.ok) setFailed(true);
+      } catch {
+        setFailed(true);
+      } finally {
+        sending.current = false;
+      }
     });
   };
 

@@ -156,10 +156,10 @@ export async function createMenuAction(
   formData: FormData,
 ): Promise<ActionResult> {
   const viewer = await requireViewer();
-  const parsed = createSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { ok: false, error: 'menuMinutes' };
   const profile = await getProfile(viewer.userId);
   if (!profile || !aiUsable(profile)) return { ok: false, error: 'generic' };
+  const parsed = createSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { ok: false, error: 'menuMinutes' };
   const today = todayIn(profile.timeZone);
 
   try {
@@ -218,10 +218,10 @@ export async function askMenuAction(
   formData: FormData,
 ): Promise<ActionResult> {
   const viewer = await requireViewer();
-  const parsed = askSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { ok: false, error: 'generic' };
   const profile = await getProfile(viewer.userId);
   if (!profile || !aiUsable(profile)) return { ok: false, error: 'generic' };
+  const parsed = askSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { ok: false, error: 'generic' };
   const today = todayIn(profile.timeZone);
 
   try {

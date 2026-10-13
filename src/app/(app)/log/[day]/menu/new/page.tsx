@@ -16,6 +16,7 @@ const OPENAI_DATA_URL = 'https://developers.openai.com/api/docs/guides/your-data
 
 /** 送るものの並び。src/app/actions/menu.ts の menuContext と、送る入力・相談に合わせる */
 const SENT = [
+  'sentDate',
   'sentProfile',
   'sentCondition',
   'sentAttempts',
