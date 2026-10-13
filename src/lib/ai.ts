@@ -156,7 +156,10 @@ export async function askJson<T>({
   try {
     data = (await response.json()) as ResponsesOutput;
   } catch (thrown) {
-    const kind = response.ok ? 'unknown' : classifyAiFailure({ status: response.status });
+    // 200 のあとに本文の読み込みが時間切れになったときも、混雑として扱う
+    const kind = response.ok
+      ? classifyAiFailure({ thrown })
+      : classifyAiFailure({ status: response.status });
     throw new AiError(kind, `AI の返事が読めません (${response.status})`, { cause: thrown });
   }
   if (!response.ok || data.error) {

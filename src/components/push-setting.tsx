@@ -67,8 +67,17 @@ export function PushSetting({
     setPending(true);
     setFailed(null);
     try {
-      if (next) synced.current = `${(await subscribe()).endpoint}|${locale}`;
-      else await unsubscribe();
+      if (next) {
+        synced.current = `${(await subscribe()).endpoint}|${locale}`;
+      } else if (subscription) {
+        // 先にサーバーの行を消す。ブラウザの購読を先に外すと、行が消せなかったときにもう一度押す手段が無くなる
+        const response = await fetch(
+          `/api/push?endpoint=${encodeURIComponent(subscription.endpoint)}`,
+          { method: 'DELETE' },
+        );
+        if (!response.ok) throw new Error(`push delete ${response.status}`);
+        await unsubscribe();
+      }
     } catch {
       // 許可を断られたときは、ブロックの文が代わりに出る
       if (!(next && Notification.permission === 'denied')) setFailed(next ? 'on' : 'off');
@@ -109,8 +118,6 @@ export function PushSetting({
           </div>
           {mounted && permission === 'denied' ? (
             <p className="text-sm text-muted-foreground">{t('denied')}</p>
-          ) : on ? (
-            <p className="text-sm text-muted-foreground">{t('onHint')}</p>
           ) : null}
           <ErrorText>
             {failed === null ? null : t(failed === 'on' ? 'failedOn' : 'failedOff')}

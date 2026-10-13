@@ -380,7 +380,6 @@
     "meetTomorrow": "The day before a competition",
     "off": "Off",
     "on": "On",
-    "onHint": "You'll get a notice on this device the evening before each competition.",
     "unsupported": "This browser can't receive notifications.",
     "installFirst": "On iPhone and iPad, add Jumps Lab to your Home Screen, then turn notifications on in the app.",
     "denied": "Notifications are blocked. Allow them for this site in your browser settings.",

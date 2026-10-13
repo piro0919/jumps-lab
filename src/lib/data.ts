@@ -855,6 +855,12 @@ export async function claimPushKeys(keys: string[]): Promise<Set<string>> {
   return new Set(rows.map((row) => row.key));
 }
 
+/** 送れなかった知らせの印を外す（印を付けたまま失敗すると、その知らせは二度と送られない） */
+export async function releasePushKeys(keys: string[]): Promise<void> {
+  if (keys.length === 0) return;
+  await db().query(`delete from push_sent where key = any($1::text[])`, [keys]);
+}
+
 /** 通知サービスが無効と返した宛先を消す */
 export async function deletePushEndpoints(endpoints: string[]): Promise<void> {
   if (endpoints.length === 0) return;
