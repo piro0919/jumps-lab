@@ -24,6 +24,39 @@ function max(values: (number | null)[]): number | null {
   return present.length > 0 ? Math.max(...present) : null;
 }
 
+/** 手で入れた値の持ち方（event_target の行）。src/lib/data.ts の Target と同じ形 */
+type TargetBests = {
+  manualPbM: number | null;
+  manualSbM: number | null;
+  manualSbSeason: number | null;
+  manualPracticeBestM: number | null;
+};
+
+/**
+ * 1種目のベストを、その種目の記録と手で入れた値から出す。ホームと AI コーチの材料の両方がこれを使い、
+ * 同じ数え方にそろえる
+ */
+export function eventBests(
+  rows: (MarkRow & { event: string })[],
+  event: string,
+  target: TargetBests | undefined,
+  today: string,
+  seasonStartMonth: number,
+): Bests {
+  return computeBests(
+    rows.filter((r) => r.event === event),
+    {
+      pbM: target?.manualPbM ?? null,
+      // 手で入れた SB は、入れたシーズンのあいだだけ数える
+      sbM: target?.manualSbM ?? null,
+      sbSeason: target?.manualSbSeason ?? null,
+      practiceBestM: target?.manualPracticeBestM ?? null,
+    },
+    today,
+    seasonStartMonth,
+  );
+}
+
 /**
  * 1種目のベスト。記録から出した値と、手で入れた値の高い方。
  * PB と SB は試合の記録だけで数え、練習の記録は練習ベストに入れる（陸上の数え方）。

@@ -4,7 +4,7 @@ import { refresh } from 'next/cache';
 import { getLocale } from 'next-intl/server';
 import { z } from 'zod';
 import { AI_CONSENT_VERSION, aiEnabled, aiUsable, askJson } from '@/lib/ai';
-import { computeBests } from '@/lib/bests';
+import { eventBests } from '@/lib/bests';
 import {
   consentToAi,
   countAiCalls,
@@ -67,15 +67,10 @@ async function menuContext(userId: string, profile: Profile, today: string) {
   // 種目ごとの自己ベストと今季ベスト。ホームと同じ数え方（記録と手で入れた値の高い方、追い風参考は除く）。
   // 中元さんの案（2026-10-14 のお返事で合意）。練習ベストと目標は渡さない
   const bests = profile.events.map((event) => {
-    const target = targets.get(event);
-    const { pbM, sbM } = computeBests(
-      allAttempts.filter((a) => a.event === event),
-      {
-        pbM: target?.manualPbM ?? null,
-        sbM: target?.manualSbM ?? null,
-        sbSeason: target?.manualSbSeason ?? null,
-        practiceBestM: target?.manualPracticeBestM ?? null,
-      },
+    const { pbM, sbM } = eventBests(
+      allAttempts,
+      event,
+      targets.get(event),
       today,
       profile.seasonStartMonth,
     );

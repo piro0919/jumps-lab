@@ -67,6 +67,8 @@ export default async function NewMenu({ params }: PageProps<'/log/[day]/menu/new
         ) : (
           <div className="flex flex-col gap-4 text-sm">
             <SectionTitle>{tConsent('title')}</SectionTitle>
+            {/* 前の版に同意した人には、聞き直す理由を出す */}
+            {profile.aiConsentVersion !== null && <p>{tConsent('changed')}</p>}
             <p>{tConsent('intro')}</p>
             <ul className="flex list-disc flex-col gap-1 pl-5">
               {SENT.map((key) => (

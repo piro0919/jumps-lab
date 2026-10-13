@@ -166,7 +166,10 @@ export async function repairTimeZone(
   return rowCount === 1;
 }
 
-/** AI コーチを使うことに同意した時刻を入れる。もう同意していれば、初めの時刻を残す */
+/**
+ * AI コーチの説明（version の版）に同意したことを入れる。同じ版にもう同意していれば何もしない。
+ * 版が上がって同意し直したときは、時刻も新しい版に同意した時刻に変わる
+ */
 export async function consentToAi(userId: string, version: number): Promise<void> {
   await db().query(
     `update profile set "aiConsentAt" = now(), "aiConsentVersion" = $2, "updatedAt" = now()

@@ -6,7 +6,7 @@ import { AdviceCard } from '@/components/advice-card';
 import { EventHero } from '@/components/event-hero';
 import { WeatherCard } from '@/components/weather-card';
 import { aiEnabled } from '@/lib/ai';
-import { computeBests } from '@/lib/bests';
+import { eventBests } from '@/lib/bests';
 import {
   getTargets,
   hasMenu,
@@ -95,18 +95,7 @@ export default async function Home() {
                 key={event}
                 event={event}
                 goalM={target.seasonGoalM}
-                bests={computeBests(
-                  attempts.filter((a) => a.event === event),
-                  {
-                    pbM: target.manualPbM,
-                    // 手で入れた SB は、入れたシーズンのあいだだけ数える
-                    sbM: target.manualSbM,
-                    sbSeason: target.manualSbSeason,
-                    practiceBestM: target.manualPracticeBestM,
-                  },
-                  today,
-                  profile.seasonStartMonth,
-                )}
+                bests={eventBests(attempts, event, target, today, profile.seasonStartMonth)}
                 manual={{
                   pbM: target.manualPbM,
                   sbM:

@@ -332,6 +332,7 @@
   },
   "aiConsent": {
     "title": "Before you use the AI coach",
+    "changed": "What the AI coach sends has changed, so please read it again. New: your personal best and season best for each event.",
     "intro": "To make and revise your menu, the AI coach sends the following to OpenAI, a company in the United States.",
     "sentDate": "Today's date",
     "sentProfile": "Your age, gender, height, weight and events",
