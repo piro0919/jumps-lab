@@ -73,9 +73,21 @@ export default function PrivacyEn() {
 
       <h2>4. Who can see it</h2>
       <p>
-        Only you can see your information. There is no feature that shows it to other users. Each
-        time you watch a video, we issue an address that stops working after a set time.
+        Only you and the joint users below can see your information. There is no feature that shows
+        it to other users. Each time you watch a video, we issue an address that stops working after
+        a set time.
       </p>
+      <p>We use your information jointly as follows.</p>
+      <dl>
+        <dt>Information used jointly</dt>
+        <dd>All of the information in section 2</dd>
+        <dt>Joint users</dt>
+        <dd>kk-web and れんれん (Renren)</dd>
+        <dt>Purposes</dt>
+        <dd>The purposes in section 3, and managing plans</dd>
+        <dt>Responsible for managing it</dt>
+        <dd>kk-web (contact in section 1)</dd>
+      </dl>
 
       <h2>5. What we share with other services</h2>
       <dl>

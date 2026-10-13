@@ -202,6 +202,6 @@ Copy the shape of `~/Repository/onigiri` (which itself copies vocafy). Read its 
   - The AI menu went live on 2026-10-12 because the owner asked for it with the items below set aside ("規約とか諸々一回置いといて"). Still open, in this order:
     - A key under the owner's account (production uses 中元さん's key for now, so user data goes through their account and they pay)
     - Done and live 2026-10-14: the privacy policy lists OpenAI (sections 2, 3 and 5, ja and en) and a consent step comes before the first menu, after checking the PPC's guidance on providing to a third party abroad (see the consent bullet). No lawyer review, like the terms
-    - The policy's section 4 still says only the person sees their data; if 中元さん uses the admin screen (names and emails), write them in as part of the operator first
+    - Joint use (共同利用, APPI Art. 27(5)(iii); PPC general guideline): section 4 (ja and en) lists the items (everything in section 2, so the later R2 and Neon move fits; items and joint users cannot in principle be changed later), joint users "kk-web, れんれん", purposes and kk-web as the one responsible. "れんれん" is a placeholder the owner chose on 2026-10-14 until 中元さん's full name or trade name is agreed (a surname alone may not identify them). Still open: the responsible person's address, which the APPI requires to be published (kk-web's address is not decided). Not pushed yet
   - Coach questions (the prototype's hidden coach mode)
 - Dev server runs on port 3110 (`pnpm dev`); local Postgres on 5436 (`pnpm db:up`, then `pnpm migrate`)
