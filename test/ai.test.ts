@@ -13,16 +13,24 @@ describe('aiEnabled', () => {
 
   it('キーがあっても Free の人には出さない', () => {
     env.OPENAI_API_KEY = 'sk-test';
-    expect(aiEnabled({ plan: 'free' })).toBe(false);
+    expect(aiEnabled({ plan: 'free', inTeamPlan: false })).toBe(false);
   });
 
   it('Premium の人には出す', () => {
     env.OPENAI_API_KEY = 'sk-test';
-    expect(aiEnabled({ plan: 'premium' })).toBe(true);
+    expect(aiEnabled({ plan: 'premium', inTeamPlan: false })).toBe(true);
   });
 
-  it('キーが無ければ Premium の人にも出さない', () => {
-    expect(aiEnabled({ plan: 'premium' })).toBe(false);
+  it('Free でも、チーム向けプランのチームの選手には出す', () => {
+    env.OPENAI_API_KEY = 'sk-test';
+    expect(aiEnabled({ plan: 'free', inTeamPlan: true })).toBe(true);
+  });
+
+  it('キーが無ければ Premium の人にもチームの選手にも出さない', () => {
+    expect([
+      aiEnabled({ plan: 'premium', inTeamPlan: false }),
+      aiEnabled({ plan: 'free', inTeamPlan: true }),
+    ]).toEqual([false, false]);
   });
 });
 
@@ -35,6 +43,7 @@ describe('aiUsable', () => {
   /** 生年月日の無い、16歳以上と答えた Premium の人 */
   const base = {
     plan: 'premium' as const,
+    inTeamPlan: false,
     aiConsentVersion: null as number | null,
     aiGuardianConsentVersion: null as number | null,
     birthdate: null as string | null,
@@ -104,6 +113,7 @@ describe('consentNotice と asksAge（同意の画面）', () => {
   const now = new Date('2026-10-14T03:00:00Z');
   const base = {
     plan: 'premium' as const,
+    inTeamPlan: false,
     aiConsentVersion: null as number | null,
     aiGuardianConsentVersion: null as number | null,
     birthdate: null as string | null,

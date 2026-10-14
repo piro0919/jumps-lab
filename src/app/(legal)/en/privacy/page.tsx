@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 /** プライバシーポリシーの英訳。節は日本語版（/privacy）と1対1 */
 export default function PrivacyEn() {
   return (
-    <Legal title="Privacy Policy" doc="privacy" locale="en" updated="October 14, 2026">
+    <Legal title="Privacy Policy" doc="privacy" locale="en" updated="October 15, 2026">
       <h2>1. Operator</h2>
       <dl>
         <dt>Operator</dt>
@@ -86,6 +86,11 @@ export default function PrivacyEn() {
           Comments that team coaches and athletes write on each day (the text, who wrote it, which
           athlete and day it belongs to, which team, and when it was written)
         </li>
+        <li>Each team&apos;s plan (Free or Premium)</li>
+        <li>
+          If you send us the Premium for teams inquiry form: your name, email address, school or
+          club name, number of athletes, events and message
+        </li>
       </ul>
       <p>
         Grade, date of birth, gender, height, weight and the injury field are optional. Write only
@@ -102,7 +107,7 @@ export default function PrivacyEn() {
         </li>
         <li>
           To make the day&apos;s practice menu and answer your questions when you use the AI coach
-          on Premium
+          on Premium or as an athlete on a team with Premium for teams
         </li>
         <li>
           If you are under 16, to email your parent or guardian a request to agree to the AI coach
@@ -119,6 +124,7 @@ export default function PrivacyEn() {
         </li>
         <li>To let team coaches and athletes exchange comments about each day&apos;s records</li>
         <li>To sign you in and confirm who you are</li>
+        <li>To reply to Premium for teams inquiries and tell you about it</li>
       </ol>
       <p>We use it for nothing else. We do not use it for advertising or sell it to anyone.</p>
 
@@ -196,7 +202,8 @@ export default function PrivacyEn() {
         <dt>Google</dt>
         <dd>
           The sign-in process. We receive your identifier, email address, display name and profile
-          image URL from Google
+          image URL from Google. The Premium for teams inquiry form is a Google Form, and what you
+          send through it is stored by Google. Google is a US company
         </dd>
         <dt>Open-Meteo</dt>
         <dd>
@@ -281,10 +288,11 @@ export default function PrivacyEn() {
         (for joining a team, until you leave or are removed from that team). We keep teams and
         invite links until a coach deletes the team or the team has no coach left. We delete a
         comment when its writer deletes it, when the team is deleted, or when its writer or the
-        athlete it belongs to deletes their account. We keep the rest of the information until you
-        delete your account. When you do, we delete all of the information above. Your videos are
-        deleted at that time too, and any that could not be deleted then are removed within 91 days
-        of their upload.
+        athlete it belongs to deletes their account. We delete Premium for teams inquiries within
+        one year after we have finished telling you about it. We keep the rest of the information
+        until you delete your account. When you do, we delete all of the information above. Your
+        videos are deleted at that time too, and any that could not be deleted then are removed
+        within 91 days of their upload.
       </p>
 
       <h2>8. Access, correction and deletion</h2>

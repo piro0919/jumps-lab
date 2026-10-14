@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import { Card, CardTitle, EmptyState, HALVES, PageTitle } from '@/components/layout-ui';
 import { LeaveTeamButton } from '@/components/team-buttons';
+import { TeamPlanCard } from '@/components/team-plan-card';
 import { buttonVariants } from '@/components/ui/button';
 import { listCoachedTeams, listMemberships } from '@/lib/data';
 import { requireProfile, requireViewer } from '@/lib/viewer';
@@ -91,6 +92,7 @@ export default async function Teams() {
           )}
         </Card>
       </div>
+      <TeamPlanCard />
     </main>
   );
 }

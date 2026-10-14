@@ -17,7 +17,7 @@ import type { Menu, MenuLevel } from '@/lib/menu';
 import type { PushTarget } from '@/lib/push-endpoint';
 import { consenterFor, declaredFromBirthdate } from '@/lib/guardian';
 import { FLAG_WINDOW_DAYS, rosterFlags } from '@/lib/teams';
-import type { Grade, Plan } from '@/lib/profile-options';
+import type { Grade, Plan, TeamPlan } from '@/lib/profile-options';
 import type { Units } from '@/lib/units';
 import { fromMs, toMarks, toMs, type MarkName, type Marks } from '@/lib/video-marks';
 import type { Angle, AngleKind, AngleName, Point } from '@/lib/video-angles';
@@ -48,6 +48,8 @@ export type Profile = {
   timeZone: string;
   /** プラン。AI の機能は premium だけ（src/lib/ai.ts の aiEnabled）。プロフィールの保存では変えない */
   plan: Plan;
+  /** チーム向けのプランのチームに、いま選手として入っているか（src/lib/ai.ts の aiEnabled）。プロフィールの保存では変えない */
+  inTeamPlan: boolean;
   /** 同意した AI コーチの説明の版。null はまだ（src/lib/ai.ts の aiUsable）。プロフィールの保存では変えない */
   aiConsentVersion: number | null;
   /** 保護者が同意した AI コーチの説明の版（16歳未満の人。src/lib/guardian.ts）。null はまだ */
@@ -65,7 +67,9 @@ export async function getProfile(userId: string): Promise<Profile | null> {
   const { rows } = await db().query<ProfileRow>(
     `select u.name, p.grade, p."gradeOffset", to_char(p.birthdate, 'YYYY-MM-DD') as birthdate, p.gender, p."heightCm", p."weightKg", p.events,
             p.units, p."seasonStartMonth", p."weekStart", p."timeZone", p.plan, p."aiConsentVersion",
-            p."aiGuardianConsentVersion", p."ageDeclared16Plus"
+            p."aiGuardianConsentVersion", p."ageDeclared16Plus",
+            exists (select 1 from team_member m join team t on t.id = m."teamId"
+                     where m."userId" = p."userId" and t.plan = 'team') as "inTeamPlan"
        from profile p join "user" u on u.id = p."userId"
       where p."userId" = $1`,
     [userId],
@@ -77,7 +81,7 @@ export async function getProfile(userId: string): Promise<Profile | null> {
 
 export type ProfileInput = Omit<
   Profile,
-  'plan' | 'aiConsentVersion' | 'aiGuardianConsentVersion' | 'ageDeclared16Plus'
+  'plan' | 'inTeamPlan' | 'aiConsentVersion' | 'aiGuardianConsentVersion' | 'ageDeclared16Plus'
 > & { goalM: number | null };
 
 /**
@@ -1460,6 +1464,45 @@ export async function setPlan(userId: string, plan: Plan): Promise<boolean> {
     `update profile set plan = $2, "updatedAt" = now() where "userId" = $1`,
     [userId, plan],
   );
+  return rowCount === 1;
+}
+
+export type AdminTeam = {
+  id: string;
+  name: string;
+  /** コーチの表示名（名前の順） */
+  coaches: string[];
+  memberCount: number;
+  plan: TeamPlan;
+};
+
+/**
+ * チームを、作った新しい順に読む。query があれば、チームの名前か、コーチのメールか名前にその語を含むチームだけ。
+ * 人の検索と同じ語で探せるように、コーチの名前とメールも見る
+ */
+export async function listTeamsForAdmin(query: string | null, limit: number): Promise<AdminTeam[]> {
+  const pattern = query === null ? null : `%${query.replace(/[\\%_]/g, '\\$&')}%`;
+  const { rows } = await db().query<AdminTeam>(
+    `select t.id, t.name, t.plan,
+            coalesce((select array_agg(u.name order by u.name)
+                        from team_coach c join "user" u on u.id = c."userId"
+                       where c."teamId" = t.id), '{}') as coaches,
+            (select count(*)::int from team_member m where m."teamId" = t.id) as "memberCount"
+       from team t
+      where $1::text is null or t.name ilike $1 escape '\\'
+         or exists (select 1 from team_coach c join "user" u on u.id = c."userId"
+                     where c."teamId" = t.id
+                       and (u.email ilike $1 escape '\\' or u.name ilike $1 escape '\\'))
+      order by t."createdAt" desc, t.id
+      limit $2`,
+    [pattern, limit],
+  );
+  return rows;
+}
+
+/** 1チームのプランを変える。チームが無ければ何もせず false */
+export async function setTeamPlan(teamId: string, plan: TeamPlan): Promise<boolean> {
+  const { rowCount } = await db().query(`update team set plan = $2 where id = $1`, [teamId, plan]);
   return rowCount === 1;
 }
 

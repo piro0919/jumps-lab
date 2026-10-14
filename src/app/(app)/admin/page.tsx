@@ -1,26 +1,31 @@
 import { Search } from 'lucide-react';
 import Form from 'next/form';
 import { notFound } from 'next/navigation';
-import { getTranslations } from 'next-intl/server';
+import { getFormatter, getTranslations } from 'next-intl/server';
 import { PlanSwitch } from '@/components/plan-switch';
 import { Button } from '@/components/ui/button';
-import { Card, CardTitle, EmptyState, Input, PageTitle } from '@/components/layout-ui';
+import { Card, CardTitle, EmptyState, HALVES, Input, PageTitle } from '@/components/layout-ui';
 import { ADMIN_LIST_LIMIT, ADMIN_QUERY_MAX_LENGTH, isAdmin } from '@/lib/admin';
-import { listUsersForAdmin } from '@/lib/data';
+import { listTeamsForAdmin, listUsersForAdmin } from '@/lib/data';
 import { requireViewer } from '@/lib/viewer';
 
 /**
- * 管理の画面。本人と中元さんだけが使い、できるのは人を探してプランを切り替えることだけ（2026-10-14）。
- * 管理者でない人には、画面が在ることも見せない（404）。
- * ?q= でメールか名前を探す。無ければ登録の新しい人から ADMIN_LIST_LIMIT 人
+ * 管理の画面。本人と中元さんだけが使い、できるのは人とチームを探してプランを切り替えることだけ
+ * （人は 2026-10-14、チームは 2026-10-15）。管理者でない人には、画面が在ることも見せない（404）。
+ * ?q= でメールか名前（チームはチームの名前か、コーチのメールか名前）を探す。無ければ新しい順に ADMIN_LIST_LIMIT 件
  */
 export default async function Admin({ searchParams }: PageProps<'/admin'>) {
   const viewer = await requireViewer();
   if (!isAdmin(viewer.email)) notFound();
   const raw = (await searchParams).q;
   const query = (typeof raw === 'string' ? raw.trim() : '').slice(0, ADMIN_QUERY_MAX_LENGTH);
-  const users = await listUsersForAdmin(query === '' ? null : query, ADMIN_LIST_LIMIT);
+  const [users, teams] = await Promise.all([
+    listUsersForAdmin(query === '' ? null : query, ADMIN_LIST_LIMIT),
+    listTeamsForAdmin(query === '' ? null : query, ADMIN_LIST_LIMIT),
+  ]);
   const t = await getTranslations('admin');
+  const tTeams = await getTranslations('teams');
+  const format = await getFormatter();
   const tNav = await getTranslations('nav');
 
   return (
@@ -44,33 +49,73 @@ export default async function Admin({ searchParams }: PageProps<'/admin'>) {
           </Button>
         </Form>
       </Card>
-      <Card>
-        <CardTitle>
-          {query === ''
-            ? t('recent')
-            : users.length === ADMIN_LIST_LIMIT
-              ? t('resultsCapped', { count: users.length })
-              : t('results', { count: users.length })}
-        </CardTitle>
-        {users.length === 0 ? (
-          <EmptyState message={t('empty')} />
-        ) : (
-          <ul className="flex flex-col divide-y divide-border">
-            {users.map((user) => (
-              <li
-                key={user.id}
-                className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
-              >
-                <div className="flex min-w-0 flex-col">
-                  <span className="truncate text-sm font-bold">{user.name}</span>
-                  <span className="truncate text-xs text-muted-foreground">{user.email}</span>
-                </div>
-                <PlanSwitch userId={user.id} name={user.name} plan={user.plan} />
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
+      <div className={HALVES}>
+        <Card>
+          <CardTitle>
+            {query === ''
+              ? t('recent')
+              : users.length === ADMIN_LIST_LIMIT
+                ? t('resultsCapped', { count: users.length })
+                : t('results', { count: users.length })}
+          </CardTitle>
+          {users.length === 0 ? (
+            <EmptyState message={t('empty')} />
+          ) : (
+            <ul className="flex flex-col divide-y divide-border">
+              {users.map((user) => (
+                <li
+                  key={user.id}
+                  className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+                >
+                  <div className="flex min-w-0 flex-col">
+                    <span className="truncate text-sm font-bold">{user.name}</span>
+                    <span className="truncate text-xs text-muted-foreground">{user.email}</span>
+                  </div>
+                  <PlanSwitch
+                    target={{ kind: 'user', id: user.id, plan: user.plan }}
+                    name={user.name}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+        <Card>
+          <CardTitle>
+            {query === ''
+              ? t('recentTeams')
+              : teams.length === ADMIN_LIST_LIMIT
+                ? t('teamResultsCapped', { count: teams.length })
+                : t('teamResults', { count: teams.length })}
+          </CardTitle>
+          {teams.length === 0 ? (
+            <EmptyState message={t('noTeams')} />
+          ) : (
+            <ul className="flex flex-col divide-y divide-border">
+              {teams.map((team) => (
+                <li
+                  key={team.id}
+                  className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+                >
+                  <div className="flex min-w-0 flex-col">
+                    <span className="truncate text-sm font-bold">{team.name}</span>
+                    <span className="truncate text-xs text-muted-foreground">
+                      {tTeams('coachedBy', { coaches: format.list(team.coaches) })}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {tTeams('memberCount', { count: team.memberCount })}
+                    </span>
+                  </div>
+                  <PlanSwitch
+                    target={{ kind: 'team', id: team.id, plan: team.plan }}
+                    name={team.name}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+      </div>
     </main>
   );
 }

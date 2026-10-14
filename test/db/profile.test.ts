@@ -50,6 +50,7 @@ describe('saveProfile', () => {
       ...input,
       goalM: undefined,
       plan: 'free',
+      inTeamPlan: false,
       aiConsentVersion: null,
       aiGuardianConsentVersion: null,
       // 生年月日（2008年生まれ）から16歳以上と分かる

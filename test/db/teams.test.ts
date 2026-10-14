@@ -20,6 +20,7 @@ const {
   findInvite,
   getCoachedTeam,
   getMemberForCoach,
+  getProfile,
   joinTeamBySelf,
   latestGuardianRequest,
   leaveTeam,
@@ -30,9 +31,11 @@ const {
   listMemberDayLogsForCoach,
   listMemberVideosForCoach,
   listMemberships,
+  listTeamsForAdmin,
   removeMember,
   renameTeam,
   revokeInvites,
+  setTeamPlan,
   teamRelation,
   teamRoster,
 } = await import('@/lib/data');
@@ -713,5 +716,54 @@ describe('ホームのチームのカード（coachedTeamSummaries）', () => {
     expect(await joinTeamBySelf(athleteId, team.tokenHash, false)).toBe('joined');
     expect(await coachedTeamSummaries(athleteId)).toEqual([]);
     expect(await coachedTeamSummaries(await addProfile())).toEqual([]);
+  });
+});
+
+describe('チーム向けプラン（inTeamPlan と管理の画面）', () => {
+  const inTeamPlan = async (userId: string) => (await getProfile(userId))?.inTeamPlan;
+
+  it('チーム向けプランのチームにいま入っている選手だけが true。コーチ・Free のチーム・抜けた人は false', async () => {
+    const paid = await teamWithInvite('Paid');
+    const free = await teamWithInvite('Free');
+    const member = await adult('Member');
+    const freeMember = await adult('FreeMember');
+    const left = await adult('Left');
+    expect(await joinTeamBySelf(member, paid.tokenHash, false)).toBe('joined');
+    expect(await joinTeamBySelf(left, paid.tokenHash, false)).toBe('joined');
+    expect(await joinTeamBySelf(freeMember, free.tokenHash, false)).toBe('joined');
+
+    const before = await inTeamPlan(member);
+    expect(await setTeamPlan(paid.teamId, 'team')).toBe(true);
+    expect(await leaveTeam(left, paid.teamId)).toBe(true);
+
+    expect({
+      before,
+      member: await inTeamPlan(member),
+      coach: await inTeamPlan(paid.coachId),
+      freeMember: await inTeamPlan(freeMember),
+      left: await inTeamPlan(left),
+    }).toEqual({ before: false, member: true, coach: false, freeMember: false, left: false });
+  });
+
+  it('無いチームのプランは変えない', async () => {
+    expect(await setTeamPlan(crypto.randomUUID(), 'team')).toBe(false);
+  });
+
+  it('管理の画面は、チームの名前かコーチの名前・メールで探し、コーチと選手の数とプランを返す', async () => {
+    const tag = `t${crypto.randomUUID().slice(0, 8)}`;
+    const coachId = await addProfile({ name: `Coach ${tag}` });
+    const teamId = await createTeam(coachId, `Team ${tag}`);
+    const token = newInviteToken();
+    await createInvite(coachId, teamId, hashInviteToken(token), INVITE_DAYS);
+    expect(await joinTeamBySelf(await adult(), hashInviteToken(token), false)).toBe('joined');
+    await setTeamPlan(teamId, 'team');
+
+    const expected = [
+      { id: teamId, name: `Team ${tag}`, coaches: [`Coach ${tag}`], memberCount: 1, plan: 'team' },
+    ];
+    expect(await listTeamsForAdmin(`team ${tag}`, 100)).toEqual(expected);
+    expect(await listTeamsForAdmin(`coach ${tag}`, 100)).toEqual(expected);
+    expect(await listTeamsForAdmin(`${coachId}@example`, 100)).toEqual(expected);
+    expect(await listTeamsForAdmin(`${tag}%`, 100)).toEqual([]);
   });
 });

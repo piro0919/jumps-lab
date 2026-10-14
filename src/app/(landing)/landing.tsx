@@ -1,3 +1,4 @@
+import { ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { getLocale, getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
@@ -7,6 +8,7 @@ import { ConditionCard } from '@/components/condition-card';
 import { EventHero } from '@/components/event-hero';
 import {
   AppIcon,
+  Badge,
   Card,
   CardTitle,
   Headline,
@@ -21,10 +23,12 @@ import {
   segmentClass,
 } from '@/components/layout-ui';
 import { TrendChart } from '@/components/trend-chart';
+import { buttonVariants } from '@/components/ui/button';
 import { EMPTY_DETAILS } from '@/lib/attempt-details';
 import type { Attempt } from '@/lib/data';
 import { addDays, todayIn } from '@/lib/dates';
 import { EVENT_BG, EVENT_MARK, EVENT_TEXT } from '@/lib/events';
+import { TEAM_PLAN_FORM_URL } from '@/lib/team-plan';
 import { formatMarkParts } from '@/lib/units';
 import { Consent } from '../sign-in/consent';
 import { GoogleButton } from '../sign-in/google-button';
@@ -151,6 +155,7 @@ export async function Landing() {
   const tLog = await getTranslations('log');
   const tAnalysis = await getTranslations('analysis');
   const tCompetitions = await getTranslations('competitions');
+  const tTeamPlan = await getTranslations('teamPlan');
   // 見本の日付の「今日」。訪れた人の時間帯は分からないので、日本語は日本、英語は UTC で数える
   const today = todayIn(locale === 'ja' ? 'Asia/Tokyo' : 'UTC');
   const units = 'metric';
@@ -366,6 +371,24 @@ export async function Landing() {
             />
           </Card>
         </Feature>
+
+        {/* チーム向けプランのお知らせ（2026-10-15）。値段が決まるまでは開発中と出し、Google フォームで問い合わせを受ける */}
+        <section className="flex flex-col items-center gap-4 px-4 py-12 text-center">
+          <Badge tone="accent">{tTeamPlan('badge')}</Badge>
+          <Headline size="section" script={script}>
+            {tTeamPlan('title')}
+          </Headline>
+          <p className={LEAD}>{tTeamPlan('body')}</p>
+          <a
+            href={TEAM_PLAN_FORM_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={buttonVariants({ variant: 'secondary' })}
+          >
+            {tTeamPlan('contact')}
+            <ExternalLink aria-hidden className="size-4" />
+          </a>
+        </section>
 
         {/* 締め。走幅跳の写真に見出しを白で重ね、ボタンをもう一度。夜の写真はダークの地に溶けたので替えた */}
         <section className="flex flex-col items-center gap-4 px-4 pt-12 pb-16 text-center">

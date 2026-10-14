@@ -525,7 +525,19 @@
     "empty": "No users found",
     "planOf": "Plan for {name}",
     "free": "Free",
-    "premium": "Premium"
+    "premium": "Premium",
+    "team": "Premium",
+    "teamPlanOf": "Plan for {name}",
+    "recentTeams": "Recent teams",
+    "teamResults": "{count, plural, one {# team} other {# teams}}",
+    "teamResultsCapped": "Showing the first {count} teams",
+    "noTeams": "No teams found"
+  },
+  "teamPlan": {
+    "title": "Premium for teams",
+    "badge": "In development",
+    "body": "Every athlete on your team gets the AI coach. Interested? Get in touch.",
+    "contact": "Contact us"
   },
   "errorPage": {
     "title": "Something went wrong",

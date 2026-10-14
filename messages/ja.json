@@ -525,7 +525,19 @@
     "empty": "該当する人はいません",
     "planOf": "{name}さんのプラン",
     "free": "Free",
-    "premium": "Premium"
+    "premium": "Premium",
+    "team": "Premium",
+    "teamPlanOf": "{name}のプラン",
+    "recentTeams": "最近作られたチーム",
+    "teamResults": "{count, plural, other {#チーム}}",
+    "teamResultsCapped": "最初の{count}チームを表示しています",
+    "noTeams": "該当するチームはありません"
+  },
+  "teamPlan": {
+    "title": "チーム向け Premium",
+    "badge": "開発中",
+    "body": "チームの選手全員が AI コーチを使えます。気になる方はお問い合わせください。",
+    "contact": "お問い合わせ"
   },
   "errorPage": {
     "title": "表示できませんでした",

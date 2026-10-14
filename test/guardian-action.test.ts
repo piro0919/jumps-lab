@@ -84,6 +84,7 @@ const athlete = (overrides: Partial<Profile> = {}): Profile => ({
   weekStart: 0,
   timeZone: 'Asia/Tokyo',
   plan: 'premium',
+  inTeamPlan: false,
   aiConsentVersion: null,
   aiGuardianConsentVersion: null,
   ageDeclared16Plus: null,

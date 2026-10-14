@@ -14,10 +14,12 @@ const TIMEOUT_MS = 60_000;
 
 /**
  * この人に AI の機能を出すか。キーが無ければ誰にも出さない。
- * キーがあっても Premium の人だけ（AI の費用を持つ中元さんが、まずテスターだけに出すと決めた。2026-10-14）
+ * キーがあっても Premium の人だけ（AI の費用を持つ中元さんが、まずテスターだけに出すと決めた。2026-10-14）と、
+ * チーム向けのプランのチームにいま入っている選手だけ（コーチがチーム単位で払う。2026-10-15）。
+ * コーチ本人には付けない（決めたのは「部員の AI」まで）。1人あたりの回数の上限（AI_CALL_LIMITS）はどちらも同じ
  */
-export function aiEnabled(profile: Pick<Profile, 'plan'>): boolean {
-  return Boolean(env.OPENAI_API_KEY) && profile.plan === 'premium';
+export function aiEnabled(profile: Pick<Profile, 'plan' | 'inTeamPlan'>): boolean {
+  return Boolean(env.OPENAI_API_KEY) && (profile.plan === 'premium' || profile.inTeamPlan);
 }
 
 /**
@@ -31,6 +33,7 @@ export const AI_CONSENT_VERSION = 2;
 type ConsentProfile = Pick<
   Profile,
   | 'plan'
+  | 'inTeamPlan'
   | 'aiConsentVersion'
   | 'aiGuardianConsentVersion'
   | 'birthdate'
