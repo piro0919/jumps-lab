@@ -40,11 +40,14 @@ export function TeamJoinChoice({
   const [answer, setAnswer] = useState<'self' | 'guardian' | null>(
     consenter === 'ask' ? null : consenter,
   );
-  const shown = askAge ? answer : consenter;
+  // サーバーが年齢で断ったとき（画面を出したあとで生年月日を変えたなど）の、サーバーの判定。画面をそれに合わせる
+  const [server, setServer] = useState<'guardian' | 'ask' | null>(null);
+  const asking = server === 'ask' || (server === null && askAge);
+  const shown = server === 'guardian' ? 'guardian' : asking ? answer : consenter;
 
   return (
     <>
-      {askAge && (
+      {asking && (
         <div className="flex flex-col gap-1.5">
           <FieldLabel label={tAi('ageQuestion')} />
           {/* 1つだけ選ぶので切り替えの形 */}
@@ -64,10 +67,19 @@ export function TeamJoinChoice({
           </div>
         </div>
       )}
-      {shown === 'self' && <JoinForm token={token} declared={askAge} />}
+      {shown === 'self' && (
+        <JoinForm
+          token={token}
+          declared={asking}
+          onRefused={(next) => {
+            setAnswer(null);
+            setServer(next);
+          }}
+        />
+      )}
       {shown === 'guardian' && (
         <GuardianRequestForm
-          declared={askAge}
+          declared={asking}
           request={request}
           linkDays={linkDays}
           intro={t('guardianNeeded', { team })}
@@ -78,12 +90,28 @@ export function TeamJoinChoice({
   );
 }
 
-/** 本人が同意して入るボタン。入れたらチームの一覧へ移る（Server Action が送る） */
-function JoinForm({ token, declared }: { token: string; declared: boolean }) {
+/**
+ * 本人が同意して入るボタン。入れたらチームの一覧へ移る（Server Action が送る）。
+ * サーバーが「保護者の同意が要る」「16歳以上かを聞く」で断ったら、onRefused で保護者の欄か年齢の問いに切り替える
+ */
+function JoinForm({
+  token,
+  declared,
+  onRefused,
+}: {
+  token: string;
+  declared: boolean;
+  onRefused: (next: 'guardian' | 'ask') => void;
+}) {
   const t = useTranslations('teams');
   const tErrors = useTranslations('errors');
   const [state, action, pending] = useActionState(
-    (_previous: unknown, formData: FormData) => safely(() => joinTeamAction(null, formData)),
+    async (_previous: unknown, formData: FormData) => {
+      const result = await safely(() => joinTeamAction(null, formData));
+      if (result?.ok === false && result.error === 'teamNeedsGuardian') onRefused('guardian');
+      if (result?.ok === false && result.error === 'teamAskAge') onRefused('ask');
+      return result;
+    },
     null,
   );
 

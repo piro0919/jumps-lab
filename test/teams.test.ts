@@ -1,4 +1,7 @@
+import { createTranslator } from 'next-intl';
 import { describe, expect, it } from 'vitest';
+import en from '../messages/en.json';
+import ja from '../messages/ja.json';
 import {
   FATIGUE_FLAG,
   hashInviteToken,
@@ -81,5 +84,46 @@ describe('sortRoster', () => {
       { name: 'Dai', flags: ['pain' as const, 'fatigue' as const] },
     ];
     expect(sortRoster(rows, 'en').map((r) => r.name)).toEqual(['Dai', 'Ben', 'Aoi', 'Chika']);
+  });
+});
+
+describe('一覧の1行の文（messages の teams.rosterLine）', () => {
+  // 訳した言葉をコードで「 · 」でつながず、1つの文に置き場所を持たせる（言語ごとに並びと区切りを決められる）
+  const line = (locale: 'en' | 'ja', values: Record<string, string | number>) =>
+    createTranslator({ locale, messages: locale === 'en' ? en : ja, namespace: 'teams' })(
+      'rosterLine',
+      {
+        last: 'none',
+        condition: 'none',
+        conditionDate: '',
+        fatigue: 'none',
+        fatigueDate: '',
+        videos: 0,
+        days: 14,
+        ...values,
+      },
+    );
+
+  it('記録が無ければ、体調と疲労を出さない', () => {
+    expect([line('en', {}), line('ja', {})]).toEqual([
+      'Nothing logged yet · no videos in 14 days',
+      'まだ記録がありません・14日間の動画 0本',
+    ]);
+  });
+
+  it('体調と疲労は、それぞれの日と一緒に出す。動画の本数は複数形で', () => {
+    const values = {
+      last: 'Oct 13',
+      condition: '7',
+      conditionDate: 'Oct 13',
+      fatigue: '9',
+      fatigueDate: 'Oct 12',
+      videos: 1,
+    };
+    expect([line('en', values), line('en', { ...values, videos: 2 }), line('ja', values)]).toEqual([
+      'Last logged Oct 13 · condition 7 on Oct 13 · fatigue 9 on Oct 12 · 1 video in 14 days',
+      'Last logged Oct 13 · condition 7 on Oct 13 · fatigue 9 on Oct 12 · 2 videos in 14 days',
+      '最後の記録 Oct 13・体調 7（Oct 13）・疲労 9（Oct 12）・14日間の動画 1本',
+    ]);
   });
 });

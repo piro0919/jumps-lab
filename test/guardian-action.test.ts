@@ -43,7 +43,7 @@ const data = vi.hoisted(() => ({
   consentToAi: vi.fn<(userId: string, version: number, declare: boolean) => Promise<boolean>>(
     async () => true,
   ),
-  agreeAsGuardian: vi.fn(async () => true),
+  agreeAsGuardian: vi.fn(async (): Promise<'agreed' | 'already' | 'coach' | 'invalid'> => 'agreed'),
   findInvite: vi.fn(
     async (): Promise<{
       inviteId: string;
@@ -271,7 +271,7 @@ describe('consentAiAction（本人の同意）', () => {
 
 describe('agreeGuardianAction', () => {
   it('鍵をハッシュにして、いまの版で同意を入れる', async () => {
-    expect(await agreeGuardianAction('abc')).toEqual({ ok: true });
+    expect(await agreeGuardianAction('abc')).toEqual({ ok: true, already: false });
     expect(data.agreeAsGuardian).toHaveBeenCalledWith(
       expect.stringMatching(/^[0-9a-f]{64}$/),
       AI_CONSENT_VERSION,
@@ -279,12 +279,24 @@ describe('agreeGuardianAction', () => {
   });
 
   it('使えないリンクは、理由を言わずに同じ誤り', async () => {
-    data.agreeAsGuardian.mockResolvedValueOnce(false);
+    data.agreeAsGuardian.mockResolvedValueOnce('invalid');
     expect(await agreeGuardianAction('abc')).toEqual({ ok: false, error: 'guardianLinkInvalid' });
     expect(await agreeGuardianAction('x'.repeat(101))).toEqual({
       ok: false,
       error: 'guardianLinkInvalid',
     });
+  });
+});
+
+describe('agreeGuardianAction（チームへの参加で入れなかったとき）', () => {
+  it('もう選手だったら成功として返し、そうと分かる印を付ける', async () => {
+    data.agreeAsGuardian.mockResolvedValueOnce('already');
+    expect(await agreeGuardianAction('abc')).toEqual({ ok: true, already: true });
+  });
+
+  it('お願いした人がそのチームのコーチになっていたら、それと分かる誤り', async () => {
+    data.agreeAsGuardian.mockResolvedValueOnce('coach');
+    expect(await agreeGuardianAction('abc')).toEqual({ ok: false, error: 'guardianTeamCoach' });
   });
 });
 

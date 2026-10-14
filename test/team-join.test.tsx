@@ -10,9 +10,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
  */
 
 const actions = vi.hoisted(() => ({
-  joinTeamAction: vi.fn<(previous: unknown, formData: FormData) => Promise<{ ok: true }>>(
-    async () => ({ ok: true }),
-  ),
+  joinTeamAction: vi.fn<
+    (previous: unknown, formData: FormData) => Promise<{ ok: true } | { ok: false; error: string }>
+  >(async () => ({ ok: true })),
   sendGuardianRequestAction: vi.fn<(formData: FormData) => Promise<{ ok: true }>>(async () => ({
     ok: true,
   })),
@@ -102,5 +102,28 @@ describe('TeamJoinChoice', () => {
     act(() => screen.getByRole('radio', { name: 'ageNo' }).click());
     expect(button('join')).toBeNull();
     expect(screen.getByRole('textbox')).not.toBeNull();
+  });
+
+  it('サーバーが保護者の同意が要ると断ったら、保護者の欄に切り替える', async () => {
+    actions.joinTeamAction.mockResolvedValueOnce({ ok: false, error: 'teamNeedsGuardian' });
+    show();
+    await act(async () => button('join')!.click());
+    expect([button('join'), screen.queryByRole('textbox') !== null]).toEqual([null, true]);
+  });
+
+  it('サーバーが16歳以上かを聞くと断ったら、年齢の問いに切り替える', async () => {
+    actions.joinTeamAction.mockResolvedValueOnce({ ok: false, error: 'teamAskAge' });
+    show();
+    await act(async () => button('join')!.click());
+    expect([
+      button('join'),
+      screen.queryByRole('radiogroup', { name: 'ageQuestion' }) !== null,
+    ]).toEqual([null, true]);
+    act(() => screen.getByRole('radio', { name: 'ageYes' }).click());
+    await act(async () => button('join')!.click());
+    expect(sent(actions.joinTeamAction.mock.calls.at(-1))).toEqual({
+      token: 'invite-token',
+      adult: 'yes',
+    });
   });
 });

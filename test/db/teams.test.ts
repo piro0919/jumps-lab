@@ -23,7 +23,7 @@ const {
   latestGuardianRequest,
   leaveTeam,
   listCoachedTeams,
-  listMemberAllAttemptsForCoach,
+  listMemberCompetitionAttemptsForCoach,
   listMemberAttemptsForCoach,
   listMemberCompetitionsForCoach,
   listMemberDayLogsForCoach,
@@ -92,7 +92,7 @@ async function seen(coachId: string, teamId: string, memberId: string, day: stri
   return {
     member: (await getMemberForCoach(access)) !== null,
     attempts: (await listMemberAttemptsForCoach(access, day, day)).length,
-    allAttempts: (await listMemberAllAttemptsForCoach(access)).length,
+    competitionAttempts: (await listMemberCompetitionAttemptsForCoach(access)).length,
     logs: (await listMemberDayLogsForCoach(access, day, day)).length,
     competitions: (await listMemberCompetitionsForCoach(access)).length,
     videos: (await listMemberVideosForCoach(access, day, day)).length,
@@ -104,7 +104,7 @@ async function seen(coachId: string, teamId: string, memberId: string, day: stri
 const NOTHING = {
   member: false,
   attempts: 0,
-  allAttempts: 0,
+  competitionAttempts: 0,
   logs: 0,
   competitions: 0,
   videos: 0,
@@ -227,6 +227,14 @@ describe('本人の同意で入る', () => {
     await query(`update profile set birthdate = '1990-01-01' where "userId" = $1`, [coachId]);
     expect(await joinTeamBySelf(coachId, tokenHash, false)).toBe('coach');
   });
+
+  it('コーチかどうかを年齢より先に見る（生年月日の無いコーチ・16歳未満のコーチにも coach）', async () => {
+    const team = await teamWithInvite();
+    expect(await joinTeamBySelf(team.coachId, team.tokenHash, false)).toBe('coach');
+    const young = await teamWithInvite('Young');
+    await query(`update profile set birthdate = '2013-01-01' where "userId" = $1`, [young.coachId]);
+    expect(await joinTeamBySelf(young.coachId, young.tokenHash, false)).toBe('coach');
+  });
 });
 
 describe('コーチが見られるもの', () => {
@@ -245,7 +253,8 @@ describe('コーチが見られるもの', () => {
     expect(await seen(team.coachId, team.teamId, athleteId, day)).toEqual({
       member: true,
       attempts: 2,
-      allAttempts: 2,
+      // 大会の結果に使うのは、大会の日に「大会」として入れた試技だけ（seedRecords の試技は練習）
+      competitionAttempts: 0,
       logs: 1,
       competitions: 1,
       videos: 1,
@@ -310,7 +319,8 @@ describe('コーチが見られるもの', () => {
       name: 'Aoi',
       events: ['long_jump', 'triple_jump'],
       lastDay: addDays(today, -1),
-      latest: { day: addDays(today, -1), condition: 6, fatigue: 8 },
+      latestCondition: { day: addDays(today, -1), value: 6 },
+      latestFatigue: { day: addDays(today, -1), value: 8 },
       lastPainDay: addDays(today, -1),
       videos: 1,
     });
@@ -318,6 +328,67 @@ describe('コーチが見られるもの', () => {
       { event: 'long_jump', day: addDays(today, -1), markM: 6.4 },
       { event: 'triple_jump', day: addDays(today, -20), markM: 13.2 },
     ]);
+  });
+});
+
+describe('一覧の体調と疲労', () => {
+  it('体調と疲労は別々に、それぞれ直近7日の最新を取る（体調だけの新しい日で、前の高い疲労を隠さない）', async () => {
+    const team = await teamWithInvite();
+    const athleteId = await adult();
+    const today = todayIn('Asia/Tokyo');
+    await query(
+      `insert into day_log ("userId", day, condition, fatigue) values ($1, $2, 5, 9), ($1, $3, 7, null), ($1, $4, 2, 10)`,
+      [athleteId, addDays(today, -2), addDays(today, -1), addDays(today, -7)],
+    );
+    await joinTeamBySelf(athleteId, team.tokenHash, false);
+
+    const [row] = await teamRoster(team.coachId, team.teamId, VIDEO_DAYS);
+    expect(row).toMatchObject({
+      latestCondition: { day: addDays(today, -1), value: 7 },
+      latestFatigue: { day: addDays(today, -2), value: 9 },
+    });
+  });
+
+  it('7日より前の体調と疲労は取らない', async () => {
+    const team = await teamWithInvite();
+    const athleteId = await adult();
+    const today = todayIn('Asia/Tokyo');
+    await query(`insert into day_log ("userId", day, condition, fatigue) values ($1, $2, 3, 9)`, [
+      athleteId,
+      addDays(today, -7),
+    ]);
+    await joinTeamBySelf(athleteId, team.tokenHash, false);
+
+    const [row] = await teamRoster(team.coachId, team.teamId, VIDEO_DAYS);
+    expect(row).toMatchObject({ latestCondition: null, latestFatigue: null });
+  });
+});
+
+describe('大会の結果に使う試技', () => {
+  it('大会の日に「大会」として入れた試技だけを読む', async () => {
+    const team = await teamWithInvite();
+    const athleteId = await adult();
+    const today = todayIn('Asia/Tokyo');
+    const meet = addDays(today, -3);
+    await query(`insert into competition ("userId", name, day) values ($1, 'Meet', $2)`, [
+      athleteId,
+      meet,
+    ]);
+    await query(
+      `insert into attempt ("userId", day, event, kind, "markM") values
+         ($1, $2, 'long_jump', 'competition', 6.5),
+         ($1, $2, 'long_jump', 'practice', 6.9),
+         ($1, $3, 'long_jump', 'competition', 7.0)`,
+      [athleteId, meet, addDays(today, -10)],
+    );
+    await joinTeamBySelf(athleteId, team.tokenHash, false);
+
+    const attempts = await listMemberCompetitionAttemptsForCoach({
+      coachId: team.coachId,
+      teamId: team.teamId,
+      memberId: athleteId,
+    });
+    expect(attempts.map((a) => [a.day, a.kind, a.markM])).toEqual([[meet, 'competition', 6.5]]);
   });
 });
 
@@ -345,7 +416,7 @@ describe('16歳未満の人は保護者の同意で入る', () => {
     expect(await latestGuardianRequest(kidId)).toMatchObject({ live: true });
     expect(await latestGuardianRequest(kidId, team.teamId)).toMatchObject({ live: true });
 
-    expect(await agreeAsGuardian(teamHash, 2)).toBe(true);
+    expect(await agreeAsGuardian(teamHash, 2)).toBe('agreed');
     const [row] = await query<{ consentBy: string }>(
       `select "consentBy" from team_member where "teamId" = $1 and "userId" = $2`,
       [team.teamId, kidId],
@@ -357,7 +428,7 @@ describe('16歳未満の人は保護者の同意で入る', () => {
       [kidId],
     );
     expect(profile?.aiGuardianConsentVersion).toBeNull();
-    expect(await agreeAsGuardian(aiHash, 2)).toBe(true);
+    expect(await agreeAsGuardian(aiHash, 2)).toBe('agreed');
   });
 
   it('コーチが招待を切ったあとは、保護者が同意しても入らない', async () => {
@@ -367,8 +438,88 @@ describe('16歳未満の人は保護者の同意で入る', () => {
     const teamHash = await guardianRequest(kidId, invite!.inviteId);
     await revokeInvites(team.coachId, team.teamId);
 
-    expect(await agreeAsGuardian(teamHash, 2)).toBe(false);
+    expect(await agreeAsGuardian(teamHash, 2)).toBe('invalid');
     expect(await listMemberships(kidId)).toEqual([]);
+  });
+
+  it('招待を作り直すと、前の招待へのお願いは待っていることにならず、切れる', async () => {
+    const team = await teamWithInvite();
+    const kidId = await minor();
+    const invite = await findInvite(team.tokenHash);
+    const teamHash = await guardianRequest(kidId, invite!.inviteId);
+    expect(await latestGuardianRequest(kidId, team.teamId)).toMatchObject({ live: true });
+
+    await createInvite(team.coachId, team.teamId, hashInviteToken(newInviteToken()), INVITE_DAYS);
+    expect(await latestGuardianRequest(kidId, team.teamId)).toBeNull();
+    const [row] = await query<{ cancelledAt: Date | null }>(
+      `select "cancelledAt" from guardian_consent_request where "tokenHash" = $1`,
+      [teamHash],
+    );
+    expect(row?.cancelledAt).toBeInstanceOf(Date);
+  });
+
+  it('招待を切ると、その招待へのお願いは待っていることにならず、切れる', async () => {
+    const team = await teamWithInvite();
+    const kidId = await minor();
+    const invite = await findInvite(team.tokenHash);
+    const teamHash = await guardianRequest(kidId, invite!.inviteId);
+    await revokeInvites(team.coachId, team.teamId);
+
+    expect(await latestGuardianRequest(kidId, team.teamId)).toBeNull();
+    const [row] = await query<{ cancelledAt: Date | null }>(
+      `select "cancelledAt" from guardian_consent_request where "tokenHash" = $1`,
+      [teamHash],
+    );
+    expect(row?.cancelledAt).toBeInstanceOf(Date);
+  });
+
+  it('期限の過ぎた招待へのお願いは、待っていることにならない', async () => {
+    const team = await teamWithInvite();
+    const kidId = await minor();
+    const invite = await findInvite(team.tokenHash);
+    await guardianRequest(kidId, invite!.inviteId);
+    await query(`update team_invite set "expiresAt" = now() - interval '1 minute' where id = $1`, [
+      invite!.inviteId,
+    ]);
+    expect(await latestGuardianRequest(kidId, team.teamId)).toBeNull();
+  });
+
+  it('保護者が同意したときにもう入っていれば already を返し、リンクを使ったことにしない', async () => {
+    const team = await teamWithInvite();
+    const kidId = await minor();
+    const invite = await findInvite(team.tokenHash);
+    const second = await guardianRequest(kidId, invite!.inviteId);
+    // 先に別の経路（ここでは直に）で入っている
+    await query(
+      `insert into team_member ("teamId", "userId", "consentedAt", "consentBy") values ($1, $2, now(), 'guardian')`,
+      [team.teamId, kidId],
+    );
+    expect(await agreeAsGuardian(second, 2)).toBe('already');
+    const [row] = await query<{ usedAt: Date | null; cancelledAt: Date | null }>(
+      `select "usedAt", "cancelledAt" from guardian_consent_request where "tokenHash" = $1`,
+      [second],
+    );
+    expect(row).toMatchObject({ usedAt: null });
+    expect(row?.cancelledAt).toBeInstanceOf(Date);
+    expect(await agreeAsGuardian(second, 2)).toBe('invalid');
+  });
+
+  it('お願いした人がそのチームのコーチになっていたら coach を返し、入れない', async () => {
+    const team = await teamWithInvite();
+    const kidId = await minor();
+    const invite = await findInvite(team.tokenHash);
+    const teamHash = await guardianRequest(kidId, invite!.inviteId);
+    await query(`insert into team_coach ("teamId", "userId") values ($1, $2)`, [
+      team.teamId,
+      kidId,
+    ]);
+    expect(await agreeAsGuardian(teamHash, 2)).toBe('coach');
+    expect(await listMemberships(kidId)).toEqual([]);
+    const [row] = await query<{ usedAt: Date | null }>(
+      `select "usedAt" from guardian_consent_request where "tokenHash" = $1`,
+      [teamHash],
+    );
+    expect(row?.usedAt).toBeNull();
   });
 
   it('抜けると、そのチームへの保護者の同意の記録（保護者のメールアドレス）も消える', async () => {

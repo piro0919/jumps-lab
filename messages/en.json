@@ -142,7 +142,8 @@
     "guardianLinkInvalid": "This link is no longer valid.",
     "teamName": "Enter a team name (up to 50 characters).",
     "teamInviteInvalid": "This invite link is no longer valid.",
-    "teamCoachJoin": "You coach this team, so you cannot join it as an athlete."
+    "teamCoachJoin": "You coach this team, so you cannot join it as an athlete.",
+    "guardianTeamCoach": "This person coaches this team, so they cannot join it as an athlete. This link can no longer be used."
   },
   "home": {
     "goal": "Season goal",
@@ -520,10 +521,6 @@
     "noAthletes": "No athletes yet. Send them an invite link.",
     "flagPain": "Pain note",
     "flagFatigue": "Fatigue {value}/10",
-    "neverLogged": "Nothing logged yet",
-    "lastLogged": "Last logged {date}",
-    "latestCondition": "{date}: condition {condition}, fatigue {fatigue}",
-    "videoCount": "{count, plural, =0 {No videos} one {# video} other {# videos}} in {days} days",
     "latestMark": "{event}, {date}",
     "recentDays": "Last {days} days",
     "noRecentDays": "Nothing logged in the last {days} days.",
@@ -551,6 +548,8 @@
     "guardianIntro": "{name} would like to join {team}, coached by {coaches}, on Jumps Lab, an app for logging jumps. Because {name} is under 16, we ask a parent or guardian to agree. If {name} joins, the coaches of {team} can see the following.",
     "guardianDone": "Thank you. {name} has joined {team}.",
     "guardianNotShown": "{name}'s email address is not shown.",
-    "guardianLeave": "{name} can leave the team anytime from Teams in the account menu. From then on, the coaches can no longer see their records."
+    "guardianLeave": "{name} can leave the team anytime from Teams in the account menu. From then on, the coaches can no longer see their records.",
+    "rosterLine": "{last, select, none {Nothing logged yet} other {Last logged {last}}}{condition, select, none {} other { · condition {condition} on {conditionDate}}}{fatigue, select, none {} other { · fatigue {fatigue} on {fatigueDate}}} · {videos, plural, =0 {no videos} one {# video} other {# videos}} in {days} days",
+    "guardianAlready": "{name} is already in {team}. There is nothing more to do."
   }
 }

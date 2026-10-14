@@ -35,3 +35,6 @@ export const EMAIL_MAX_LENGTH = 254;
 
 /** チームの名前の字数 */
 export const TEAM_NAME_MAX_LENGTH = 50;
+
+/** 利用者の id（Better Auth が振る文字列）の長さの上限。これより長いものは探さない（コーチの画面と Server Action） */
+export const USER_ID_MAX_LENGTH = 200;

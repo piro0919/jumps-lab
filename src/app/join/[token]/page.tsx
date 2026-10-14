@@ -12,7 +12,8 @@ import { findInvite, getProfile, latestGuardianRequest, teamRelation } from '@/l
 import { todayIn } from '@/lib/dates';
 import { consenterFor, GUARDIAN_LINK_DAYS, maskEmail } from '@/lib/guardian';
 import { hashInviteToken, INVITE_TOKEN_MAX_LENGTH, inviteLinkState } from '@/lib/teams';
-import { requireViewer } from '@/lib/viewer';
+import { joinReturnPath } from '@/lib/safe-next';
+import { getViewer } from '@/lib/viewer';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('teams');
@@ -26,7 +27,8 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /**
- * チームの招待の画面（/join/<鍵>。2026-10-14）。ログインしていなければ、ログインの画面を通ってここへ戻る（src/proxy.ts）。
+ * チームの招待の画面（/join/<鍵>。2026-10-14）。ログインしていなければ、ログインの画面を通ってここへ戻る
+ * （Cookie が無ければ src/proxy.ts が、Cookie が残ってセッションが切れていればこの画面が送る）。
  * プロフィールがまだなら、ようこその画面を通ってここへ戻る。
  * チームの名前とコーチの表示名、コーチに見せるもの（見るだけ・いつでも抜けられる）を見せ、「同意して参加」で入る。
  * 16歳未満の人は保護者の同意で入る（AI コーチと同じ線。src/lib/guardian.ts）。
@@ -34,8 +36,14 @@ export async function generateMetadata(): Promise<Metadata> {
  * 切った・期限の過ぎた・知らないリンクは、どれか言わずに同じ「もう使えません」を出す
  */
 export default async function Join({ params }: PageProps<'/join/[token]'>) {
-  const viewer = await requireViewer();
   const { token } = await params;
+  const viewer = await getViewer();
+  if (!viewer) {
+    // Cookie だけ残ってセッションが切れた人は、src/proxy.ts を通り抜けてここへ来る。
+    // requireViewer の /sign-in では招待を失うので、ここでも ?next= を付けてログインの画面へ送る
+    const back = joinReturnPath(`/join/${token}`);
+    redirect(back === null ? '/sign-in' : `/sign-in?next=${encodeURIComponent(back)}`);
+  }
   const profile = await getProfile(viewer.userId);
   if (!profile) redirect(`/welcome?next=${encodeURIComponent(`/join/${token}`)}`);
 

@@ -20,22 +20,20 @@ import {
   type CoachAccess,
   getCoachedTeam,
   getMemberForCoach,
-  listMemberAllAttemptsForCoach,
   listMemberAttemptsForCoach,
+  listMemberCompetitionAttemptsForCoach,
   listMemberCompetitionsForCoach,
   listMemberDayLogsForCoach,
   listMemberVideosForCoach,
 } from '@/lib/data';
 import { addDays, todayIn } from '@/lib/dates';
+import { USER_ID_MAX_LENGTH } from '@/lib/limits';
 import { viewUrl } from '@/lib/r2';
 import { formatMark } from '@/lib/units';
 import { requireProfile, requireViewer } from '@/lib/viewer';
 
 /** 選手の記録を見る日数（選手の時間帯の今日を含む直近14日） */
 const RECENT_DAYS = 14;
-
-/** 利用者の id（Better Auth が振る文字列）の長さの上限。これより長いものは探さない */
-const USER_ID_MAX_LENGTH = 200;
 
 /**
  * コーチが見る、選手1人の記録（2026-10-14）。見るだけで、直す・消す・目印を置くは出さない。
@@ -59,12 +57,12 @@ export default async function TeamMember({
 
   const today = todayIn(member.timeZone);
   const from = addDays(today, 1 - RECENT_DAYS);
-  const [attempts, logs, videos, competitions, allAttempts] = await Promise.all([
+  const [attempts, logs, videos, competitions, competitionAttempts] = await Promise.all([
     listMemberAttemptsForCoach(access, from, today),
     listMemberDayLogsForCoach(access, from, today),
     listMemberVideosForCoach(access, from, today),
     listMemberCompetitionsForCoach(access),
-    listMemberAllAttemptsForCoach(access),
+    listMemberCompetitionAttemptsForCoach(access),
   ]);
   const videoItems = await Promise.all(
     videos.map(async (video) => {
@@ -78,8 +76,6 @@ export default async function TeamMember({
           kind: video.kind,
           note: video.note,
           url: await viewUrl(video.objectKey),
-          // 保存のボタンは出さない（見るだけ）
-          downloadUrl: '',
           expiresAt: video.expiresAt,
           attemptLabel:
             index < 0 ? null : `${index + 1}. ${formatMark(sameEvent[index]!.markM, coach.units)}`,
@@ -94,7 +90,7 @@ export default async function TeamMember({
       ...videos.map((v) => v.day),
     ]),
   ].toSorted((a, b) => b.localeCompare(a));
-  const results = competitionResults(allAttempts);
+  const results = competitionResults(competitionAttempts);
 
   const t = await getTranslations('teams');
   const tNav = await getTranslations('nav');
@@ -142,7 +138,7 @@ export default async function TeamMember({
                     <ConditionCard log={log} />
                   </div>
                   {dayVideos.length > 0 && (
-                    <VideosCard videos={dayVideos} timeZone={coach.timeZone} />
+                    <VideosCard videos={dayVideos} timeZone={coach.timeZone} readOnly />
                   )}
                 </section>
               );

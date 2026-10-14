@@ -7,6 +7,7 @@ import type { ReminderRow } from '@/lib/meet-reminder';
 import type { Menu, MenuLevel } from '@/lib/menu';
 import type { PushTarget } from '@/lib/push-endpoint';
 import { consenterFor, declaredFromBirthdate } from '@/lib/guardian';
+import { FLAG_WINDOW_DAYS } from '@/lib/teams';
 import type { Grade, Plan } from '@/lib/profile-options';
 import type { Units } from '@/lib/units';
 import { toMarks, type MarkName, type Marks } from '@/lib/video-marks';
@@ -284,7 +285,9 @@ export async function releaseGuardianRequest(userId: string, id: string): Promis
 
 /**
  * 待っているお願い（使われておらず、送り直しや保護者の同意で切られていないもの）。live は期限の内か。
- * 切られた行は出さない（「期限が切れました」と出したり、古い宛先へ送り直したりしないように）
+ * 切られた行は出さない（「期限が切れました」と出したり、古い宛先へ送り直したりしないように）。
+ * チームへの参加のお願いは、その招待がまだ使える（切られておらず期限の内）ものだけ。コーチが招待を作り直したあとに
+ * 「待っています」と出し続けると、保護者は同意できず（agreeAsGuardian が断る）、本人も新しい招待で送り直せない
  */
 export async function latestGuardianRequest(
   userId: string,
@@ -295,7 +298,9 @@ export async function latestGuardianRequest(
     `select r.id, r."guardianEmail", r."expiresAt" > now() as live
        from guardian_consent_request r left join team_invite i on i.id = r."inviteId"
       where r."userId" = $1 and r."usedAt" is null and r."cancelledAt" is null
-        and (case when $2::uuid is null then r.purpose = 'ai' else r.purpose = 'team' and i."teamId" = $2 end)
+        and (case when $2::uuid is null then r.purpose = 'ai'
+                  else r.purpose = 'team' and i."teamId" = $2
+                       and i."revokedAt" is null and i."expiresAt" > now() end)
       order by r."createdAt" desc limit 1`,
     [userId, teamId],
   );
@@ -346,61 +351,92 @@ const TEAM_COACH_NAMES = `(select coalesce(array_agg(cu.name order by c."created
      from team_coach c join "user" cu on cu.id = c."userId" where c."teamId" = t.id)`;
 
 /**
+ * 保護者の同意の結果。agreed は同意を入れた（AI コーチ）か、チームに入れた。
+ * already はもうそのチームの選手だった（同じことなので、保護者の画面ではうまくいったと見せる）。
+ * coach はお願いした人がそのチームのコーチになっていた（選手としては入れない）。
+ * invalid はリンクが使えない（期限切れ・使用済み・知らない鍵・招待が切れた）
+ */
+export type GuardianAgreeOutcome = 'agreed' | 'already' | 'coach' | 'invalid';
+
+/**
  * 保護者が同意した（ログインの無い画面から）。リンクが期限の内で使われていなければ、1回だけ使う。
  * - AI コーチのお願い: お願いした人に version の版の保護者の同意を入れる
  * - チームへの参加のお願い: 招待がまだ使える（切られておらず期限の内）ときだけ、お願いした人をチームに入れる
- *   （同意したのは保護者と残す）。コーチが切った招待で入らないように
- * 同じことへのほかのリンクは切り、前の同意の記録（前の行）は消す。使えたら true
+ *   （同意したのは保護者と残す）。コーチが切った招待で入らないように。
+ *   入れられなかったとき（もう選手だった・そのチームのコーチになっていた）は、リンクを「使った」にせず切る。
+ *   使った行は「保護者が同意して入った」記録として残るので、入れていないのに残さない（2026-10-14 のコードレビュー）
+ * 同じことへのほかのリンクは切り、前の同意の記録（前の行）は消す
  */
-export async function agreeAsGuardian(tokenHash: string, version: number): Promise<boolean> {
+export async function agreeAsGuardian(
+  tokenHash: string,
+  version: number,
+): Promise<GuardianAgreeOutcome> {
   const client = await db().connect();
   try {
     await client.query('begin');
     const { rows } = await client.query<{ id: string; userId: string; inviteId: string | null }>(
-      `update guardian_consent_request r set "usedAt" = now()
+      `select r.id, r."userId", r."inviteId" from guardian_consent_request r
         where r."tokenHash" = $1 and r."usedAt" is null and r."expiresAt" > now()
           and (r.purpose = 'ai' or exists (
                 select 1 from team_invite i
                  where i.id = r."inviteId" and i."revokedAt" is null and i."expiresAt" > now()))
-        returning r.id, r."userId", r."inviteId"`,
+        for update`,
       [tokenHash],
     );
-    const used = rows[0];
-    if (!used) {
+    const request = rows[0];
+    if (!request) {
       await client.query('rollback');
-      return false;
+      return 'invalid';
     }
-    if (used.inviteId === null) {
+    if (request.inviteId === null) {
       await client.query(
         `update profile set "aiGuardianConsentVersion" = $2, "aiGuardianConsentAt" = now(), "updatedAt" = now()
           where "userId" = $1`,
-        [used.userId, version],
+        [request.userId, version],
       );
     } else {
       // コーチ本人はそのチームの選手にしない（自分の記録を自分に見せても意味が無い）
-      await client.query(
+      const { rowCount } = await client.query(
         `insert into team_member ("teamId", "userId", "consentedAt", "consentBy")
          select i."teamId", $1, now(), 'guardian' from team_invite i
           where i.id = $2
             and not exists (select 1 from team_coach c where c."teamId" = i."teamId" and c."userId" = $1)
          on conflict ("teamId", "userId") do nothing`,
-        [used.userId, used.inviteId],
+        [request.userId, request.inviteId],
       );
+      if (rowCount !== 1) {
+        const { rows: relation } = await client.query<{ coach: boolean }>(
+          `select exists (select 1 from team_coach c join team_invite i on i."teamId" = c."teamId"
+                           where i.id = $2 and c."userId" = $1) as coach`,
+          [request.userId, request.inviteId],
+        );
+        await client.query(
+          `update guardian_consent_request
+              set "cancelledAt" = now(), "expiresAt" = least("expiresAt", now())
+            where id = $1`,
+          [request.id],
+        );
+        await client.query('commit');
+        return relation[0]?.coach ? 'coach' : 'already';
+      }
     }
+    await client.query(`update guardian_consent_request set "usedAt" = now() where id = $1`, [
+      request.id,
+    ]);
     await client.query(
       `update guardian_consent_request r
           set "cancelledAt" = now(), "expiresAt" = least(r."expiresAt", now())
         where r."userId" = $1 and r.id <> $3 and r."usedAt" is null and r."cancelledAt" is null
           and ${SAME_PURPOSE}`,
-      [used.userId, used.inviteId, used.id],
+      [request.userId, request.inviteId, request.id],
     );
     await client.query(
       `delete from guardian_consent_request r
         where r."userId" = $1 and r.id <> $3 and r."usedAt" is not null and ${SAME_PURPOSE}`,
-      [used.userId, used.inviteId, used.id],
+      [request.userId, request.inviteId, request.id],
     );
     await client.query('commit');
-    return true;
+    return 'agreed';
   } catch (error) {
     await client.query('rollback');
     throw error;
@@ -1213,6 +1249,14 @@ export type CoachAccess = { coachId: string; teamId: string; memberId: string };
 
 const accessParams = (access: CoachAccess) => [access.coachId, access.teamId, access.memberId];
 
+/**
+ * 切った招待（revoked という with の行）からの、待っている保護者へのお願いを切る。
+ * 切った招待では保護者が同意しても入れないので、本人の画面に「待っています」と残さず、新しい招待で送り直せるようにする
+ */
+const CANCEL_REVOKED_REQUESTS = `update guardian_consent_request r
+     set "cancelledAt" = now(), "expiresAt" = least(r."expiresAt", now())
+   where r."inviteId" in (select id from revoked) and r."usedAt" is null and r."cancelledAt" is null`;
+
 /** チームを作り、作った人をコーチにする。チームの id を返す */
 export async function createTeam(userId: string, name: string): Promise<string> {
   const client = await db().connect();
@@ -1323,7 +1367,10 @@ export async function createInvite(
       return null;
     }
     await client.query(
-      `update team_invite set "revokedAt" = now() where "teamId" = $1 and "revokedAt" is null`,
+      `with revoked as (
+         update team_invite set "revokedAt" = now() where "teamId" = $1 and "revokedAt" is null
+         returning id)
+       ${CANCEL_REVOKED_REQUESTS}`,
       [teamId],
     );
     const { rows } = await client.query<{ expiresAt: Date }>(
@@ -1341,11 +1388,14 @@ export async function createInvite(
   }
 }
 
-/** 招待を切る（使えるものすべて）。コーチだけ */
+/** 招待を切る（使えるものすべて）。コーチだけ。その招待からの、待っている保護者へのお願いも切る */
 export async function revokeInvites(coachId: string, teamId: string): Promise<void> {
   await db().query(
-    `update team_invite set "revokedAt" = now()
-      where "teamId" = $2 and "revokedAt" is null and ${IS_COACH}`,
+    `with revoked as (
+       update team_invite set "revokedAt" = now()
+        where "teamId" = $2 and "revokedAt" is null and ${IS_COACH}
+        returning id)
+     ${CANCEL_REVOKED_REQUESTS}`,
     [coachId, teamId],
   );
 }
@@ -1392,7 +1442,7 @@ export type JoinResult = 'joined' | 'already' | 'invalid' | 'coach' | 'guardian'
  * - 16歳未満（生年月日か、前の答え）は入れずに guardian（保護者の同意で入る）
  * - 生年月日が無く16歳以上かを答えていない人は、declare16Plus（「16歳以上です」と答えて押した）が無ければ ask。
  *   答えて押したら答えを残す。もう16歳未満と分かっている人の答えは上書きしない（AI コーチの consentToAi と同じ）
- * - 招待が切れている・期限が過ぎた・知らない鍵は invalid、そのチームのコーチは coach、もう入っていれば already
+ * - 招待が切れている・期限が過ぎた・知らない鍵は invalid、そのチームのコーチは coach（年齢より先に見る）、もう入っていれば already
  * プロフィールの行を押さえてから決める（同時に生年月日を変えても、古い年齢で入らないように）
  */
 export async function joinTeamBySelf(
@@ -1415,6 +1465,12 @@ export async function joinTeamBySelf(
     );
     const teamId = invites[0]?.teamId;
     if (!teamId) return await finish('invalid');
+    // コーチかどうかは年齢より先に見る（16歳未満や年齢を答えていないコーチに、保護者の欄や年齢の問いを出さない）
+    const { rows: relation } = await client.query<{ coach: boolean }>(
+      `select ${IS_COACH} as coach`,
+      [userId, teamId],
+    );
+    if (relation[0]?.coach) return await finish('coach');
     const { rows: profiles } = await client.query<{
       birthdate: string | null;
       ageDeclared16Plus: boolean | null;
@@ -1434,11 +1490,6 @@ export async function joinTeamBySelf(
       today: todayIn(profile.timeZone, now),
     });
     if (consenter !== 'self') return await finish(consenter);
-    const { rows: relation } = await client.query<{ coach: boolean }>(
-      `select ${IS_COACH} as coach`,
-      [userId, teamId],
-    );
-    if (relation[0]?.coach) return await finish('coach');
     if (profile.birthdate === null && profile.ageDeclared16Plus === null) {
       await client.query(
         `update profile set "ageDeclared16Plus" = true, "updatedAt" = now() where "userId" = $1`,
@@ -1507,8 +1558,10 @@ export type RosterRow = {
   timeZone: string;
   /** 試技か体調を入れた最新の日 */
   lastDay: string | null;
-  /** 体調か疲労を入れた最新の日と、その値 */
-  latest: { day: string; condition: number | null; fatigue: number | null } | null;
+  /** 直近 FLAG_WINDOW_DAYS 日（選手の時間帯）で体調を入れた最新の日と、その値 */
+  latestCondition: { day: string; value: number } | null;
+  /** 直近 FLAG_WINDOW_DAYS 日で疲労を入れた最新の日と、その値（体調だけの新しい日に隠れないよう、体調とは別に取る） */
+  latestFatigue: { day: string; value: number } | null;
   /** 痛みのメモがある最新の日 */
   lastPainDay: string | null;
   /** 種目ごとの、試技を入れた最新の日のいちばん良い記録 */
@@ -1516,6 +1569,15 @@ export type RosterRow = {
   /** 直近 videoDays 日の動画の本数 */
   videos: number;
 };
+
+/** 選手 m の、直近 $4 日（選手の時間帯の今日を含む）で column を入れた最新の日と値 */
+const latestInWindow = (column: 'condition' | 'fatigue') =>
+  `(select json_build_object('day', to_char(l.day, 'YYYY-MM-DD'), 'value', l.${column})
+      from day_log l
+     where l."userId" = m."userId" and l.${column} is not null
+       and l.day between (now() at time zone p."timeZone")::date - ($4::integer - 1)
+                     and (now() at time zone p."timeZone")::date
+     order by l.day desc limit 1)`;
 
 /** チームの選手の一覧。コーチでなければ空 */
 export async function teamRoster(
@@ -1531,10 +1593,8 @@ export async function teamRoster(
     `select u.id as "userId", u.name, p.events, p."timeZone",
             to_char(greatest((select max(a.day) from attempt a where a."userId" = m."userId"),
                              (select max(l.day) from day_log l where l."userId" = m."userId")), 'YYYY-MM-DD') as "lastDay",
-            (select json_build_object('day', to_char(l.day, 'YYYY-MM-DD'), 'condition', l.condition, 'fatigue', l.fatigue)
-               from day_log l
-              where l."userId" = m."userId" and (l.condition is not null or l.fatigue is not null)
-              order by l.day desc limit 1) as latest,
+            ${latestInWindow('condition')} as "latestCondition",
+            ${latestInWindow('fatigue')} as "latestFatigue",
             (select to_char(max(l.day), 'YYYY-MM-DD') from day_log l
               where l."userId" = m."userId" and btrim(coalesce(l.injury, '')) <> '') as "lastPainDay",
             (select json_agg(json_build_object('event', b.event, 'day', b.day, 'markM', b.best) order by b.event)
@@ -1550,7 +1610,7 @@ export async function teamRoster(
        join "user" u on u.id = m."userId"
        join profile p on p."userId" = m."userId"
       where m."teamId" = $2`,
-    [coachId, teamId, videoDays],
+    [coachId, teamId, videoDays, FLAG_WINDOW_DAYS],
   );
   return rows.map((row) => ({
     ...row,
@@ -1618,11 +1678,19 @@ export async function listMemberCompetitionsForCoach(access: CoachAccess): Promi
   return rows;
 }
 
-/** コーチが見る、選手の大会の結果に使う試技すべて（古い順） */
-export async function listMemberAllAttemptsForCoach(access: CoachAccess): Promise<Attempt[]> {
+/**
+ * コーチが見る、選手の大会の結果に使う試技（古い順）。大会の日に「大会」として入れたものだけを DB で絞る
+ * （src/lib/competition-results.ts が使うのもこれだけ。練習の記録をすべて読まない）
+ */
+export async function listMemberCompetitionAttemptsForCoach(
+  access: CoachAccess,
+): Promise<Attempt[]> {
   const { rows } = await db().query<AttemptRow>(
-    `select ${attemptColumns} from attempt where "userId" = $3 and ${COACH_SEES}
-      order by day, "createdAt"`,
+    `select ${attemptColumns} from attempt a
+      where a."userId" = $3 and a.kind = 'competition'
+        and exists (select 1 from competition c where c."userId" = $3 and c.day = a.day)
+        and ${COACH_SEES}
+      order by a.day, a."createdAt"`,
     accessParams(access),
   );
   return rows.map(toAttempt);

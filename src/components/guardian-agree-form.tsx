@@ -33,7 +33,11 @@ export function GuardianAgreeForm({
   if (state?.ok) {
     return (
       <p className="font-semibold">
-        {team === undefined ? t('done', { name }) : tTeams('guardianDone', { name, team })}
+        {team === undefined
+          ? t('done', { name })
+          : state.already
+            ? tTeams('guardianAlready', { name, team })
+            : tTeams('guardianDone', { name, team })}
       </p>
     );
   }

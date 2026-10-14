@@ -17,8 +17,8 @@ export type VideoItem = {
   note: string | null;
   /** 見るための署名 URL（期限つき） */
   url: string;
-  /** 端末に保存するための署名 URL（期限つき） */
-  downloadUrl: string;
+  /** 端末に保存するための署名 URL（期限つき）。見るだけの画面（readOnly）では作らない */
+  downloadUrl?: string;
   /** 動画が消える時刻（ISO 8601） */
   expiresAt: string;
   /** 結び付けた試技の記録（表示用の文字） */
@@ -32,16 +32,25 @@ export type VideoItem = {
  * 動画は 90 日で消えるので、消える日と、端末に保存するボタンを出す（2026-10-12 に本人と決めた）
  */
 export function VideosCard({
-  addHref,
   videos,
   timeZone,
+  ...mode
 }: {
-  /** 足す画面。無ければ見るだけ（コーチが選手の動画を見る画面）。見比べ・保存・削除も出さない */
-  addHref?: string;
   videos: VideoItem[];
   /** 消える日を出す時間帯（本人の設定。サーバーは UTC で動くので渡す） */
   timeZone: string;
-}) {
+} & (
+  | {
+      /** 見るだけ（コーチが選手の動画を見る画面）。足す・見比べ・保存・削除を出さない */
+      readOnly: true;
+    }
+  | {
+      readOnly?: false;
+      /** 足す画面 */
+      addHref: string;
+    }
+)) {
+  const addHref = mode.readOnly ? undefined : mode.addHref;
   const t = useTranslations('videos');
   const tToday = useTranslations('today');
   const tEvents = useTranslations('events');
@@ -106,7 +115,7 @@ export function VideosCard({
                   </span>
                 </div>
                 {/* 同じ種目のほかの動画と見比べる画面へ（相手はそこで選ぶ） */}
-                {addHref && (
+                {!mode.readOnly && (
                   <>
                     <Link
                       href={`/videos/compare?a=${video.id}`}
@@ -115,14 +124,16 @@ export function VideosCard({
                     >
                       <Columns2 aria-hidden />
                     </Link>
-                    <a
-                      href={video.downloadUrl}
-                      download
-                      aria-label={t('download')}
-                      className={buttonVariants({ variant: 'ghost', size: 'icon' })}
-                    >
-                      <Download aria-hidden />
-                    </a>
+                    {video.downloadUrl && (
+                      <a
+                        href={video.downloadUrl}
+                        download
+                        aria-label={t('download')}
+                        className={buttonVariants({ variant: 'ghost', size: 'icon' })}
+                      >
+                        <Download aria-hidden />
+                      </a>
+                    )}
                     <Button
                       variant="ghost"
                       size="icon"

@@ -69,8 +69,8 @@ describe('保護者へのお願い', () => {
   it('リンクは1回だけ使える', async () => {
     const userId = await minor();
     const { tokenHash } = await request(userId);
-    expect(await agreeAsGuardian(tokenHash, AI_CONSENT_VERSION)).toBe(true);
-    expect(await agreeAsGuardian(tokenHash, AI_CONSENT_VERSION)).toBe(false);
+    expect(await agreeAsGuardian(tokenHash, AI_CONSENT_VERSION)).toBe('agreed');
+    expect(await agreeAsGuardian(tokenHash, AI_CONSENT_VERSION)).toBe('invalid');
     expect((await findGuardianRequest(tokenHash))?.usedAt).not.toBeNull();
   });
 
@@ -81,7 +81,7 @@ describe('保護者へのお願い', () => {
       `update guardian_consent_request set "expiresAt" = now() - interval '1 second' where id = $1`,
       [id],
     );
-    expect(await agreeAsGuardian(tokenHash, AI_CONSENT_VERSION)).toBe(false);
+    expect(await agreeAsGuardian(tokenHash, AI_CONSENT_VERSION)).toBe('invalid');
     expect((await getProfile(userId))?.aiGuardianConsentVersion).toBeNull();
   });
 
@@ -89,9 +89,9 @@ describe('保護者へのお願い', () => {
     const userId = await minor();
     const first = await request(userId);
     const second = await request(userId);
-    expect(await agreeAsGuardian(first.tokenHash, AI_CONSENT_VERSION)).toBe(false);
+    expect(await agreeAsGuardian(first.tokenHash, AI_CONSENT_VERSION)).toBe('invalid');
     expect(await latestGuardianRequest(userId)).toMatchObject({ id: second.id, live: true });
-    expect(await agreeAsGuardian(second.tokenHash, AI_CONSENT_VERSION)).toBe(true);
+    expect(await agreeAsGuardian(second.tokenHash, AI_CONSENT_VERSION)).toBe('agreed');
   });
 
   it('同時に送っても、生きたリンクは1つだけ', async () => {
@@ -111,7 +111,7 @@ describe('保護者へのお願い', () => {
     const second = await request(userId);
     await releaseGuardianRequest(userId, second.id!);
     expect(await latestGuardianRequest(userId)).toBeNull();
-    expect(await agreeAsGuardian(first.tokenHash, AI_CONSENT_VERSION)).toBe(false);
+    expect(await agreeAsGuardian(first.tokenHash, AI_CONSENT_VERSION)).toBe('invalid');
   });
 
   it('期限で自然に切れたお願いは「期限切れ」として出す', async () => {
@@ -191,7 +191,7 @@ describe('保護者の同意と aiUsable', () => {
     );
     // 使った行は最後の1つだけ。使われていない行のリンクは切れている
     expect(rows.filter((r) => r.used).map((r) => r.id)).toEqual([again.id]);
-    expect(await agreeAsGuardian(pending.tokenHash, AI_CONSENT_VERSION)).toBe(false);
+    expect(await agreeAsGuardian(pending.tokenHash, AI_CONSENT_VERSION)).toBe('invalid');
     // 切ったお願いは、本人の画面に「期限切れ」として出さない
     expect(await latestGuardianRequest(userId)).toBeNull();
   });

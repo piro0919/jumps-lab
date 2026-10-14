@@ -4,7 +4,7 @@ import { refresh } from 'next/cache';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { z } from 'zod';
 import { env } from '@/env';
-import { AI_CONSENT_VERSION, aiConsenter, aiEnabled } from '@/lib/ai';
+import { AI_CONSENT_VERSION, aiEnabled } from '@/lib/ai';
 import {
   addGuardianRequest,
   agreeAsGuardian,
@@ -16,7 +16,9 @@ import {
   teamRelation,
 } from '@/lib/data';
 import type { ActionResult } from '@/lib/form';
+import { todayIn } from '@/lib/dates';
 import {
+  consenterFor,
   GUARDIAN_LINK_DAYS,
   GUARDIAN_SENDS_PER_DAY,
   hashGuardianToken,
@@ -63,11 +65,16 @@ export async function sendGuardianRequestAction(formData: FormData): Promise<Act
     return { ok: false, error: 'generic' };
   }
   const declaredMinor = formData.get('adult') === 'no';
-  // 生年月日がある人は年齢で決める。無い人は今の答えか、前に残した答えで決める
+  // 生年月日がある人は年齢で決める。無い人は今の答えか、前に残した答えで決める。
+  // AI コーチとチームで同じ線（src/lib/guardian.ts の consenterFor。チームへの参加の joinTeamBySelf も同じ）
   const minor =
     profile.birthdate === null
       ? declaredMinor || profile.ageDeclared16Plus === false
-      : aiConsenter(profile) === 'guardian';
+      : consenterFor({
+          birthdate: profile.birthdate,
+          declared16Plus: profile.ageDeclared16Plus,
+          today: todayIn(profile.timeZone),
+        }) === 'guardian';
   if (!minor) return { ok: false, error: 'generic' };
   if (!mailReady()) return { ok: false, error: 'guardianMailUnavailable' };
 
@@ -160,18 +167,25 @@ async function teamGuardianMail(
   };
 }
 
+/** 保護者の同意の結果。already はお願いした人がもうそのチームの選手だった（同じことなので成功として見せる） */
+export type GuardianAgreeResult = { ok: true; already: boolean } | { ok: false; error: string };
+
 /**
  * 保護者が同意する（/guardian-consent/[token]。ログインの無い画面）。押した人の確かめはリンクの鍵で行う:
  * 鍵が期限の内で使われていなければ、1回だけ使い、お願いした人にいまの版の保護者の同意を入れる。
- * 使えないリンクは、あるかどうかを言わずに同じ誤りを返す
+ * 使えないリンクは、あるかどうかを言わずに同じ誤りを返す。
+ * チームへの参加で、お願いした人がそのチームのコーチになっていたら、それと分かる誤りを返す（入れない）
  */
-export async function agreeGuardianAction(token: string): Promise<ActionResult> {
+export async function agreeGuardianAction(token: string): Promise<GuardianAgreeResult> {
   if (typeof token !== 'string' || token.length === 0 || token.length > TOKEN_MAX_LENGTH) {
     return { ok: false, error: 'guardianLinkInvalid' };
   }
   try {
-    const agreed = await agreeAsGuardian(hashGuardianToken(token), AI_CONSENT_VERSION);
-    return agreed ? { ok: true } : { ok: false, error: 'guardianLinkInvalid' };
+    const outcome = await agreeAsGuardian(hashGuardianToken(token), AI_CONSENT_VERSION);
+    if (outcome === 'agreed') return { ok: true, already: false };
+    if (outcome === 'already') return { ok: true, already: true };
+    if (outcome === 'coach') return { ok: false, error: 'guardianTeamCoach' };
+    return { ok: false, error: 'guardianLinkInvalid' };
   } catch (error) {
     console.error(error);
     return { ok: false, error: 'generic' };

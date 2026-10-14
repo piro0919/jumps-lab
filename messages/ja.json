@@ -142,7 +142,8 @@
     "guardianLinkInvalid": "このリンクはもう使えません。",
     "teamName": "チームの名前を入れてください（50文字まで）。",
     "teamInviteInvalid": "この招待のリンクはもう使えません。",
-    "teamCoachJoin": "このチームのコーチなので、選手としては参加できません。"
+    "teamCoachJoin": "このチームのコーチなので、選手としては参加できません。",
+    "guardianTeamCoach": "この方はこのチームのコーチのため、選手としては参加できません。このリンクはもう使えません。"
   },
   "home": {
     "goal": "今季の目標",
@@ -520,10 +521,6 @@
     "noAthletes": "まだ選手がいません。招待のリンクを送ってください。",
     "flagPain": "痛みのメモ",
     "flagFatigue": "疲労 {value}/10",
-    "neverLogged": "まだ記録がありません",
-    "lastLogged": "最後の記録 {date}",
-    "latestCondition": "{date}: 体調 {condition}・疲労 {fatigue}",
-    "videoCount": "{days}日間の動画 {count}本",
     "latestMark": "{event}・{date}",
     "recentDays": "直近{days}日",
     "noRecentDays": "直近{days}日の記録はありません",
@@ -551,6 +548,8 @@
     "guardianIntro": "{name} さんが、跳躍の記録アプリ Jumps Lab で、{coaches} さんがコーチをするチーム「{team}」に参加しようとしています。{name} さんは16歳未満のため、保護者の方の同意をお願いしています。参加すると、{team}のコーチは {name} さんの次のものを見られます。",
     "guardianDone": "ありがとうございました。{name} さんは{team}に参加しました。",
     "guardianNotShown": "{name} さんのメールアドレスは見せません。",
-    "guardianLeave": "{name} さんは、アカウントのメニューの「チーム」からいつでも抜けられます。抜けたときから、コーチは記録を見られなくなります。"
+    "guardianLeave": "{name} さんは、アカウントのメニューの「チーム」からいつでも抜けられます。抜けたときから、コーチは記録を見られなくなります。",
+    "rosterLine": "{last, select, none {まだ記録がありません} other {最後の記録 {last}}}{condition, select, none {} other {・体調 {condition}（{conditionDate}）}}{fatigue, select, none {} other {・疲労 {fatigue}（{fatigueDate}）}}・{days}日間の動画 {videos}本",
+    "guardianAlready": "{name} さんはもう{team}に参加しています。これ以上の手続きはありません。"
   }
 }

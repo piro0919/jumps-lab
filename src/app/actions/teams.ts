@@ -15,7 +15,7 @@ import {
   revokeInvites,
 } from '@/lib/data';
 import type { ActionResult } from '@/lib/form';
-import { TEAM_NAME_MAX_LENGTH } from '@/lib/limits';
+import { TEAM_NAME_MAX_LENGTH, USER_ID_MAX_LENGTH } from '@/lib/limits';
 import { SITE_URL } from '@/lib/site';
 import { hashInviteToken, INVITE_DAYS, INVITE_TOKEN_MAX_LENGTH, newInviteToken } from '@/lib/teams';
 import { requireProfile, requireViewer } from '@/lib/viewer';
@@ -27,8 +27,6 @@ import { requireProfile, requireViewer } from '@/lib/viewer';
 
 const teamName = z.string().trim().min(1, 'teamName').max(TEAM_NAME_MAX_LENGTH, 'teamName');
 const teamId = z.uuid();
-/** 利用者の id（Better Auth が振る文字列）の長さの上限。これより長いものは探さない */
-const USER_ID_MAX_LENGTH = 200;
 const userId = z.string().min(1).max(USER_ID_MAX_LENGTH);
 const inviteToken = z.string().min(1).max(INVITE_TOKEN_MAX_LENGTH);
 
@@ -149,6 +147,8 @@ export async function joinTeamAction(
   }
   if (result === 'invalid') return { ok: false, error: 'teamInviteInvalid' };
   if (result === 'coach') return { ok: false, error: 'teamCoachJoin' };
-  if (result === 'guardian' || result === 'ask') return { ok: false, error: 'generic' };
+  // 画面は年齢で見せ方を替えているが、表示のあとで年齢が変わったときなどに備え、画面を切り替えられる値で返す
+  if (result === 'guardian') return { ok: false, error: 'teamNeedsGuardian' };
+  if (result === 'ask') return { ok: false, error: 'teamAskAge' };
   redirect('/teams');
 }

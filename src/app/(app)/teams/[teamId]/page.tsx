@@ -23,7 +23,7 @@ import { requireProfile, requireViewer } from '@/lib/viewer';
 
 /**
  * コーチの画面（2026-10-14）。チームの選手の一覧を、印（直近7日の痛みのメモ・高い疲労）のある選手から並べる。
- * 1行に、名前・種目・最後に記録した日・最新の体調と疲労・種目ごとの最新の記録・直近14日の動画の本数。
+ * 1行に、名前・種目・最後に記録した日・直近7日の最新の体調と疲労（別々に）・種目ごとの最新の記録・直近14日の動画の本数。
  * 押すと選手の記録（見るだけ）。右の列に招待のリンク。コーチでなければ開かない
  */
 export default async function TeamDashboard({ params }: PageProps<'/teams/[teamId]'>) {
@@ -38,16 +38,7 @@ export default async function TeamDashboard({ params }: PageProps<'/teams/[teamI
   const roster = sortRoster(
     (await teamRoster(viewer.userId, team.id, VIDEO_WINDOW_DAYS)).map((row) => ({
       ...row,
-      flags: rosterFlags(
-        {
-          lastPainDay: row.lastPainDay,
-          latestFatigue:
-            row.latest?.fatigue === null || row.latest === null
-              ? null
-              : { day: row.latest.day, value: row.latest.fatigue },
-        },
-        todayIn(row.timeZone),
-      ),
+      flags: rosterFlags(row, todayIn(row.timeZone)),
     })),
     locale,
   );
@@ -100,7 +91,7 @@ export default async function TeamDashboard({ params }: PageProps<'/teams/[teamI
                         )}
                         {member.flags.includes('fatigue') && (
                           <Badge tone="danger">
-                            {t('flagFatigue', { value: member.latest?.fatigue ?? 0 })}
+                            {t('flagFatigue', { value: member.latestFatigue?.value ?? 0 })}
                           </Badge>
                         )}
                       </span>
@@ -112,21 +103,17 @@ export default async function TeamDashboard({ params }: PageProps<'/teams/[teamI
                         ))}
                       </span>
                       <span className="text-xs text-muted-foreground">
-                        {[
-                          member.lastDay === null
-                            ? t('neverLogged')
-                            : t('lastLogged', { date: day(member.lastDay) }),
-                          member.latest === null
-                            ? null
-                            : t('latestCondition', {
-                                date: day(member.latest.day),
-                                condition: member.latest.condition ?? '—',
-                                fatigue: member.latest.fatigue ?? '—',
-                              }),
-                          t('videoCount', { count: member.videos, days: VIDEO_WINDOW_DAYS }),
-                        ]
-                          .filter(Boolean)
-                          .join(' · ')}
+                        {t('rosterLine', {
+                          last: member.lastDay === null ? 'none' : day(member.lastDay),
+                          condition: member.latestCondition?.value.toString() ?? 'none',
+                          conditionDate:
+                            member.latestCondition === null ? '' : day(member.latestCondition.day),
+                          fatigue: member.latestFatigue?.value.toString() ?? 'none',
+                          fatigueDate:
+                            member.latestFatigue === null ? '' : day(member.latestFatigue.day),
+                          videos: member.videos,
+                          days: VIDEO_WINDOW_DAYS,
+                        })}
                       </span>
                       {member.latestBests.length > 0 && (
                         <span className="flex flex-wrap gap-x-5 gap-y-2">

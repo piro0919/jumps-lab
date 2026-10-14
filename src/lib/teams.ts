@@ -37,8 +37,8 @@ export function inviteLinkState(
   return invite.expiresAt.getTime() > now.getTime() ? 'valid' : 'expired';
 }
 
-/** 痛みのメモを印にする日数（今日を含む直近7日） */
-const PAIN_WINDOW_DAYS = 7;
+/** 痛みのメモと疲労を印にし、一覧に最新の体調と疲労を出す日数（今日を含む直近7日） */
+export const FLAG_WINDOW_DAYS = 7;
 
 /** 動画の本数を数える日数（今日を含む直近14日） */
 export const VIDEO_WINDOW_DAYS = 14;
@@ -64,7 +64,7 @@ export function rosterFlags(
   },
   today: string,
 ): RosterFlag[] {
-  const from = addDays(today, 1 - PAIN_WINDOW_DAYS);
+  const from = addDays(today, 1 - FLAG_WINDOW_DAYS);
   const recent = (day: string) => day >= from && day <= today;
   const flags: RosterFlag[] = [];
   if (member.lastPainDay !== null && recent(member.lastPainDay)) flags.push('pain');
