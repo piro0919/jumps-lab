@@ -4,10 +4,12 @@ import { getTranslations } from 'next-intl/server';
 import { DisplayNumber, PageTitle, SectionTitle, MAIN_SIDE } from '@/components/layout-ui';
 import { AdviceCard } from '@/components/advice-card';
 import { EventHero } from '@/components/event-hero';
+import { TeamsCard } from '@/components/teams-card';
 import { WeatherCard } from '@/components/weather-card';
 import { aiEnabled } from '@/lib/ai';
 import { eventBests } from '@/lib/bests';
 import {
+  coachedTeamSummaries,
   getTargets,
   hasMenu,
   listAllAttempts,
@@ -26,18 +28,20 @@ const NEXT_MEET_ON_TOP_DAYS = 14;
 /**
  * ホーム。幅 1024px 以上は2列：左に種目ごとの色付きのカード、右に次の大会・今日のコンディション・天気。
  * スマホは種目のカードから縦に積む。自分のカード（顔・名前・本数）は外した。顔と名前はユーザーメニューにあり、
- * 本数は分析で見られるため（本人、2026-10-11）
+ * 本数は分析で見られるため（本人、2026-10-11）。チームをコーチしている人にだけ、左の列の一番上にチームのカード
+ * （選手とコーチの切り替えは置かない。本人、2026-10-14）
  */
 export default async function Home() {
   const viewer = await requireViewer();
   const profile = await requireProfile(viewer.userId);
   const today = todayIn(profile.timeZone);
-  const [targets, attempts, recentLogs, upcoming, menuMade] = await Promise.all([
+  const [targets, attempts, recentLogs, upcoming, menuMade, coachedTeams] = await Promise.all([
     getTargets(viewer.userId, profile.events),
     listAllAttempts(viewer.userId),
     listConditionsBetween(viewer.userId, readinessFrom(today), today),
     listCompetitionsBetween(viewer.userId, today, readinessUntil(today)),
     aiEnabled(profile) ? hasMenu(viewer.userId, today) : null,
+    coachedTeamSummaries(viewer.userId),
   ]);
   // 今日の体調と次の大会は、アドバイスのために読んだ範囲から取る（DB への問い合わせを減らす）。
   // 8週より先の大会だけは範囲の外なので、そのときだけ読み直す
@@ -88,6 +92,8 @@ export default async function Home() {
 
       <div className={MAIN_SIDE}>
         <div className="flex flex-col gap-3">
+          {/* チームをコーチしている人にだけ、種目のカードの上にチームのカード（2026-10-14） */}
+          <TeamsCard teams={coachedTeams} />
           {profile.events.map((event) => {
             const target = targets.get(event)!;
             return (

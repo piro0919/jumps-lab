@@ -7,7 +7,7 @@ import type { ReminderRow } from '@/lib/meet-reminder';
 import type { Menu, MenuLevel } from '@/lib/menu';
 import type { PushTarget } from '@/lib/push-endpoint';
 import { consenterFor, declaredFromBirthdate } from '@/lib/guardian';
-import { FLAG_WINDOW_DAYS } from '@/lib/teams';
+import { FLAG_WINDOW_DAYS, rosterFlags } from '@/lib/teams';
 import type { Grade, Plan } from '@/lib/profile-options';
 import type { Units } from '@/lib/units';
 import { toMarks, type MarkName, type Marks } from '@/lib/video-marks';
@@ -1570,14 +1570,18 @@ export type RosterRow = {
   videos: number;
 };
 
-/** 選手 m の、直近 $4 日（選手の時間帯の今日を含む）で column を入れた最新の日と値 */
-const latestInWindow = (column: 'condition' | 'fatigue') =>
+/** 選手 m の、直近 days 日（days は日数の引数の番号。選手 p の時間帯の今日を含む）で column を入れた最新の日と値 */
+const latestInWindow = (column: 'condition' | 'fatigue', days: string) =>
   `(select json_build_object('day', to_char(l.day, 'YYYY-MM-DD'), 'value', l.${column})
       from day_log l
      where l."userId" = m."userId" and l.${column} is not null
-       and l.day between (now() at time zone p."timeZone")::date - ($4::integer - 1)
+       and l.day between (now() at time zone p."timeZone")::date - (${days}::integer - 1)
                      and (now() at time zone p."timeZone")::date
      order by l.day desc limit 1)`;
+
+/** 選手 m の、痛みのメモがある最新の日 */
+const LAST_PAIN_DAY = `(select to_char(max(l.day), 'YYYY-MM-DD') from day_log l
+   where l."userId" = m."userId" and btrim(coalesce(l.injury, '')) <> '')`;
 
 /** チームの選手の一覧。コーチでなければ空 */
 export async function teamRoster(
@@ -1593,10 +1597,9 @@ export async function teamRoster(
     `select u.id as "userId", u.name, p.events, p."timeZone",
             to_char(greatest((select max(a.day) from attempt a where a."userId" = m."userId"),
                              (select max(l.day) from day_log l where l."userId" = m."userId")), 'YYYY-MM-DD') as "lastDay",
-            ${latestInWindow('condition')} as "latestCondition",
-            ${latestInWindow('fatigue')} as "latestFatigue",
-            (select to_char(max(l.day), 'YYYY-MM-DD') from day_log l
-              where l."userId" = m."userId" and btrim(coalesce(l.injury, '')) <> '') as "lastPainDay",
+            ${latestInWindow('condition', '$4')} as "latestCondition",
+            ${latestInWindow('fatigue', '$4')} as "latestFatigue",
+            ${LAST_PAIN_DAY} as "lastPainDay",
             (select json_agg(json_build_object('event', b.event, 'day', b.day, 'markM', b.best) order by b.event)
                from (select distinct on (a.event) a.event, to_char(a.day, 'YYYY-MM-DD') as day,
                             max(a."markM") over (partition by a.event, a.day) as best
@@ -1616,6 +1619,45 @@ export async function teamRoster(
     ...row,
     latestBests: (row.latestBests ?? []).map((b) => ({ ...b, markM: Number(b.markM) })),
   }));
+}
+
+/** ホームのチームのカードの1行。コーチしているチームと、選手の数と、印のある選手の数 */
+export type CoachedTeamSummary = { id: string; name: string; memberCount: number; flagged: number };
+
+/**
+ * コーチしているチーム（作った順）ごとの、選手の数と印のある選手の数。全部のチームを1つの文で読む。
+ * 印は選手の一覧と同じ rosterFlags で付ける（線と日数がずれないように）。コーチしていなければ空
+ */
+export async function coachedTeamSummaries(userId: string): Promise<CoachedTeamSummary[]> {
+  // チームごとに選手の行（選手がいなければ member の列が null の1行）。
+  // 選手はコーチの行と同じチームの team_member にいまいる人だけ（COACH_SEES と同じ確かめを join で）
+  const { rows } = await db().query<{
+    id: string;
+    name: string;
+    memberId: string | null;
+    timeZone: string | null;
+    lastPainDay: string | null;
+    latestFatigue: { day: string; value: number } | null;
+  }>(
+    `select t.id, t.name, m."userId" as "memberId", p."timeZone",
+            ${LAST_PAIN_DAY} as "lastPainDay",
+            ${latestInWindow('fatigue', '$2')} as "latestFatigue"
+       from team_coach c
+       join team t on t.id = c."teamId"
+       left join (team_member m join profile p on p."userId" = m."userId") on m."teamId" = c."teamId"
+      where c."userId" = $1
+      order by t."createdAt", t.id`,
+    [userId, FLAG_WINDOW_DAYS],
+  );
+  const teams = new Map<string, CoachedTeamSummary>();
+  for (const row of rows) {
+    const team = teams.get(row.id) ?? { id: row.id, name: row.name, memberCount: 0, flagged: 0 };
+    teams.set(row.id, team);
+    if (row.memberId === null || row.timeZone === null) continue;
+    team.memberCount += 1;
+    if (rosterFlags(row, todayIn(row.timeZone)).length > 0) team.flagged += 1;
+  }
+  return [...teams.values()];
 }
 
 /** コーチが見る選手。コーチでないか、いまの選手でなければ null */

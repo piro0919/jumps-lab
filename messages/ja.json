@@ -497,6 +497,7 @@
     "coaching": "コーチしているチーム",
     "noCoaching": "コーチしているチームはありません",
     "memberCount": "{count, plural, =0 {選手はいません} other {選手 #人}}",
+    "flagged": "{count, plural, other {要注意 #人}}",
     "member": "入っているチーム",
     "noMember": "入っているチームはありません。コーチに招待のリンクをもらってください。",
     "coachedBy": "コーチ: {coaches}",

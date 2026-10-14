@@ -12,6 +12,7 @@ import { addProfile, query } from './seed';
 
 const {
   addGuardianRequest,
+  coachedTeamSummaries,
   agreeAsGuardian,
   createInvite,
   createTeam,
@@ -590,5 +591,64 @@ describe('消したとき', () => {
     ]);
     await query(`delete from "user" where id = $1`, [team.coachId]);
     expect(await getCoachedTeam(secondCoach, team.teamId)).not.toBeNull();
+  });
+});
+
+describe('ホームのチームのカード（coachedTeamSummaries）', () => {
+  /** その人の、今日から offset 日の体調の行 */
+  async function log(
+    userId: string,
+    offset: number,
+    values: { fatigue?: number; injury?: string },
+  ) {
+    const day = addDays(todayIn('Asia/Tokyo'), offset);
+    await query(`insert into day_log ("userId", day, fatigue, injury) values ($1, $2, $3, $4)`, [
+      userId,
+      day,
+      values.fatigue ?? null,
+      values.injury ?? null,
+    ]);
+  }
+
+  it('チームごとに選手の数と印のある選手の数を数え、ほかのチームと抜けた選手は数えない', async () => {
+    const team = await teamWithInvite('Hawks');
+    const empty = await createTeam(team.coachId, 'Empty');
+    const other = await teamWithInvite('Other');
+
+    const pain = await adult('Pain');
+    const tired = await adult('Tired');
+    const fine = await adult('Fine');
+    const old = await adult('Old');
+    const left = await adult('Left');
+    const elsewhere = await adult('Elsewhere');
+    for (const id of [pain, tired, fine, old, left]) {
+      expect(await joinTeamBySelf(id, team.tokenHash, false)).toBe('joined');
+    }
+    expect(await joinTeamBySelf(elsewhere, other.tokenHash, false)).toBe('joined');
+
+    await log(pain, 0, { injury: 'left knee' });
+    await log(tired, -1, { fatigue: 9 });
+    await log(fine, 0, { fatigue: 3 });
+    // 窓（7日）より前の痛みと疲労は印にしない
+    await log(old, -7, { injury: 'ankle', fatigue: 10 });
+    await log(left, 0, { injury: 'back' });
+    await log(elsewhere, 0, { injury: 'hip' });
+    expect(await leaveTeam(left, team.teamId)).toBe(true);
+
+    expect(await coachedTeamSummaries(team.coachId)).toEqual([
+      { id: team.teamId, name: 'Hawks', memberCount: 4, flagged: 2 },
+      { id: empty, name: 'Empty', memberCount: 0, flagged: 0 },
+    ]);
+    expect(await coachedTeamSummaries(other.coachId)).toEqual([
+      { id: other.teamId, name: 'Other', memberCount: 1, flagged: 1 },
+    ]);
+  });
+
+  it('コーチしていない人と、選手として入っているだけの人は空', async () => {
+    const team = await teamWithInvite();
+    const athleteId = await adult();
+    expect(await joinTeamBySelf(athleteId, team.tokenHash, false)).toBe('joined');
+    expect(await coachedTeamSummaries(athleteId)).toEqual([]);
+    expect(await coachedTeamSummaries(await addProfile())).toEqual([]);
   });
 });
