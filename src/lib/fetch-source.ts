@@ -3,6 +3,7 @@ import { lookup, type LookupAddress, type LookupOptions } from 'node:dns';
 import http, { type IncomingMessage } from 'node:http';
 import https from 'node:https';
 import { BlockList, isIP } from 'node:net';
+import { pipeline } from 'node:stream';
 import { createBrotliDecompress, createGunzip, createInflate } from 'node:zlib';
 
 /**
@@ -14,8 +15,10 @@ import { createBrotliDecompress, createGunzip, createInflate } from 'node:zlib';
 
 /** 読む大きさの上限。PDF の要項でも足りる大きさ（仮決め） */
 const MAX_BYTES = 8_388_608; // 8MB
-/** 1回の読み込みの時間の上限（ミリ秒） */
+/** 読み込みの時間の上限（ミリ秒）。転送をたどる分も含めた全体 */
 const TIMEOUT_MS = 15_000;
+/** 通信が止まったまま待つ上限（ミリ秒） */
+const IDLE_TIMEOUT_MS = 10_000;
 /** 転送をたどる回数 */
 const MAX_REDIRECTS = 4;
 /** AI に渡す本文の字数の上限。日程の表が収まり、費用が膨らまない長さ（仮決め） */
@@ -159,10 +162,11 @@ function safeLookup(
 
 type Raw = { status: number; headers: IncomingMessage['headers']; body: Buffer };
 
-/** 1回だけ読む（転送はたどらない）。圧縮は解き、上限を超えたら止める */
-function requestOnce(url: URL): Promise<Raw> {
+/** 1回だけ読む（転送はたどらない）。圧縮は解き、上限を超えたら止める。signal で全体の時間を切る */
+export function requestOnce(url: URL, signal: AbortSignal): Promise<Raw> {
   const client = url.protocol === 'https:' ? https : http;
   return new Promise((resolve, reject) => {
+    const fail = (error: unknown) => reject(new SourceError('unreachable', String(error)));
     const request = client.get(
       url,
       {
@@ -172,18 +176,33 @@ function requestOnce(url: URL): Promise<Raw> {
           Accept: 'text/html,application/xhtml+xml,application/pdf,image/*;q=0.9,*/*;q=0.5',
           'Accept-Encoding': 'gzip, deflate, br',
         },
-        timeout: TIMEOUT_MS,
+        // 通信が止まったまま待つ上限。全体の上限は signal
+        timeout: IDLE_TIMEOUT_MS,
+        signal,
       },
       (response) => {
+        const status = response.statusCode ?? 0;
+        // 転送なら本文は使わないので、読まずに切る（転送先は頭の location だけで決まる）
+        if (status >= HTTP_REDIRECT_MIN && status <= HTTP_REDIRECT_MAX) {
+          resolve({ status, headers: response.headers, body: Buffer.alloc(0) });
+          response.destroy();
+          return;
+        }
         const encoding = String(response.headers['content-encoding'] ?? '').toLowerCase();
-        const stream =
+        const decompress =
           encoding === 'gzip'
-            ? response.pipe(createGunzip())
+            ? createGunzip()
             : encoding === 'deflate'
-              ? response.pipe(createInflate())
+              ? createInflate()
               : encoding === 'br'
-                ? response.pipe(createBrotliDecompress())
-                : response;
+                ? createBrotliDecompress()
+                : null;
+        // pipe と違い pipeline は、応答そのものの失敗（途中で切られたなど）も受け取れる
+        const stream = decompress
+          ? pipeline(response, decompress, (error) => {
+              if (error) fail(error);
+            })
+          : response;
         const chunks: Buffer[] = [];
         let size = 0;
         stream.on('data', (chunk: Buffer) => {
@@ -196,17 +215,13 @@ function requestOnce(url: URL): Promise<Raw> {
           chunks.push(chunk);
         });
         stream.on('end', () =>
-          resolve({
-            status: response.statusCode ?? 0,
-            headers: response.headers,
-            body: Buffer.concat(chunks),
-          }),
+          resolve({ status, headers: response.headers, body: Buffer.concat(chunks) }),
         );
-        stream.on('error', (error) => reject(new SourceError('unreachable', String(error))));
+        stream.on('error', fail);
       },
     );
     request.on('timeout', () => request.destroy(new Error('時間切れ')));
-    request.on('error', (error) => reject(new SourceError('unreachable', String(error))));
+    request.on('error', fail);
   });
 }
 
@@ -293,13 +308,16 @@ export function looksLikePdf(data: Buffer): boolean {
   return data.subarray(0, PDF_MAGIC.length).toString('latin1') === PDF_MAGIC;
 }
 
-const IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+/** 読める写真の種類（URL の先と、送られたファイルの両方。ブラウザは JPEG に縮めて送り、縮められなかったものはそのまま） */
+export const IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
 
 /** URL を読み、本文か PDF か写真にする。読めなければ SourceError */
 export async function fetchSource(raw: string): Promise<FetchedSource> {
   let url = checkSourceUrl(raw);
+  // 転送をたどる分も含めた、全体の時間の上限
+  const signal = AbortSignal.timeout(TIMEOUT_MS);
   for (let hop = 0; hop <= MAX_REDIRECTS; hop += 1) {
-    const response = await requestOnce(url);
+    const response = await requestOnce(url, signal);
     if (response.status >= HTTP_REDIRECT_MIN && response.status <= HTTP_REDIRECT_MAX) {
       const location = response.headers.location;
       if (!location)

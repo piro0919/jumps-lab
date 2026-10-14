@@ -1,5 +1,14 @@
-import { describe, expect, it } from 'vitest';
-import { checkSourceUrl, htmlToText, isPublicAddress, SourceError } from '@/lib/fetch-source';
+import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
+import type { AddressInfo } from 'node:net';
+import { gzipSync } from 'node:zlib';
+import { afterEach, describe, expect, it } from 'vitest';
+import {
+  checkSourceUrl,
+  htmlToText,
+  isPublicAddress,
+  requestOnce,
+  SourceError,
+} from '@/lib/fetch-source';
 
 describe('isPublicAddress', () => {
   it('accepts public addresses and refuses private, local and reserved ones', () => {
@@ -96,5 +105,68 @@ describe('htmlToText', () => {
         'お問い合わせ はこちら',
       ].join('\n'),
     );
+  });
+});
+
+/**
+ * 1回の読み込み（requestOnce）を手元のサーバーで確かめる。IP を直接書いた宛先は名前を引かないので、
+ * 公開の宛先かの確かめ（safeLookup）を通らずに手元へ繋がる。本番の入口の checkSourceUrl は IP と番号で止める
+ */
+describe('requestOnce', () => {
+  const servers: Server[] = [];
+  afterEach(async () => {
+    await Promise.all(servers.splice(0).map((s) => new Promise((done) => s.close(done))));
+  });
+
+  async function serve(handler: (req: IncomingMessage, res: ServerResponse) => void): Promise<URL> {
+    const server = createServer(handler);
+    servers.push(server);
+    await new Promise<void>((done) => server.listen(0, '127.0.0.1', done));
+    const { port } = server.address() as AddressInfo;
+    return new URL(`http://127.0.0.1:${port}/`);
+  }
+
+  it('gzip の本文の途中で接続が切られたら、待ち続けずに unreachable で終わる', async () => {
+    const url = await serve((_req, res) => {
+      res.writeHead(200, { 'Content-Type': 'text/html', 'Content-Encoding': 'gzip' });
+      res.write(gzipSync(Buffer.alloc(100_000, 'a')).subarray(0, 200));
+      setTimeout(() => res.socket?.destroy(), 50);
+    });
+    const result = await requestOnce(url, AbortSignal.timeout(5_000)).catch(
+      (error: unknown) => error,
+    );
+    expect(result).toBeInstanceOf(SourceError);
+    expect((result as SourceError).kind).toBe('unreachable');
+  });
+
+  it('全体の時間の上限（signal）で、少しずつ送り続ける相手も切る', async () => {
+    const url = await serve((_req, res) => {
+      res.writeHead(200, { 'Content-Type': 'text/html' });
+      const timer = setInterval(() => res.write('a'), 20);
+      res.on('close', () => clearInterval(timer));
+    });
+    const started = Date.now();
+    const result = await requestOnce(url, AbortSignal.timeout(300)).catch(
+      (error: unknown) => error,
+    );
+    const elapsed = Date.now() - started;
+    expect({ kind: (result as SourceError).kind, fast: elapsed < 2_000 }).toEqual({
+      kind: 'unreachable',
+      fast: true,
+    });
+  });
+
+  it('転送の応答は本文を読まずに、頭だけを返す', async () => {
+    const url = await serve((_req, res) => {
+      res.writeHead(302, { Location: 'https://example.com/next' });
+      res.write(Buffer.alloc(1_000_000, 'a'));
+      // 本文を終えないので、本文を読み切ろうとすると返らない
+    });
+    const result = await requestOnce(url, AbortSignal.timeout(2_000));
+    expect({
+      status: result.status,
+      location: result.headers.location,
+      size: result.body.length,
+    }).toEqual({ status: 302, location: 'https://example.com/next', size: 0 });
   });
 });

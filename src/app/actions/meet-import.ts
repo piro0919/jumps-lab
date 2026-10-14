@@ -2,10 +2,10 @@
 
 import { getLocale } from 'next-intl/server';
 import { type AiAttachment, AiError, aiUsable, askJson } from '@/lib/ai';
-import { overAiLimit } from '@/lib/ai-limit';
-import { getProfile, recordAiCall } from '@/lib/data';
+import { claimAiCallWithinLimit } from '@/lib/ai-limit';
+import { getProfile } from '@/lib/data';
 import { todayIn } from '@/lib/dates';
-import { fetchSource, looksLikePdf, SourceError } from '@/lib/fetch-source';
+import { fetchSource, IMAGE_TYPES, looksLikePdf, SourceError } from '@/lib/fetch-source';
 import { MEET_FILE_MAX_BYTES, URL_MAX_LENGTH } from '@/lib/limits';
 import {
   cleanMeets,
@@ -16,9 +16,6 @@ import {
   type MeetImportResult,
 } from '@/lib/meet-import';
 import { requireViewer } from '@/lib/viewer';
-
-/** 送れる写真の種類（ブラウザが JPEG に縮めて送る。縮められなかったものはそのまま） */
-const IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
 
 /** AI が答えられなかったときの文言の鍵（メニューと同じ分け方。分からないものは importFailed） */
 function aiFailure(error: AiError): string {
@@ -95,11 +92,10 @@ export async function importMeetsAction(formData: FormData): Promise<MeetImportR
   }
 
   try {
-    if (await overAiLimit(viewer.userId, today, 'meetImport')) {
+    // 呼ぶ前に記録する（失敗しても上限に数える）
+    if (!(await claimAiCallWithinLimit(viewer.userId, today, 'meetImport', MEET_IMPORT_MODEL))) {
       return { ok: false, error: 'importLimit' };
     }
-    // 呼ぶ前に記録する（失敗しても上限に数える）
-    await recordAiCall(viewer.userId, today, 'meetImport', MEET_IMPORT_MODEL);
     const answer = await askJson<unknown>({
       model: MEET_IMPORT_MODEL,
       instructions: meetImportInstructions((await getLocale()) === 'ja' ? 'ja' : 'en', today),

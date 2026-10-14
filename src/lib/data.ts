@@ -1350,6 +1350,47 @@ export async function recordAiCall(
   ]);
 }
 
+/**
+ * 上限（その日と、その日と同じ月の回数）に収まっていれば、AI を1回呼ぶ記録を入れて true を返す。
+ * 人ごとの鍵の中で数えてから入れるので、同時に送られても上限を超えない
+ */
+export async function claimAiCall(
+  userId: string,
+  day: string,
+  kind: AiCallKind,
+  model: string,
+  limit: { perDay: number; perMonth: number },
+): Promise<boolean> {
+  const client = await db().connect();
+  try {
+    await client.query('begin');
+    await client.query(`select pg_advisory_xact_lock(hashtext('ai_call:' || $1))`, [userId]);
+    const { rows } = await client.query<{ today: number; month: number }>(
+      `select (count(*) filter (where day = $2::date))::integer as today, count(*)::integer as month
+         from ai_call
+        where "userId" = $1 and kind = $3 and date_trunc('month', day) = date_trunc('month', $2::date)`,
+      [userId, day, kind],
+    );
+    if (rows[0]!.today >= limit.perDay || rows[0]!.month >= limit.perMonth) {
+      await client.query('rollback');
+      return false;
+    }
+    await client.query(`insert into ai_call ("userId", day, kind, model) values ($1, $2, $3, $4)`, [
+      userId,
+      day,
+      kind,
+      model,
+    ]);
+    await client.query('commit');
+    return true;
+  } catch (error) {
+    await client.query('rollback');
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 /** AI を呼んだ回数。その日の分と、その日と同じ月の分 */
 export async function countAiCalls(
   userId: string,

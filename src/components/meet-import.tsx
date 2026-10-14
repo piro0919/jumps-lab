@@ -138,7 +138,11 @@ export function MeetImport({ added }: { added: string[] }) {
                   type="button"
                   role="radio"
                   aria-checked={mode === value}
-                  onClick={() => setMode(value)}
+                  onClick={() => {
+                    // ファイルの欄は切り替えで作り直されて空になるので、選んでいたファイルも忘れる
+                    if (value !== mode) setFile(null);
+                    setMode(value);
+                  }}
                   className={cn(segmentClass(mode === value), 'px-2')}
                 >
                   {value === 'url' ? t('fromUrl') : t('fromFile')}

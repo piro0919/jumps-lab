@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  claimAiCall,
   countAiCalls,
   getMenu,
   hasMenu,
@@ -37,6 +38,29 @@ describe('countAiCalls', () => {
     expect(await countAiCalls(userId, DAY, 'menu')).toEqual({ today: 2, month: 4 });
     expect(await countAiCalls(userId, DAY, 'chat')).toEqual({ today: 1, month: 1 });
     expect(await countAiCalls(userId, '2026-10-02', 'menu')).toEqual({ today: 0, month: 4 });
+  });
+});
+
+describe('claimAiCall', () => {
+  it('同時に送られても、その日の上限の数だけ記録して通す', async () => {
+    const userId = await addProfile();
+    const results = await Promise.all(
+      Array.from({ length: 6 }, () =>
+        claimAiCall(userId, DAY, 'meetImport', 'm', { perDay: 2, perMonth: 10 }),
+      ),
+    );
+    expect({
+      passed: results.filter(Boolean).length,
+      recorded: await countAiCalls(userId, DAY, 'meetImport'),
+    }).toEqual({ passed: 2, recorded: { today: 2, month: 2 } });
+  });
+
+  it('月の上限に達していれば、その日がまだでも通さない', async () => {
+    const userId = await addProfile();
+    await recordAiCall(userId, '2026-10-01', 'meetImport', 'm');
+    expect(await claimAiCall(userId, DAY, 'meetImport', 'm', { perDay: 5, perMonth: 1 })).toBe(
+      false,
+    );
   });
 });
 
