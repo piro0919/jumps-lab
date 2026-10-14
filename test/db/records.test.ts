@@ -10,6 +10,7 @@ import {
   getCompetition,
   getDayLog,
   listAllAttempts,
+  listAttemptMarksBetween,
   listAttempts,
   listAttemptsBetween,
   listCompetitions,
@@ -151,10 +152,17 @@ describe('試技の細かい記録', () => {
     const [longJump] = await listAttemptsBetween(userId, '2026-10-13', '2026-10-13');
     expect(longJump?.details).toEqual({ ...EMPTY_DETAILS, approachSteps: 20, boardOffsetCm: -2.5 });
 
-    // 全期間を読む集計（ホーム・分析・記録の一覧）は細かい記録の列を読まない。読むのは出す画面だけ
+    // 全期間を読む集計（ホーム・分析・記録の一覧）と、それを出さない期間の読み（試技・動画を足す画面、AI のメニュー）は
+    // 細かい記録と高さごとの結果の列を読まない。読むのは出す画面だけ
     const [all] = await listAllAttempts(userId);
     const [vaults] = await listAttempts(userId, 'pole_vault');
-    expect([all, vaults].map((attempt) => attempt && 'details' in attempt)).toEqual([false, false]);
+    const [marks] = await listAttemptMarksBetween(userId, '2026-10-14', '2026-10-14');
+    expect(
+      [all, vaults, marks].map(
+        (attempt) => attempt && ('details' in attempt || 'heightSeries' in attempt),
+      ),
+    ).toEqual([false, false, false]);
+    expect(marks).toEqual(expect.objectContaining({ id: saved!.id, markM: 4.2 }));
 
     await updateAttempt(userId, saved!.id, { ...vault, details: EMPTY_DETAILS });
     expect((await getAttempt(userId, saved!.id))?.details).toEqual(EMPTY_DETAILS);

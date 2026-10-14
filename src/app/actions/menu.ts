@@ -12,7 +12,7 @@ import {
   getProfile,
   getTargets,
   listAllAttempts,
-  listAttemptsBetween,
+  listAttemptMarksBetween,
   listCompetitionsBetween,
   listConditionsBetween,
   listMenuMessages,
@@ -60,7 +60,7 @@ async function menuContext(userId: string, profile: Profile, today: string) {
   const [logs, competitions, attempts, targets, allAttempts] = await Promise.all([
     listConditionsBetween(userId, readinessFrom(today), today),
     listCompetitionsBetween(userId, today, readinessUntil(today)),
-    listAttemptsBetween(userId, historyFrom, today),
+    listAttemptMarksBetween(userId, historyFrom, today),
     getTargets(userId, profile.events),
     listAllAttempts(userId),
   ]);
@@ -108,7 +108,7 @@ async function menuContext(userId: string, profile: Profile, today: string) {
           pain: log.injury,
           practiceNote: log.note,
         })),
-      // 跳躍の細かい記録（a.details、2026-10-14）と走高跳・棒高跳の高さごとの結果（a.heightSeries）は送らない。
+      // 跳躍の細かい記録と走高跳・棒高跳の高さごとの結果は送らない（読みもしない: listAttemptMarksBetween）。
       // 送るなら同意の一覧と AI_CONSENT_VERSION、プライバシーポリシーの 5. も一緒に変える
       attemptsLast14Days: attempts.map((a) => ({
         day: a.day,

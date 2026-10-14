@@ -15,7 +15,7 @@ import { Segmented } from '@/components/attempt-form';
 import { FormActions } from '@/components/form-actions';
 import { ErrorText, Field, FieldLabel, Select, TextArea } from '@/components/layout-ui';
 import { buttonVariants } from '@/components/ui/button';
-import type { Attempt } from '@/lib/data';
+import type { AttemptMark } from '@/lib/data';
 import type { JumpEvent } from '@/lib/events';
 import { NOTE_MAX_LENGTH } from '@/lib/limits';
 import { formatMark, type Units } from '@/lib/units';
@@ -94,7 +94,7 @@ export function VideoForm({
   events: JumpEvent[];
   initialEvent: JumpEvent;
   /** その日の試技（結び付ける先の候補） */
-  attempts: Attempt[];
+  attempts: AttemptMark[];
   units: Units;
   backHref: string;
 }) {

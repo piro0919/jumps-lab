@@ -38,6 +38,7 @@ export function FeetInchesInput({
   autoFocus,
   feetRef,
   required,
+  disabled,
   labels,
 }: {
   feet: string;
@@ -50,6 +51,8 @@ export function FeetInchesInput({
   feetRef?: Ref<HTMLInputElement>;
   /** フィートの欄を空で送らせない */
   required?: boolean;
+  /** 止める（ブラウザの検査にも入らない） */
+  disabled?: boolean;
   /** 見出しの無い所に置くときの、2つの欄の読み上げの名前 */
   labels?: { feet: string; inches: string };
 }) {
@@ -65,6 +68,7 @@ export function FeetInchesInput({
         value={feet}
         autoFocus={autoFocus}
         required={required}
+        disabled={disabled}
         aria-label={labels?.feet}
         onChange={(e) => onChange(e.target.value, inches)}
       />
@@ -76,6 +80,7 @@ export function FeetInchesInput({
         max={11.75}
         step={inchStep}
         value={inches}
+        disabled={disabled}
         aria-label={labels?.inches}
         onChange={(e) => onChange(feet, e.target.value)}
       />
@@ -145,12 +150,15 @@ export function MarkInput({
   defaultMeters = null,
   autoFocus,
   range,
+  disabled,
 }: {
   name: string;
   units: Units;
   defaultMeters?: number | null;
   autoFocus?: boolean;
   range?: MeterRange;
+  /** 止める。送る値にもブラウザの検査にも入らず、入れた文字は残る（高さごとに入れている記録の欄） */
+  disabled?: boolean;
 }) {
   const t = useTranslations('units');
   // はじめに出した文字（両方の単位）。いまの文字と比べて、触られたかを見る
@@ -186,7 +194,7 @@ export function MarkInput({
 
   return (
     <>
-      <input type="hidden" name={name} value={value} />
+      <input type="hidden" name={name} value={value} disabled={disabled} />
       {metric ? (
         <div className="flex items-center gap-2">
           <Input
@@ -196,6 +204,7 @@ export function MarkInput({
             max={range?.max}
             step={0.01}
             value={meters}
+            disabled={disabled}
             autoFocus={autoFocus}
             onChange={(e) => setMeters(e.target.value)}
           />
@@ -207,6 +216,7 @@ export function MarkInput({
           inches={fi.inches}
           inchStep={0.25}
           autoFocus={autoFocus}
+          disabled={disabled}
           feetRef={feetRef}
           onChange={(feet, inches) => setFi({ feet, inches })}
         />

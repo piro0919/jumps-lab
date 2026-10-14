@@ -119,36 +119,102 @@ export function summarize(series: HeightSeries): SeriesSummary {
   };
 }
 
+/** 見つけた誤りと、その高さの位置 */
+type Found = { error: SeriesError; index: number };
+
+/** 高さの値の誤り（範囲と並び）。はじめに見つかったもの */
+function heightError(series: HeightSeries): Found | null {
+  for (const [index, row] of series.entries()) {
+    if (row.heightM < BAR_HEIGHT_MIN_M || row.heightM > BAR_HEIGHT_MAX_M) {
+      return { error: 'heightRange', index };
+    }
+    if (index > 0 && row.heightM <= series[index - 1].heightM) {
+      return { error: 'heightOrder', index };
+    }
+  }
+  return null;
+}
+
 /**
- * 高さごとの結果が規則どおりかを確かめる。はじめに見つかった誤りと、その高さの位置を返す。
- * 何も越えていない（noClear）は形の誤りをすべて確かめてから返す
+ * 結果の並びの誤り（高さの値は見ない）。checkSeries と入力の欄（trialOptions・canAddHeight）が使う、規則のただ1つの置き場。
+ * skipEmpty は入力の途中のため、結果の無い高さを誤りにせず飛ばす
+ */
+function trialError(rows: readonly (readonly Trial[])[], skipEmpty: boolean): Found | null {
+  let consecutive = 0;
+  for (const [index, trials] of rows.entries()) {
+    if (trials.length === 0) {
+      if (skipEmpty) continue;
+      return { error: 'noTrials', index };
+    }
+    for (const [at, trial] of trials.entries()) {
+      if (consecutive >= ELIMINATION_MISSES) return { error: 'afterElimination', index };
+      // 成功とパスはその高さの最後（TR26.3）。2回目以降は前が失敗のときだけ跳べる
+      if (at > 0 && trials[at - 1] !== 'missed') return { error: 'afterEnd', index };
+      if (trial === 'missed') consecutive += 1;
+      if (trial === 'cleared') consecutive = 0;
+    }
+    if (index < rows.length - 1 && trials[trials.length - 1] === 'missed') {
+      // 3回続けて失敗した高さの後ろに高さがあれば、続けて跳んだことになる
+      return {
+        error: consecutive >= ELIMINATION_MISSES ? 'afterElimination' : 'unfinished',
+        index,
+      };
+    }
+  }
+  return null;
+}
+
+/**
+ * 高さごとの結果が規則どおりかを確かめる。はじめに見つかった誤りと、その高さの位置を返す
+ * （同じ高さでは、高さの値の誤りを先に）。何も越えていない（noClear）は形の誤りをすべて確かめてから返す
  */
 export function checkSeries(
   series: HeightSeries,
 ): { ok: true; summary: SeriesSummary } | { ok: false; error: SeriesError; index: number } {
-  let consecutive = 0;
-  for (const [index, row] of series.entries()) {
-    const fail = (error: SeriesError) => ({ ok: false as const, error, index });
-    if (row.heightM < BAR_HEIGHT_MIN_M || row.heightM > BAR_HEIGHT_MAX_M)
-      return fail('heightRange');
-    if (index > 0 && row.heightM <= series[index - 1].heightM) return fail('heightOrder');
-    if (row.trials.length === 0) return fail('noTrials');
-    for (const [at, trial] of row.trials.entries()) {
-      if (consecutive >= ELIMINATION_MISSES) return fail('afterElimination');
-      // 成功とパスはその高さの最後（TR26.3）。2回目以降は前が失敗のときだけ跳べる
-      if (at > 0 && row.trials[at - 1] !== 'missed') return fail('afterEnd');
-      if (trial === 'missed') consecutive += 1;
-      if (trial === 'cleared') consecutive = 0;
-    }
-    const last = row.trials[row.trials.length - 1];
-    if (index < series.length - 1 && last === 'missed') {
-      // 3回続けて失敗した高さの後ろに高さがあれば、続けて跳んだことになる
-      return fail(consecutive >= ELIMINATION_MISSES ? 'afterElimination' : 'unfinished');
-    }
-  }
+  const height = heightError(series);
+  const trial = trialError(
+    series.map((row) => row.trials),
+    false,
+  );
+  const first = height && (!trial || height.index <= trial.index) ? height : trial;
+  if (first) return { ok: false, ...first };
   const summary = summarize(series);
   if (summary.bestM === null) return { ok: false, error: 'noClear', index: 0 };
   return { ok: true, summary };
+}
+
+/**
+ * at 回目の結果を value にした、その高さの結果。失敗にしたときだけ後ろを残す
+ * （成功やパスのあとには跳べないので、後ろは消す）。value が無ければ、その回から後ろを消す
+ */
+export function setTrial(trials: readonly Trial[], at: number, value: Trial | undefined): Trial[] {
+  const before = trials.slice(0, at);
+  if (value === undefined) return before;
+  return value === 'missed' ? [...before, value, ...trials.slice(at + 1)] : [...before, value];
+}
+
+/**
+ * 入力の欄で、row 番目の高さの at 回目に入れられる値（無しを含む）。入れたあとの並びが規則どおり
+ * （trialError。入れている途中の結果の無い高さは数えない）になる値だけ。前の回が空なら何も入れられない
+ */
+export function trialOptions(
+  rows: readonly (readonly Trial[])[],
+  row: number,
+  at: number,
+): (Trial | undefined)[] {
+  if (at > rows[row].length) return [];
+  return [undefined, ...TRIALS].filter((value) => {
+    const next = rows.map((trials, i) => (i === row ? setTrial(trials, at, value) : trials));
+    return trialError(next, true) === null;
+  });
+}
+
+/**
+ * 次の高さを足せるか。足したあとの並びが規則どおりのときだけ（失敗のままの高さの後ろや、
+ * 続けて3回失敗したあとには足せない）
+ */
+export function canAddHeight(rows: readonly (readonly Trial[])[]): boolean {
+  return trialError([...rows, []], true) === null;
 }
 
 /** 1つの高さの結果を「XO」の形に */
@@ -156,8 +222,8 @@ export function trialSymbols(trials: readonly Trial[]): string {
   return trials.map((t) => TRIAL_SYMBOL[t]).join('');
 }
 
-/** メートルを DB と同じ 0.1mm に丸める */
-const toTenthMm = (meters: number) => Math.round(meters * TENTH_MM_PER_M) / TENTH_MM_PER_M;
+/** メートルを DB と同じ 0.1mm に丸める。サーバーの読み（heightSeriesSchema）と入力の欄の両方で同じ値を確かめるため */
+export const toTenthMm = (meters: number) => Math.round(meters * TENTH_MM_PER_M) / TENTH_MM_PER_M;
 
 /**
  * 送られてきた高さごとの結果（フォームの隠しの欄の JSON）。空なら null。

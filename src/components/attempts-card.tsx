@@ -97,7 +97,8 @@ export function AttemptsCard({
                       <span className="w-5 text-sm text-muted-foreground tabular-nums">
                         {index + 1}
                       </span>
-                      <span className="flex min-w-0 flex-1 flex-col">
+                      {/* 高さごとの結果は一覧（ol）なので、入れ物は span ではなく div */}
+                      <div className="flex min-w-0 flex-1 flex-col">
                         {/* 数字は折らず、入りきらない札を次の行へ回す（「ベスト」と「追い風参考」が並ぶと、
                             幅 375px で m が次の行に落ち、札が鉛筆に重なった。2026-10-11） */}
                         <span className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
@@ -139,7 +140,7 @@ export function AttemptsCard({
                           <SeriesLine series={attempt.heightSeries} units={units} />
                         )}
                         <DetailsLine details={attempt.details} units={units} />
-                      </span>
+                      </div>
                       {/* 行の操作はアイコンだけのボタン（大会の一覧と同じ）。直すのは別の画面 */}
                       {!readOnly && (
                         <>

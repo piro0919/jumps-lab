@@ -8,9 +8,12 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/cn';
 import type { JumpEvent } from '@/lib/events';
 import {
-  checkSeries,
+  canAddHeight,
   nextHeight,
+  setTrial,
+  toTenthMm,
   TRIAL_SYMBOL,
+  trialOptions,
   TRIALS_PER_HEIGHT,
   type HeightSeries,
   type SeriesError,
@@ -57,7 +60,9 @@ function heightOf(row: HeightRowState, units: Units): number | null {
   const { text, initial } = row;
   if (units === 'metric') {
     if (text.meters === initial.meters && row.stored !== null) return row.stored;
-    return text.meters.trim() === '' ? null : Number(text.meters);
+    // サーバー（heightSeriesSchema）と同じ 0.1mm に丸めてから確かめ、送る。丸めずに確かめると、
+    // ここでは通った並びがサーバーで弾かれる（1.80 と 1.80004 が同じ高さになる）
+    return text.meters.trim() === '' ? null : toTenthMm(Number(text.meters));
   }
   if (text.feet === initial.feet && text.inches === initial.inches && row.stored !== null) {
     return row.stored;
@@ -77,28 +82,32 @@ export function completeSeries(rows: HeightRowState[], units: Units): HeightSeri
   return series.every((r) => r.heightM !== null) ? (series as HeightSeries) : null;
 }
 
-/** 1回目の空の欄を押したときからの順。成功がいちばん多いので先 */
+/** 押すたびに進む順（空 → O → X → –）。成功がいちばん多いので先 */
 const CYCLE: (Trial | undefined)[] = [undefined, 'cleared', 'missed', 'passed'];
 
-/**
- * i 回目の欄を押したあとの結果。失敗のあとだけ次の回へ進める。失敗から変えたら、その後ろは消す
- * （成功やパスのあとには跳べない）
- */
-function cycleTrial(trials: Trial[], i: number): Trial[] {
-  const next = CYCLE[(CYCLE.indexOf(trials[i]) + 1) % CYCLE.length];
-  const before = trials.slice(0, i);
-  if (next === undefined) return before;
-  return next === 'missed' ? [...before, next, ...trials.slice(i + 1)] : [...before, next];
+/** 今の値の次に入れられる値（入れられる値は trialOptions が規則から決める）。ほかに入れられる値が無ければ null */
+function nextOption(current: Trial | undefined, options: (Trial | undefined)[]) {
+  const start = CYCLE.indexOf(current);
+  for (let step = 1; step < CYCLE.length; step += 1) {
+    const value = CYCLE[(start + step) % CYCLE.length];
+    if (options.includes(value)) return { value };
+  }
+  return null;
 }
 
 /** その場で出す誤り。結果の無い高さと、何も越えていないことは保存を押すまで言わない（入れている途中のため） */
-export const LIVE_ERRORS: readonly SeriesError[] = [
+const LIVE_ERRORS: readonly SeriesError[] = [
   'heightOrder',
   'heightRange',
   'afterEnd',
   'unfinished',
   'afterElimination',
 ];
+
+/** その場で出す誤りか */
+export function isLiveError(error: SeriesError): boolean {
+  return LIVE_ERRORS.includes(error);
+}
 
 /** 誤りの文。高さはその行の高さを本人の単位で */
 export function useSeriesMessage(units: Units) {
@@ -117,8 +126,20 @@ export function useSeriesMessage(units: Units) {
 }
 
 /**
+ * 1回ごとの欄の見た目。ボタンの決まり（src/components/ui/button.tsx）の variant から選ぶ:
+ * 成功はアプリの青、失敗とパスは灰色（記号で分かる）、まだ空の欄は枠だけ
+ */
+const SLOT_VARIANT = {
+  cleared: 'default',
+  missed: 'secondary',
+  passed: 'secondary',
+  empty: 'outline',
+} as const;
+
+/**
  * 走高跳・棒高跳の「高さごと」の欄（/log/[day]/new と /attempts/[id]/edit）。1行が1つの高さで、
- * 高さの欄と、押すたびに 空 → O → X → – と変わる3つの欄、行を消すボタン。
+ * 高さの欄と、押すたびに 空 → O → X → – と変わる3つの欄、行を消すボタン。欄には規則どおりになる値しか入らない
+ * （trialOptions）。高さを足せるのも、足したあとが規則どおりのときだけ（canAddHeight）。
  * 高さを足すと、前の高さに上げ幅を足した高さが入る（書き換えられる）。
  * 送るのは隠しの欄の JSON だけ。記録はサーバーがいちばん高く越えた高さにする
  */
@@ -126,26 +147,25 @@ export function HeightSeriesFields({
   event,
   units,
   rows,
+  invalid,
+  error,
   onChange,
 }: {
   event: JumpEvent;
   units: Units;
   rows: HeightRowState[];
+  /** 今の並びが規則に合わない（AttemptForm が checkSeries で1度だけ確かめた結果） */
+  invalid: boolean;
+  /** 高さの下に出す誤りの文 */
+  error: string | null;
   onChange: (rows: HeightRowState[]) => void;
 }) {
   const t = useTranslations('today');
   const tUnits = useTranslations('units');
-  const message = useSeriesMessage(units);
   const metric = units === 'metric';
-
-  const complete = completeSeries(rows, units);
-  const checked = complete && complete.length > 0 ? checkSeries(complete) : null;
-  const liveError =
-    checked && !checked.ok && LIVE_ERRORS.includes(checked.error)
-      ? message(checked.error, complete?.[checked.index]?.heightM ?? null)
-      : null;
-  // 続けて3回失敗したら、その先の高さは足せない
-  const ended = checked?.ok === true && checked.summary.eliminated;
+  const trials = rows.map((row) => row.trials);
+  // 失敗のままの高さの後ろ・続けて3回失敗したあと・規則に合わない並びには、高さを足せない
+  const addable = !invalid && canAddHeight(trials);
 
   const update = (key: number, change: Partial<HeightRowState>) =>
     onChange(rows.map((row) => (row.key === key ? { ...row, ...change } : row)));
@@ -218,30 +238,27 @@ export function HeightSeriesFields({
                 <div className="flex items-center gap-1">
                   {SLOTS.map((i) => {
                     const trial = row.trials[i];
-                    // 1回目と、前の回が失敗のときだけ押せる
-                    const open = i === 0 || row.trials[i - 1] === 'missed';
+                    // 規則どおりになる次の値。無ければ押せない（成功・パスのあと、続けて3回失敗したあと）
+                    const next = nextOption(trial, trialOptions(trials, index, i));
                     return (
-                      <button
+                      <Button
                         key={i}
                         type="button"
-                        disabled={!open}
+                        size="icon"
+                        variant={SLOT_VARIANT[trial ?? 'empty']}
+                        disabled={next === null}
                         aria-label={t('trialSlot', {
                           n: i + 1,
                           height: heightLabel,
                           result: trial ?? 'empty',
                         })}
-                        onClick={() => update(row.key, { trials: cycleTrial(row.trials, i) })}
-                        className={cn(
-                          'flex size-9 items-center justify-center rounded-full text-sm font-extrabold transition-colors disabled:opacity-40',
-                          trial === 'cleared' && 'bg-primary text-primary-foreground',
-                          trial === 'missed' && 'bg-muted text-foreground',
-                          trial === 'passed' && 'bg-muted text-muted-foreground',
-                          trial === undefined &&
-                            'border border-dashed border-border text-muted-foreground',
-                        )}
+                        onClick={() =>
+                          next && update(row.key, { trials: setTrial(row.trials, i, next.value) })
+                        }
+                        className={cn(trial === undefined && 'border-dashed')}
                       >
                         {trial ? TRIAL_SYMBOL[trial] : ''}
-                      </button>
+                      </Button>
                     );
                   })}
                   <Button
@@ -259,13 +276,13 @@ export function HeightSeriesFields({
           })}
         </ol>
       )}
-      <ErrorText>{liveError}</ErrorText>
+      <ErrorText>{error}</ErrorText>
       <Button
         type="button"
         variant="secondary"
         size="sm"
         className="w-fit"
-        disabled={ended}
+        disabled={!addable}
         onClick={add}
       >
         <Plus aria-hidden className="size-4" />

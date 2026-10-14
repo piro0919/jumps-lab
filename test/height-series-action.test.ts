@@ -82,8 +82,9 @@ describe('saveAttemptAction の高さごとの結果', () => {
     ];
     expect({ results, writes: data.addAttempt.mock.calls.length }).toEqual({
       results: [
-        { ok: false, error: 'series.afterElimination' },
-        { ok: false, error: 'series.noClear' },
+        // どの高さかは位置で返す（画面がその高さの名前で言う）。何も越えていないのは高さによらない
+        { ok: false, error: 'series.afterElimination', row: 1 },
+        { ok: false, error: 'series.noClear', row: null },
         { ok: false, error: 'generic' },
       ],
       writes: 0,

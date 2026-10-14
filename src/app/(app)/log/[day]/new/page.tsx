@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import { AttemptForm } from '@/components/attempt-form';
 import { Card, PageTitle, FORM_PAGE } from '@/components/layout-ui';
-import { listAttemptsBetween } from '@/lib/data';
+import { listAttemptMarksBetween } from '@/lib/data';
 import { resolveLogDay, todayIn } from '@/lib/dates';
 import { requireProfile, requireViewer } from '@/lib/viewer';
 
@@ -18,7 +18,7 @@ export default async function NewAttempt({ params }: PageProps<'/log/[day]/new'>
   const day = resolveLogDay(requested, today);
   if (!day) redirect('/log/today/new');
 
-  const attempts = await listAttemptsBetween(viewer.userId, day, day);
+  const attempts = await listAttemptMarksBetween(viewer.userId, day, day);
   const lastEvent = attempts.at(-1)?.event;
   const initialEvent =
     lastEvent && profile.events.includes(lastEvent) ? lastEvent : profile.events[0]!;

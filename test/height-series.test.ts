@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
+  canAddHeight,
   checkSeries,
   hasHeightSeries,
   heightSeriesSchema,
   nextHeight,
   summarize,
+  trialOptions,
   trialSymbols,
   type HeightSeries,
   type Trial,
@@ -100,6 +102,41 @@ describe('checkSeries', () => {
       'noClear@1.8',
       'noClear@1.8',
     ]);
+  });
+});
+
+/** 「XX- X」の形から、高さごとの結果だけを作る（入力の欄の規則は高さを見ない） */
+const trialRows = (text: string) =>
+  text.split(' ').map((marks) => [...marks].map((m) => TRIAL_OF[m]!));
+/** 入れられる値を記号で（空は「_」） */
+const options = (text: string, row: number, at: number) =>
+  trialOptions(trialRows(text), row, at)
+    .map((value) => (value === undefined ? '_' : { cleared: 'O', missed: 'X', passed: '-' }[value]))
+    .join('');
+
+describe('入力の欄で入れられる値（trialOptions・canAddHeight）', () => {
+  it('成功・パスのあとの回は空のまま。まだ前の回が空の回には何も入れられない', () => {
+    expect([options('O', 0, 1), options('-', 0, 1), options('', 0, 1), options('X', 0, 2)]).toEqual(
+      ['_', '_', '', ''],
+    );
+  });
+
+  it('次の高さがあれば、その前の高さは失敗のままにできない。入れ直す途中の空の高さは飛ばす', () => {
+    expect([options('XX- X', 0, 2), options('O O', 0, 0)]).toEqual(['O-', '_O-']);
+  });
+
+  it('続けて3回失敗したあと（高さをまたいでも）は空のまま。3回目の失敗は入れられる', () => {
+    expect([options('XX- X', 1, 1), options('XX- ', 1, 0), options('XXX', 0, 2)]).toEqual([
+      '_',
+      '_OX-',
+      '_OX-',
+    ]);
+  });
+
+  it('失敗のままの高さの後ろと、続けて3回失敗したあとには高さを足せない', () => {
+    expect(
+      ['', 'O', 'X-', 'XX', 'XXX', 'XX- X', 'O '].map((t) => canAddHeight(trialRows(t))),
+    ).toEqual([true, true, true, false, false, false, true]);
   });
 });
 

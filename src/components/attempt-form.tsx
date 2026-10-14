@@ -4,7 +4,7 @@
 import { useRouter } from '@bprogress/next/app';
 import { ChevronDown } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useActionState, useEffect, useRef, useState } from 'react';
+import { useActionState, useEffect, useMemo, useRef, useState } from 'react';
 import { saveAttemptAction } from '@/app/actions/today';
 import { safely } from '@/lib/safe-action';
 import { ActionForm } from '@/components/action-form';
@@ -22,7 +22,7 @@ import { FormActions } from '@/components/form-actions';
 import {
   completeSeries,
   HeightSeriesFields,
-  LIVE_ERRORS,
+  isLiveError,
   toRows,
   useSeriesMessage,
   type HeightRowState,
@@ -163,26 +163,46 @@ export function AttemptForm({
   const [event, setEvent] = useState<JumpEvent>(initialEvent);
   // 走高跳・棒高跳の高さごとの結果。種目を変えても残し（戻せば出る）、送るのは高さを持つ種目のときだけ
   const [rows, setRows] = useState<HeightRowState[]>(() => toRows(initial?.heightSeries ?? null));
+  // 保存を押してから高さの行を触ったか。触ったら、サーバーが弾いた理由（送った行のもの）は出さない
+  const [rowsEdited, setRowsEdited] = useState(false);
   const bySeries = hasHeightSeries(event) && rows.length > 0;
-  const complete = completeSeries(rows, units);
-  const best = complete ? summarize(complete).bestM : null;
+  // 高さがすべて入っている行の結果と、その確かめ・越えた高さ。ここで1度だけ求めて、高さの欄にも渡す
+  const { complete, checked, best } = useMemo(() => {
+    const series = completeSeries(rows, units);
+    if (!series || series.length === 0) return { complete: series, checked: null, best: null };
+    const result = checkSeries(series);
+    return {
+      complete: series,
+      checked: result,
+      best: result.ok ? result.summary.bestM : summarize(series).bestM,
+    };
+  }, [rows, units]);
   const [kind, setKind] = useState<'practice' | 'competition'>(initial?.kind ?? 'practice');
   const [state, action, pending] = useActionState(async (previous: unknown, formData: FormData) => {
+    setRowsEdited(false);
     const result = await safely(() => saveAttemptAction(null, formData));
     if (result?.ok) router.push(backHref);
     return result;
   }, null);
-
-  /**
-   * サーバーが弾いた理由の文。どの高さかは、送った行をここでも確かめて出す。
-   * 高さの欄の下にその場で出している理由（LIVE_ERRORS）は、同じ文を2度出さない
-   */
-  const seriesError = (error: SeriesError) => {
-    if (LIVE_ERRORS.includes(error)) return null;
-    const checked = complete ? checkSeries(complete) : null;
-    const index = checked && !checked.ok ? checked.index : 0;
-    return seriesMessage(error, complete?.[index]?.heightM ?? null);
+  const changeRows = (next: HeightRowState[]) => {
+    setRows(next);
+    setRowsEdited(true);
   };
+
+  /** 高さの文（その位置の高さを本人の単位で） */
+  const seriesText = (error: SeriesError, index: number | null) =>
+    seriesMessage(error, index === null ? null : (complete?.[index]?.heightM ?? null));
+  // サーバーが弾いた理由。どの高さかはサーバーが返した位置で言う（送った行のまま、触っていないあいだだけ）
+  const serverSeries =
+    state?.ok === false && state.error.startsWith(SERIES_PREFIX) && !rowsEdited
+      ? seriesText(
+          state.error.slice(SERIES_PREFIX.length) as SeriesError,
+          'row' in state ? (state.row ?? null) : null,
+        )
+      : null;
+  // その場で確かめた誤り。サーバーの理由を出しているあいだは、同じ文を2度出さない
+  const live = checked && !checked.ok && isLiveError(checked.error) ? checked : null;
+  const liveError = live && serverSeries === null ? seriesText(live.error, live.index) : null;
 
   return (
     <ActionForm action={action} className="flex flex-col gap-4">
@@ -207,10 +227,17 @@ export function AttemptForm({
         />
       </div>
       {/* 高さごとに入れているあいだは、記録はいちばん高く越えた高さ（サーバーも同じく決める）。
-          記録の欄は消さずに隠し、高さをすべて消したら入れていた値に戻る */}
+          記録の欄は消さずに隠して止める（止めた欄はブラウザの検査にも送る値にも入らない。隠した欄の検査で
+          保存が黙って止まっていた）。高さをすべて消したら入れていた値に戻る */}
       <div hidden={bySeries}>
         <Field label={t('mark')} required={tProfile('required')}>
-          <MarkInput name="markM" units={units} defaultMeters={initial?.markM ?? null} autoFocus />
+          <MarkInput
+            name="markM"
+            units={units}
+            defaultMeters={initial?.markM ?? null}
+            autoFocus
+            disabled={bySeries}
+          />
         </Field>
       </div>
       {bySeries && (
@@ -224,7 +251,14 @@ export function AttemptForm({
         </div>
       )}
       {hasHeightSeries(event) && (
-        <HeightSeriesFields event={event} units={units} rows={rows} onChange={setRows} />
+        <HeightSeriesFields
+          event={event}
+          units={units}
+          rows={rows}
+          invalid={live !== null}
+          error={liveError}
+          onChange={changeRows}
+        />
       )}
       {hasWind(event) && (
         <Field label={t('wind')}>
@@ -242,7 +276,7 @@ export function AttemptForm({
           <ErrorText>
             {state?.ok === false
               ? state.error.startsWith(SERIES_PREFIX)
-                ? seriesError(state.error.slice(SERIES_PREFIX.length) as SeriesError)
+                ? serverSeries
                 : state.error.startsWith(DETAIL_RANGE_PREFIX)
                   ? rangeMessage(state.error.slice(DETAIL_RANGE_PREFIX.length) as DetailKey)
                   : tErrors(state.error as 'generic' | 'mark' | 'grip')

@@ -607,7 +607,24 @@ export async function listAttempts(userId: string, event: JumpEvent): Promise<At
   return rows.map(toAttemptMark);
 }
 
-/** 期間の中の記録（全種目）。カレンダー用 */
+/**
+ * 期間の中の記録（全種目）。細かい記録と高さごとの結果は読まない。それを出さない呼び手
+ * （試技・動画を足す画面のはじめの種目、動画の結び付け先、AI のメニューの材料）はこちら
+ */
+export async function listAttemptMarksBetween(
+  userId: string,
+  from: string,
+  to: string,
+): Promise<AttemptMark[]> {
+  const { rows } = await db().query<AttemptMarkRow>(
+    `select ${attemptMarkColumns} from attempt where "userId" = $1 and day between $2 and $3
+      order by day, "createdAt"`,
+    [userId, from, to],
+  );
+  return rows.map(toAttemptMark);
+}
+
+/** 期間の中の記録（全種目）を、細かい記録と高さごとの結果も含めて。それを出す日の画面用 */
 export async function listAttemptsBetween(
   userId: string,
   from: string,

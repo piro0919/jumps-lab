@@ -69,10 +69,19 @@ const attemptSchema = z.object({
   day,
   event: z.enum(EVENTS),
   kind: z.enum(['practice', 'competition']),
-  markM: z.coerce.number({ message: 'mark' }).min(MARK_MIN_M, 'mark').max(MARK_MAX_M, 'mark'),
   windMs: optionalNumber(-WIND_LIMIT_MS, WIND_LIMIT_MS),
   note: optionalText(NOTE_MAX_LENGTH),
 });
+
+// 記録は種目を読んでから（高さごとの結果があれば、送られてきた値ではなく越えた高さ）
+const markSchema = z.coerce.number().min(MARK_MIN_M).max(MARK_MAX_M);
+
+/**
+ * 試技の保存の結果。高さごとの結果を弾いたときは、どの高さか（送られてきた行の位置。
+ * 何も越えていない noClear は高さによらないので null）も返す。画面はその高さの名前で言う
+ */
+export type SaveAttemptResult =
+  { ok: true } | { ok: false; error: string; row?: number | null } | null;
 
 /**
  * 試技を1本足すか書き換える。種目は本人の選んだ種目だけ（書き換えは元の種目のままでもよい）。風は走幅跳と三段跳だけ残す。
@@ -81,30 +90,31 @@ const attemptSchema = z.object({
  * いちばん高く越えた高さにする。何も越えていなければ保存しない（記録の列は空にできず、PB・平均が数える）
  */
 export async function saveAttemptAction(
-  _previous: ActionResult,
+  _previous: SaveAttemptResult,
   formData: FormData,
-): Promise<ActionResult> {
+): Promise<SaveAttemptResult> {
   const viewer = await requireViewer();
   const raw = Object.fromEntries(formData);
+  const parsed = attemptSchema.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: 'generic' };
   // 高さごとの結果は走高跳・棒高跳だけ。ほかの種目（種目を変えて直した試技も）では捨てる
-  const vertical = EVENTS.some((e) => e === raw.event && hasHeightSeries(e));
-  const series = heightSeriesSchema.safeParse(vertical ? raw.heightSeries : null);
+  const series = heightSeriesSchema.safeParse(
+    hasHeightSeries(parsed.data.event) ? raw.heightSeries : null,
+  );
   if (!series.success) return { ok: false, error: 'generic' };
   let seriesMark: number | null = null;
   if (series.data) {
     const checked = checkSeries(series.data);
-    if (!checked.ok) return { ok: false, error: `series.${checked.error}` };
+    if (!checked.ok) {
+      const row = checked.error === 'noClear' ? null : checked.index;
+      return { ok: false, error: `series.${checked.error}`, row };
+    }
     seriesMark = checked.summary.bestM;
   }
-  const parsed = attemptSchema.safeParse({
-    ...raw,
-    markM: seriesMark ?? (raw.markM === '' ? undefined : raw.markM),
-  });
+  const mark = markSchema.safeParse(seriesMark ?? (raw.markM === '' ? undefined : raw.markM));
+  if (!mark.success) return { ok: false, error: 'mark' };
   // 細かい記録は種目に合わない欄も含めて読み、範囲を確かめてから種目に合う欄だけ残す（keepDetailsFor）
   const details = attemptDetailsSchema.safeParse(raw);
-  if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0]?.message === 'mark' ? 'mark' : 'generic' };
-  }
   if (!details.success) {
     // どの欄が範囲の外かを返す（ブラウザを通らない要求と、ブラウザの検査をすり抜けた値）
     return { ok: false, error: detailsError(details.error) };
@@ -123,6 +133,7 @@ export async function saveAttemptAction(
   }
   const values = {
     ...input,
+    markM: mark.data,
     event,
     windMs: hasWind(event) ? input.windMs : null,
     details: keepDetailsFor(event, details.data),
