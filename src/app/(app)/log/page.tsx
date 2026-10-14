@@ -106,7 +106,9 @@ export default async function Log({ searchParams }: PageProps<'/log'>) {
                             })}
                       </span>
                       {competitionOn.has(entry.day) && (
-                        <Badge tone="accent" className="min-w-0 truncate">
+                        // 長い大会名は省略する。札は縮まない inline-flex なので、縮む block に替える
+                        // （そのままだと幅 375px で札が伸び、ページが横にはみ出した。2026-10-15）
+                        <Badge tone="accent" className="block min-w-0 shrink truncate">
                           {competitionOn.get(entry.day)}
                         </Badge>
                       )}

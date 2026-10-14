@@ -1335,21 +1335,6 @@ export async function saveMenuExchange(
 /** AI を呼んだ用途。メニュー、相談、大会の取り込み（ai_call の柵と同じ） */
 export type AiCallKind = 'menu' | 'chat' | 'meetImport';
 
-/** AI を1回呼ぶ前に記録する（失敗した呼び出しも上限に数えるため） */
-export async function recordAiCall(
-  userId: string,
-  day: string,
-  kind: AiCallKind,
-  model: string,
-): Promise<void> {
-  await db().query(`insert into ai_call ("userId", day, kind, model) values ($1, $2, $3, $4)`, [
-    userId,
-    day,
-    kind,
-    model,
-  ]);
-}
-
 /**
  * 上限（その日と、その日と同じ月の回数）に収まっていれば、AI を1回呼ぶ記録を入れて true を返す。
  * 人ごとの鍵の中で数えてから入れるので、同時に送られても上限を超えない
@@ -1389,20 +1374,6 @@ export async function claimAiCall(
   } finally {
     client.release();
   }
-}
-
-/** AI を呼んだ回数。その日の分と、その日と同じ月の分 */
-export async function countAiCalls(
-  userId: string,
-  day: string,
-  kind: AiCallKind,
-): Promise<{ today: number; month: number }> {
-  const { rows } = await db().query<{ today: string; month: string }>(
-    `select count(*) filter (where day = $2::date) as today, count(*) as month from ai_call
-      where "userId" = $1 and kind = $3 and date_trunc('month', day) = date_trunc('month', $2::date)`,
-    [userId, day, kind],
-  );
-  return { today: Number(rows[0]!.today), month: Number(rows[0]!.month) };
 }
 
 /**

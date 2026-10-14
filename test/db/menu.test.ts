@@ -1,16 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import {
+  type AiCallKind,
   claimAiCall,
-  countAiCalls,
   getMenu,
   hasMenu,
   listMenuMessages,
-  recordAiCall,
   saveMenu,
   saveMenuExchange,
 } from '@/lib/data';
 import type { Menu } from '@/lib/menu';
-import { addProfile } from './seed';
+import { addProfile, query } from './seed';
 
 /** AI コーチの表（呼んだ回数・今日のメニュー・チャット） */
 
@@ -22,26 +21,41 @@ function menu(summary: string): Menu {
 
 const first = { level: 'normal' as const, model: 'model-a', menu: menu('first'), minutes: 90 };
 
-describe('countAiCalls', () => {
-  it('その日の分と同じ月の分を、種類ごとに本人の分だけ数える', async () => {
-    const [userId, other] = await Promise.all([addProfile(), addProfile()]);
-    await recordAiCall(userId, DAY, 'menu', 'm');
-    await recordAiCall(userId, DAY, 'menu', 'm');
-    await recordAiCall(userId, DAY, 'chat', 'm');
-    await recordAiCall(userId, '2026-10-01', 'menu', 'm');
-    await recordAiCall(userId, '2026-10-31', 'menu', 'm');
-    // 前の月と次の月は数えない
-    await recordAiCall(userId, '2026-09-30', 'menu', 'm');
-    await recordAiCall(userId, '2026-11-01', 'menu', 'm');
-    await recordAiCall(other, DAY, 'menu', 'm');
-
-    expect(await countAiCalls(userId, DAY, 'menu')).toEqual({ today: 2, month: 4 });
-    expect(await countAiCalls(userId, DAY, 'chat')).toEqual({ today: 1, month: 1 });
-    expect(await countAiCalls(userId, '2026-10-02', 'menu')).toEqual({ today: 0, month: 4 });
-  });
-});
+/** 上限に関わらず、AI を呼んだ記録を1行入れる */
+async function record(userId: string, day: string, kind: AiCallKind) {
+  await query(`insert into ai_call ("userId", day, kind, model) values ($1, $2, $3, 'm')`, [
+    userId,
+    day,
+    kind,
+  ]);
+}
 
 describe('claimAiCall', () => {
+  it('その日の分と同じ月の分を、種類ごとに本人の分だけ数える', async () => {
+    const [userId, other] = await Promise.all([addProfile(), addProfile()]);
+    await record(userId, DAY, 'menu');
+    await record(userId, DAY, 'menu');
+    await record(userId, DAY, 'chat');
+    await record(userId, '2026-10-01', 'menu');
+    await record(userId, '2026-10-31', 'menu');
+    // 前の月と次の月は数えない
+    await record(userId, '2026-09-30', 'menu');
+    await record(userId, '2026-11-01', 'menu');
+    await record(other, DAY, 'menu');
+
+    // 断るものを先に確かめる（通ると1行増える）
+    const results = [
+      // その日は 2回
+      await claimAiCall(userId, DAY, 'menu', 'm', { perDay: 2, perMonth: 99 }),
+      // 月は 4回
+      await claimAiCall(userId, '2026-10-02', 'menu', 'm', { perDay: 9, perMonth: 4 }),
+      await claimAiCall(userId, '2026-10-02', 'menu', 'm', { perDay: 1, perMonth: 5 }),
+      // 相談は 1回だけ
+      await claimAiCall(userId, DAY, 'chat', 'm', { perDay: 2, perMonth: 2 }),
+    ];
+    expect(results).toEqual([false, false, true, true]);
+  });
+
   it('同時に送られても、その日の上限の数だけ記録して通す', async () => {
     const userId = await addProfile();
     const results = await Promise.all(
@@ -51,13 +65,18 @@ describe('claimAiCall', () => {
     );
     expect({
       passed: results.filter(Boolean).length,
-      recorded: await countAiCalls(userId, DAY, 'meetImport'),
-    }).toEqual({ passed: 2, recorded: { today: 2, month: 2 } });
+      recorded: (
+        await query<{ n: number }>(
+          `select count(*)::integer as n from ai_call where "userId" = $1`,
+          [userId],
+        )
+      )[0]!.n,
+    }).toEqual({ passed: 2, recorded: 2 });
   });
 
   it('月の上限に達していれば、その日がまだでも通さない', async () => {
     const userId = await addProfile();
-    await recordAiCall(userId, '2026-10-01', 'meetImport', 'm');
+    await record(userId, '2026-10-01', 'meetImport');
     expect(await claimAiCall(userId, DAY, 'meetImport', 'm', { perDay: 5, perMonth: 1 })).toBe(
       false,
     );

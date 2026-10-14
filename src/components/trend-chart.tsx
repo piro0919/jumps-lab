@@ -86,7 +86,8 @@ export function TrendChart({
       )}
       <div ref={frame}>
         <svg viewBox={`0 0 ${width} ${HEIGHT}`} className={`w-full ${colorClass}`} role="img">
-          {[max, min].map((m) => (
+          {/* 全部同じ値なら目盛りは1本（2本だと同じ字が重なり、key もぶつかった） */}
+          {(max === min ? [max] : [max, min]).map((m) => (
             <g key={m}>
               <line
                 x1={PAD.left}

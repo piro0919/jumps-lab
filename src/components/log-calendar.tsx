@@ -115,7 +115,12 @@ export async function LogCalendar({
               <span className="flex h-3 items-center gap-1">
                 {recorded.has(cell) && <span className="size-2 rounded-full bg-primary" />}
                 {competitions.has(cell) && (
-                  <Trophy aria-label={t('competitionDay')} className="size-3 text-primary" />
+                  // role が無いと、押せない先の日のマスでは aria-label が読まれない
+                  <Trophy
+                    role="img"
+                    aria-label={t('competitionDay')}
+                    className="size-3 text-primary"
+                  />
                 )}
               </span>
             </>

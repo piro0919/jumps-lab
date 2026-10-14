@@ -97,16 +97,18 @@ beforeEach(() => {
 });
 
 describe('createMenuAction', () => {
-  it('上限に達していれば AI を呼ばずに menuLimit を返す', async () => {
+  it('上限に達していれば材料も読まず AI も呼ばずに menuLimit を返す', async () => {
     limit.claimAiCallWithinLimit.mockResolvedValue(false);
     const result = await createMenuAction({ ok: true }, form({ minutes: '60' }));
     expect({
       result,
       asked: askJson.mock.calls.length,
+      read: data.listAllAttempts.mock.calls.length,
       claims: limit.claimAiCallWithinLimit.mock.calls,
     }).toEqual({
       result: { ok: false, error: 'menuLimit' },
       asked: 0,
+      read: 0,
       claims: [['u1', expect.any(String), 'menu', MENU_MODEL]],
     });
   });
@@ -127,17 +129,19 @@ describe('createMenuAction', () => {
 });
 
 describe('askMenuAction', () => {
-  it('上限に達していれば AI を呼ばずに chatLimit を返す', async () => {
+  it('上限に達していれば材料も読まず AI も呼ばずに chatLimit を返す', async () => {
     data.getMenu.mockResolvedValue(savedMenu);
     limit.claimAiCallWithinLimit.mockResolvedValue(false);
     const result = await askMenuAction({ ok: true }, form({ question: '短くして' }));
     expect({
       result,
       asked: askJson.mock.calls.length,
+      read: data.listAllAttempts.mock.calls.length,
       claims: limit.claimAiCallWithinLimit.mock.calls,
     }).toEqual({
       result: { ok: false, error: 'chatLimit' },
       asked: 0,
+      read: 0,
       claims: [['u1', expect.any(String), 'chat', CHAT_MODEL]],
     });
   });
