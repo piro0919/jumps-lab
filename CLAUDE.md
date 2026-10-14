@@ -208,7 +208,6 @@ Copy the shape of `~/Repository/onigiri` (which itself copies vocafy). Read its 
 - Everything is pushed and live (2026-10-11): the landing page, videos, today's advice with the main goal meet, grade only in Japan, week start, the terms sentence, the shared lint rules at error level, and the UTC time zone fix with its one-time repair
 - Not yet checked:
   - Uploading and playing a video in production (needs the owner's Google sign-in on a phone; works locally against jumps-lab-dev)
-  - The analysis page at 3:2 was not looked at after the layout change (home was)
 - Not done:
   - Push notifications: live since 2026-10-14. Not yet checked: a real notice on a phone, tapping a notice, `pushsubscriptionchange`, iOS
   - The AI menu went live on 2026-10-12 because the owner asked for it with the items below set aside ("規約とか諸々一回置いといて"). Still open, in this order:
