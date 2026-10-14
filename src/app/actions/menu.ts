@@ -4,7 +4,7 @@ import { refresh } from 'next/cache';
 import { getLocale } from 'next-intl/server';
 import { z } from 'zod';
 import { AI_CONSENT_VERSION, AiError, aiConsenter, aiEnabled, aiUsable, askJson } from '@/lib/ai';
-import { overAiLimit } from '@/lib/ai-limit';
+import { claimAiCallWithinLimit } from '@/lib/ai-limit';
 import { eventBests } from '@/lib/bests';
 import {
   consentToAi,
@@ -17,7 +17,6 @@ import {
   listConditionsBetween,
   listMenuMessages,
   type Profile,
-  recordAiCall,
   saveMenu,
   saveMenuExchange,
 } from '@/lib/data';
@@ -202,7 +201,6 @@ export async function createMenuAction(
 
   try {
     if (await getMenu(viewer.userId, today)) return { ok: true };
-    if (await overAiLimit(viewer.userId, today, 'menu')) return { ok: false, error: 'menuLimit' };
     const { advice, meetDay, data } = await menuContext(viewer.userId, profile, today);
     const input = JSON.stringify({
       ...data,
@@ -211,8 +209,10 @@ export async function createMenuAction(
     let instructions = menuInstructions(advice.level, await language(), meetDay);
 
     for (let attempt = 0; attempt <= RETRIES; attempt += 1) {
-      // 呼ぶ前に記録する（失敗しても上限に数える）
-      await recordAiCall(viewer.userId, today, 'menu', MENU_MODEL);
+      // 呼ぶ前に数えて記録する（失敗しても上限に数える。同時に送られても上限を超えない）
+      if (!(await claimAiCallWithinLimit(viewer.userId, today, 'menu', MENU_MODEL))) {
+        return { ok: false, error: attempt === 0 ? 'menuLimit' : 'menuFailed' };
+      }
       const answer = await askJson<Menu>({
         model: MENU_MODEL,
         instructions,
@@ -265,7 +265,6 @@ export async function askMenuAction(
   try {
     const current = await getMenu(viewer.userId, today);
     if (!current) return { ok: false, error: 'generic' };
-    if (await overAiLimit(viewer.userId, today, 'chat')) return { ok: false, error: 'chatLimit' };
     const [{ advice, data }, history] = await Promise.all([
       menuContext(viewer.userId, profile, today),
       listMenuMessages(viewer.userId, today),
@@ -291,7 +290,9 @@ export async function askMenuAction(
     }
 
     for (let attempt = 0; attempt <= RETRIES; attempt += 1) {
-      await recordAiCall(viewer.userId, today, 'chat', CHAT_MODEL);
+      if (!(await claimAiCallWithinLimit(viewer.userId, today, 'chat', CHAT_MODEL))) {
+        return { ok: false, error: attempt === 0 ? 'chatLimit' : 'menuFailed' };
+      }
       const answer = await askJson<Revision>({
         model: CHAT_MODEL,
         instructions,
