@@ -89,7 +89,7 @@ export default function Privacy() {
         <dt>共同して利用する項目</dt>
         <dd>2. に挙げた情報のすべて</dd>
         <dt>共同して利用する者の範囲</dt>
-        <dd>kk-web、れんれん</dd>
+        <dd>kk-web、中元廉弥</dd>
         <dt>利用目的</dt>
         <dd>3. に挙げた目的と、プランの管理のため</dd>
         <dt>管理について責任を有する者</dt>
