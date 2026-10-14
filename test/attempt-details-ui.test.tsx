@@ -88,6 +88,7 @@ describe('AttemptForm の細かい記録', () => {
       markM: 4.2,
       windMs: null,
       note: null,
+      heightSeries: null,
       details: { ...EMPTY_DETAILS, poleLengthM: 4.572, standardsCm: 45.7 },
     };
     render(
@@ -140,6 +141,7 @@ describe('AttemptsCard の細かい記録の行', () => {
       markM: 6.5,
       windMs: null,
       note: null,
+      heightSeries: null,
       details: { ...EMPTY_DETAILS, approachSteps: 18, approachLengthM: 40.5, boardOffsetCm: 12 },
     },
     {
@@ -150,6 +152,7 @@ describe('AttemptsCard の細かい記録の行', () => {
       markM: 6.2,
       windMs: null,
       note: null,
+      heightSeries: null,
       details: { ...EMPTY_DETAILS, boardOffsetCm: -3 },
     },
     {
@@ -160,6 +163,7 @@ describe('AttemptsCard の細かい記録の行', () => {
       markM: 4.2,
       windMs: null,
       note: null,
+      heightSeries: null,
       details: {
         ...EMPTY_DETAILS,
         poleLengthM: 4.572,
@@ -176,6 +180,7 @@ describe('AttemptsCard の細かい記録の行', () => {
       markM: 1.8,
       windMs: null,
       note: null,
+      heightSeries: null,
       details: EMPTY_DETAILS,
     },
   ];
@@ -283,6 +288,7 @@ describe('AttemptForm の長さの欄を直さずに保存する', () => {
     markM: 4.2032,
     windMs: null,
     note: null,
+    heightSeries: null,
     details: {
       ...EMPTY_DETAILS,
       approachSteps: 16,

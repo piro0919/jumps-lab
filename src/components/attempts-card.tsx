@@ -11,6 +11,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import type { AttemptDetails, DetailKey } from '@/lib/attempt-details';
 import type { Attempt } from '@/lib/data';
 import { EVENT_BG, isWindAided, type JumpEvent } from '@/lib/events';
+import { summarize, trialSymbols, type HeightSeries } from '@/lib/height-series';
 import { formatMark, formatShortLength, type Units } from '@/lib/units';
 
 /**
@@ -134,6 +135,9 @@ export function AttemptsCard({
                             .filter(Boolean)
                             .join(' · ')}
                         </span>
+                        {attempt.heightSeries && (
+                          <SeriesLine series={attempt.heightSeries} units={units} />
+                        )}
                         <DetailsLine details={attempt.details} units={units} />
                       </span>
                       {/* 行の操作はアイコンだけのボタン（大会の一覧と同じ）。直すのは別の画面 */}
@@ -240,5 +244,44 @@ function DetailsLine({ details, units }: { details: AttemptDetails; units: Units
     <span className="text-xs text-muted-foreground">
       {format.list(items, { type: 'unit', style: 'short' })}
     </span>
+  );
+}
+
+/**
+ * 走高跳・棒高跳の高さごとの結果を「1.80 m O  1.85 m XO  1.90 m XXX」の形で（記録用紙と同じ O・X・–）。
+ * 高さは本人の単位。読み上げには記号ではなく「成功・失敗・パス」の語を渡す。
+ * その下に、同じ高さで並んだときに順位を分ける2つの失敗の数（TR26.8）
+ */
+function SeriesLine({ series, units }: { series: HeightSeries; units: Units }) {
+  const t = useTranslations('today');
+  const format = useFormatter();
+  const { missesAtBest, missesTotal } = summarize(series);
+  return (
+    <>
+      <ol className="flex flex-wrap gap-x-3 text-xs text-muted-foreground">
+        {series.map((row) => {
+          const height = formatMark(row.heightM, units);
+          const words = row.trials.map((result) => t('trialWord', { result }));
+          return (
+            <li
+              key={row.heightM}
+              aria-label={t('seriesItem', {
+                height,
+                results: format.list(words, { type: 'unit', style: 'short' }),
+              })}
+              className="whitespace-nowrap"
+            >
+              <span aria-hidden>
+                {height}{' '}
+                <span className="font-bold text-foreground">{trialSymbols(row.trials)}</span>
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+      <span className="text-xs text-muted-foreground">
+        {t('lineMisses', { total: missesTotal, atBest: missesAtBest })}
+      </span>
+    </>
   );
 }

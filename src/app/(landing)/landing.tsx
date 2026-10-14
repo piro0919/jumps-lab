@@ -46,7 +46,7 @@ function attempt(
   windMs: number | null,
   note: string | null = null,
 ): Attempt {
-  return { id, day, event, kind, markM, windMs, note, details: EMPTY_DETAILS };
+  return { id, day, event, kind, markM, windMs, note, details: EMPTY_DETAILS, heightSeries: null };
 }
 
 /** 見本の練習の日（走幅跳）。記録は m、風は m/s。最後の1本にメモを付ける */

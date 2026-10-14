@@ -24,19 +24,21 @@ const WEIGHT_STEP_KG = 0.1;
  * サーバーは単位を知らなくて済む
  */
 
-function Unit({ children }: { children: string }) {
+export function Unit({ children }: { children: string }) {
   return <span className="shrink-0 text-sm text-muted-foreground">{children}</span>;
 }
 
 const parse = (value: string) => (value.trim() === '' ? null : Number(value));
 
-function FeetInchesInput({
+export function FeetInchesInput({
   feet,
   inches,
   inchStep,
   onChange,
   autoFocus,
   feetRef,
+  required,
+  labels,
 }: {
   feet: string;
   inches: string;
@@ -46,6 +48,10 @@ function FeetInchesInput({
   autoFocus?: boolean;
   /** フィートの欄（合わせた長さの範囲を、この欄で止めるため） */
   feetRef?: Ref<HTMLInputElement>;
+  /** フィートの欄を空で送らせない */
+  required?: boolean;
+  /** 見出しの無い所に置くときの、2つの欄の読み上げの名前 */
+  labels?: { feet: string; inches: string };
 }) {
   const t = useTranslations('units');
   return (
@@ -58,6 +64,8 @@ function FeetInchesInput({
         step={1}
         value={feet}
         autoFocus={autoFocus}
+        required={required}
+        aria-label={labels?.feet}
         onChange={(e) => onChange(e.target.value, inches)}
       />
       <Unit>{t('ft')}</Unit>
@@ -68,6 +76,7 @@ function FeetInchesInput({
         max={11.75}
         step={inchStep}
         value={inches}
+        aria-label={labels?.inches}
         onChange={(e) => onChange(feet, e.target.value)}
       />
       <Unit>{t('in')}</Unit>

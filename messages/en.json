@@ -156,7 +156,16 @@
       "gripHeightM": "Grip height must be from {min} to {max}.",
       "standardsCm": "Standards must be from {min} to {max}."
     },
-    "grip": "Grip height can't be more than the pole length."
+    "grip": "Grip height can't be more than the pole length.",
+    "series": {
+      "heightOrder": "Each height must be above the one before ({height}).",
+      "heightRange": "{height} is outside the bar heights from {min} to {max}.",
+      "noTrials": "Enter a result for {height}.",
+      "afterEnd": "At {height}, nothing can follow a clear or a pass.",
+      "unfinished": "At {height}, clear it or pass before going to the next height.",
+      "afterElimination": "Three misses in a row end the competition. Remove the jumps from {height} on.",
+      "noClear": "Clear at least one height to save this attempt."
+    }
   },
   "home": {
     "goal": "Season goal",
@@ -231,7 +240,20 @@
     "linePole": "{length} pole",
     "lineStiffness": "{lb} lb",
     "lineGrip": "Grip {length}",
-    "lineStandards": "Standards {length}"
+    "lineStandards": "Standards {length}",
+    "heights": "By height",
+    "addHeight": "Add height",
+    "removeHeight": "Remove {height}",
+    "barHeight": "Bar height",
+    "barHeightN": "Bar height {n}",
+    "barHeightFeet": "Bar height {n}, feet",
+    "barHeightInches": "Bar height {n}, inches",
+    "trialSlot": "{height}, trial {n}: {result, select, cleared {cleared} missed {missed} passed {passed} other {not entered}}",
+    "markFromHeights": "Mark (best height cleared)",
+    "noHeightCleared": "No height cleared yet",
+    "seriesItem": "{height}: {results}",
+    "trialWord": "{result, select, cleared {cleared} missed {missed} other {passed}}",
+    "lineMisses": "Misses: {total} in total, {atBest} at the best height"
   },
   "calendar": {
     "add": "Add",
@@ -565,7 +587,7 @@
     "joinTitle": "Join {team}",
     "joinIntro": "{coaches} invited you to {team} on Jumps Lab. If you join, the coaches of {team} can see the following.",
     "shownProfile": "Display name and events",
-    "shownAttempts": "Attempts: date, event, practice or competition, mark, wind, note and the approach, board and pole details",
+    "shownAttempts": "Attempts: date, event, practice or competition, mark, wind, note, the approach, board and pole details and per-height results",
     "shownCondition": "Condition, fatigue, sleep, pain notes and practice notes for each day",
     "shownCompetitions": "Competitions and their results",
     "shownVideos": "Videos and their notes, until they are deleted 90 days after upload",

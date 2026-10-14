@@ -13,6 +13,7 @@ import {
 import { isDay, todayIn } from '@/lib/dates';
 import { attemptDetailsSchema, detailsError, keepDetailsFor } from '@/lib/attempt-details';
 import { EVENTS, hasWind } from '@/lib/events';
+import { checkSeries, hasHeightSeries, heightSeriesSchema } from '@/lib/height-series';
 import { type ActionResult, optionalNumber, optionalText } from '@/lib/form';
 import {
   LONG_NOTE_MAX_LENGTH,
@@ -75,7 +76,9 @@ const attemptSchema = z.object({
 
 /**
  * 試技を1本足すか書き換える。種目は本人の選んだ種目だけ（書き換えは元の種目のままでもよい）。風は走幅跳と三段跳だけ残す。
- * 跳躍の細かい記録（src/lib/attempt-details.ts）は、種目に合う欄だけ残す
+ * 跳躍の細かい記録（src/lib/attempt-details.ts）は、種目に合う欄だけ残す。
+ * 走高跳・棒高跳の高さごとの結果（src/lib/height-series.ts）があれば、規則どおりかを確かめ、記録は送られてきた値ではなく
+ * いちばん高く越えた高さにする。何も越えていなければ保存しない（記録の列は空にできず、PB・平均が数える）
  */
 export async function saveAttemptAction(
   _previous: ActionResult,
@@ -83,9 +86,19 @@ export async function saveAttemptAction(
 ): Promise<ActionResult> {
   const viewer = await requireViewer();
   const raw = Object.fromEntries(formData);
+  // 高さごとの結果は走高跳・棒高跳だけ。ほかの種目（種目を変えて直した試技も）では捨てる
+  const vertical = EVENTS.some((e) => e === raw.event && hasHeightSeries(e));
+  const series = heightSeriesSchema.safeParse(vertical ? raw.heightSeries : null);
+  if (!series.success) return { ok: false, error: 'generic' };
+  let seriesMark: number | null = null;
+  if (series.data) {
+    const checked = checkSeries(series.data);
+    if (!checked.ok) return { ok: false, error: `series.${checked.error}` };
+    seriesMark = checked.summary.bestM;
+  }
   const parsed = attemptSchema.safeParse({
     ...raw,
-    markM: raw.markM === '' ? undefined : raw.markM,
+    markM: seriesMark ?? (raw.markM === '' ? undefined : raw.markM),
   });
   // 細かい記録は種目に合わない欄も含めて読み、範囲を確かめてから種目に合う欄だけ残す（keepDetailsFor）
   const details = attemptDetailsSchema.safeParse(raw);
@@ -113,6 +126,7 @@ export async function saveAttemptAction(
     event,
     windMs: hasWind(event) ? input.windMs : null,
     details: keepDetailsFor(event, details.data),
+    heightSeries: series.data,
   };
   try {
     if (id) await updateAttempt(viewer.userId, id, values);

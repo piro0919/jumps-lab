@@ -10,6 +10,7 @@ import {
   type AttemptDetails,
   type DetailKey,
 } from '@/lib/attempt-details';
+import type { HeightSeries } from '@/lib/height-series';
 import type { Locale } from '@/i18n/locales';
 import type { ReminderRow } from '@/lib/meet-reminder';
 import type { Menu, MenuLevel } from '@/lib/menu';
@@ -545,29 +546,36 @@ export type Attempt = {
   note: string | null;
   /** 跳躍の細かい記録（任意。種目に合う欄だけ入る） */
   details: AttemptDetails;
+  /** 走高跳・棒高跳の高さごとの結果（任意）。あれば markM はいちばん高く越えた高さ */
+  heightSeries: HeightSeries | null;
 };
 
-/** 足す・書き換えるときの値。細かい記録は省けば空 */
-export type AttemptInput = Omit<Attempt, 'id' | 'details'> & { details?: AttemptDetails };
+/** 足す・書き換えるときの値。細かい記録と高さごとの結果は省けば空 */
+export type AttemptInput = Omit<Attempt, 'id' | 'details' | 'heightSeries'> & {
+  details?: AttemptDetails;
+  heightSeries?: HeightSeries | null;
+};
 
 /**
  * 細かい記録の無い試技。全期間を読んで数える画面（ホーム・分析・記録の一覧・大会の結果）はこれだけ読む。
  * 細かい記録の列を読むのは、それを出す画面（日の画面・直す画面・コーチの見る日ごとの試技）だけ
  */
-export type AttemptMark = Omit<Attempt, 'details'>;
+export type AttemptMark = Omit<Attempt, 'details' | 'heightSeries'>;
 
 type AttemptMarkRow = Omit<AttemptMark, 'markM' | 'windMs'> & {
   markM: string;
   windMs: string | null;
 };
-type AttemptRow = AttemptMarkRow & Record<DetailKey, string | number | null>;
+type AttemptRow = AttemptMarkRow &
+  Record<DetailKey, string | number | null> & { heightSeries: HeightSeries | null };
 
 /** 細かい記録の列の名前（引用符付き、DETAIL_KEYS の順）。select・insert・update はここから組む */
 const DETAIL_COLUMN_NAMES = DETAIL_KEYS.map((key) => `"${key}"`);
 const DETAIL_COLUMNS = DETAIL_COLUMN_NAMES.join(', ');
 
 const attemptMarkColumns = `id, to_char(day, 'YYYY-MM-DD') as day, event, kind, "markM", "windMs", note`;
-const attemptColumns = `${attemptMarkColumns}, ${DETAIL_COLUMNS}`;
+// 高さごとの結果（jsonb）も、細かい記録と同じく出す画面だけが読む
+const attemptColumns = `${attemptMarkColumns}, ${DETAIL_COLUMNS}, "heightSeries"`;
 
 function toAttemptMark(row: AttemptMarkRow): AttemptMark {
   const { id, day, event, kind, note } = row;
@@ -578,8 +586,12 @@ function toAttempt(row: AttemptRow): Attempt {
   const details = Object.fromEntries(
     DETAIL_KEYS.map((key) => [key, row[key] === null ? null : Number(row[key])]),
   ) as AttemptDetails;
-  return { ...toAttemptMark(row), details };
+  return { ...toAttemptMark(row), details, heightSeries: row.heightSeries };
 }
+
+/** 高さごとの結果を jsonb の引数に（pg は配列を Postgres の配列にしてしまうので、文字にして渡す） */
+const seriesValue = (series: HeightSeries | null | undefined) =>
+  series ? JSON.stringify(series) : null;
 
 /** 細かい記録を DETAIL_KEYS の順に並べた値（insert と update の引数） */
 const detailValues = (details: AttemptDetails = EMPTY_DETAILS) =>
@@ -618,10 +630,11 @@ export async function addAttempt(userId: string, input: AttemptInput): Promise<v
     input.markM,
     input.windMs,
     input.note,
+    seriesValue(input.heightSeries),
     ...detailValues(input.details),
   ];
   await db().query(
-    `insert into attempt ("userId", day, event, kind, "markM", "windMs", note,
+    `insert into attempt ("userId", day, event, kind, "markM", "windMs", note, "heightSeries",
        ${DETAIL_COLUMNS})
      values (${values.map((_, i) => `$${i + 1}`).join(', ')})`,
     values,
@@ -637,19 +650,29 @@ export async function getAttempt(userId: string, id: string): Promise<Attempt | 
   return rows[0] ? toAttempt(rows[0]) : null;
 }
 
-/** 試技を1本書き換える（日は変えない）。本人の試技だけ。細かい記録も渡した値で置き換える */
+/** 試技を1本書き換える（日は変えない）。本人の試技だけ。細かい記録と高さごとの結果も渡した値で置き換える */
 export async function updateAttempt(
   userId: string,
   id: string,
   input: Omit<AttemptInput, 'day'>,
 ): Promise<void> {
-  const values = [userId, id, input.event, input.kind, input.markM, input.windMs, input.note];
+  const values = [
+    userId,
+    id,
+    input.event,
+    input.kind,
+    input.markM,
+    input.windMs,
+    input.note,
+    seriesValue(input.heightSeries),
+  ];
   // 細かい記録の列は、上の値の続きの番号から DETAIL_KEYS の順
   const setDetails = DETAIL_COLUMN_NAMES.map(
     (column, i) => `${column} = $${values.length + i + 1}`,
   ).join(', ');
   await db().query(
-    `update attempt set event = $3, kind = $4, "markM" = $5, "windMs" = $6, note = $7, ${setDetails}
+    `update attempt set event = $3, kind = $4, "markM" = $5, "windMs" = $6, note = $7,
+       "heightSeries" = $8, ${setDetails}
       where "userId" = $1 and id = $2`,
     [...values, ...detailValues(input.details)],
   );

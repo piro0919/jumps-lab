@@ -39,7 +39,8 @@ export default function PrivacyEn() {
         <li>
           Your marks (date, event, practice or competition, mark, wind and note, and, if you enter
           them, approach steps and length, distance from the take-off board, pole length and
-          stiffness, grip height and standards setting)
+          stiffness, grip height and standards setting, and per-height results for high jump and
+          pole vault)
         </li>
         <li>
           Your condition, fatigue, sleep, injuries or discomfort and practice notes for each day
@@ -132,10 +133,10 @@ export default function PrivacyEn() {
         <dd>
           The coaches of a team you join can see, without being able to change anything, your
           display name and events, your attempts (date, event, practice or competition, mark, wind,
-          note and the approach, board and pole details), your condition, fatigue, sleep, injuries
-          or discomfort and practice notes for each day, your competitions and their results, and
-          your videos and their notes. They do not see your email address. Coaches cannot change or
-          delete your records
+          note, the approach, board and pole details and per-height results), your condition,
+          fatigue, sleep, injuries or discomfort and practice notes for each day, your competitions
+          and their results, and your videos and their notes. They do not see your email address.
+          Coaches cannot change or delete your records
         </dd>
         <dt>Comments</dt>
         <dd>

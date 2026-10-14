@@ -73,3 +73,12 @@ export const GRIP_HEIGHT_MAX_M = 6;
 /** 支柱の位置（cm）。規則で 0〜80cm */
 export const STANDARDS_MIN_CM = 0;
 export const STANDARDS_MAX_CM = 80;
+
+/*
+ * 走高跳・棒高跳の高さごとの結果（src/lib/height-series.ts、db/migrations/0025_height_series.sql）。
+ * バーの高さはメートル。下限は子どもの走高跳、上限は棒高跳の世界記録（6m 台）に余裕を持たせた値（仮決め）
+ */
+export const BAR_HEIGHT_MIN_M = 0.5;
+export const BAR_HEIGHT_MAX_M = 7;
+/** 1本の試技に入れられる高さの数（DB の check と同じ） */
+export const HEIGHT_SERIES_MAX_ROWS = 40;

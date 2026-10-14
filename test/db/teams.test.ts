@@ -305,6 +305,35 @@ describe('コーチが見られるもの', () => {
     }).toEqual({ attempts: [details], results: [[6.5, false]] });
   });
 
+  it('コーチの読む日ごとの試技には高さごとの結果も入る（大会の結果の試技は記録だけ）', async () => {
+    const team = await teamWithInvite();
+    const athleteId = await adult();
+    const day = todayIn('Asia/Tokyo');
+    const series = [
+      { heightM: 1.7, trials: ['cleared'] },
+      { heightM: 1.75, trials: ['missed', 'missed', 'missed'] },
+    ];
+    await query(
+      `insert into attempt ("userId", day, event, kind, "markM", "heightSeries")
+       values ($1, $2, 'high_jump', 'competition', 1.7, $3::jsonb)`,
+      [athleteId, day, JSON.stringify(series)],
+    );
+    await query(`insert into competition ("userId", name, day) values ($1, 'Meet', $2)`, [
+      athleteId,
+      day,
+    ]);
+    await joinTeamBySelf(athleteId, team.tokenHash, false);
+    const access = { coachId: team.coachId, teamId: team.teamId, memberId: athleteId };
+
+    expect({
+      attempts: (await listMemberAttemptsForCoach(access, day, day)).map((a) => a.heightSeries),
+      results: (await listMemberCompetitionAttemptsForCoach(access)).map((a) => [
+        a.markM,
+        'heightSeries' in a,
+      ]),
+    }).toEqual({ attempts: [series], results: [[1.7, false]] });
+  });
+
   it('抜けた選手は、抜けたときから見えない。保護者の同意の記録も消える', async () => {
     const team = await teamWithInvite();
     const athleteId = await adult();

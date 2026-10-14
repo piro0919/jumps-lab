@@ -22,6 +22,7 @@ import {
   updateAttempt,
 } from '@/lib/data';
 import { type AttemptDetails, EMPTY_DETAILS } from '@/lib/attempt-details';
+import type { HeightSeries } from '@/lib/height-series';
 import { addProfile } from './seed';
 
 /**
@@ -91,6 +92,7 @@ describe('試技', () => {
       windMs: null,
       note: null,
       details: EMPTY_DETAILS,
+      heightSeries: null,
     });
     await deleteAttempt(userId, attempt.id);
     expect(await getAttempt(userId, attempt.id)).toBeNull();
@@ -174,6 +176,69 @@ describe('試技の細かい記録', () => {
     const results = await Promise.allSettled(tries.map((t) => addAttempt(userId, { ...t, day })));
     expect(results.map((r) => r.status)).toEqual(tries.map(() => 'rejected'));
     expect(await listAttemptsBetween(userId, day, day)).toEqual([]);
+  });
+});
+
+describe('走高跳・棒高跳の高さごとの結果', () => {
+  const series: HeightSeries = [
+    { heightM: 1.8, trials: ['cleared'] },
+    // 6' 0¾"（フィート・インチで入れた値）
+    { heightM: 1.8478, trials: ['missed', 'cleared'] },
+    { heightM: 1.9, trials: ['missed', 'missed', 'passed'] },
+    { heightM: 1.95, trials: ['missed'] },
+  ];
+  const highJump: Omit<AttemptInput, 'day'> = {
+    event: 'high_jump',
+    kind: 'competition',
+    markM: 1.8478,
+    windMs: null,
+    note: null,
+    heightSeries: series,
+  };
+
+  it('並びも高さも 0.1mm まで戻り、書き換えで消せる。全期間の集計は読まない', async () => {
+    const userId = await addProfile();
+    const day = '2026-10-14';
+    await addAttempt(userId, { ...highJump, day });
+    const [saved] = await listAttemptsBetween(userId, day, day);
+    const got = await getAttempt(userId, saved!.id);
+    const [all] = await listAllAttempts(userId);
+    const [jumps] = await listAttempts(userId, 'high_jump');
+    expect({
+      between: saved?.heightSeries,
+      one: got?.heightSeries,
+      lean: [all, jumps].map((a) => a && 'heightSeries' in a),
+    }).toEqual({ between: series, one: series, lean: [false, false] });
+
+    await updateAttempt(userId, saved!.id, { ...highJump, heightSeries: null });
+    expect((await getAttempt(userId, saved!.id))?.heightSeries).toBeNull();
+    // 高さごとの結果の無い試技（細かい記録だけの入れ方）は null
+    await addAttempt(userId, { ...jump, day });
+    const rows = await listAttemptsBetween(userId, day, day);
+    expect(rows.map((a) => a.heightSeries)).toEqual([null, null]);
+  });
+
+  it('走高跳・棒高跳のほかの種目、配列でない値、空の配列、41 個の高さは DB が弾く', async () => {
+    const userId = await addProfile();
+    const day = '2026-10-14';
+    const many = Array.from({ length: 41 }, (_, i) => ({
+      heightM: 1 + i / 100,
+      trials: ['cleared'] as const,
+    }));
+    const tries = [
+      { ...highJump, event: 'long_jump' as const },
+      { ...highJump, event: 'triple_jump' as const },
+      { ...highJump, heightSeries: [] },
+      { ...highJump, heightSeries: many as unknown as HeightSeries },
+      { ...highJump, heightSeries: { heightM: 1.8 } as unknown as HeightSeries },
+    ];
+    const results = await Promise.allSettled(tries.map((t) => addAttempt(userId, { ...t, day })));
+    expect(results.map((r) => r.status)).toEqual(tries.map(() => 'rejected'));
+    // 棒高跳は持てる
+    await addAttempt(userId, { ...highJump, event: 'pole_vault', day });
+    expect((await listAttemptsBetween(userId, day, day)).map((a) => a.event)).toEqual([
+      'pole_vault',
+    ]);
   });
 });
 

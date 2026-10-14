@@ -108,8 +108,8 @@ async function menuContext(userId: string, profile: Profile, today: string) {
           pain: log.injury,
           practiceNote: log.note,
         })),
-      // 跳躍の細かい記録（a.details、2026-10-14）は送らない。送るなら同意の一覧と AI_CONSENT_VERSION、
-      // プライバシーポリシーの 5. も一緒に変える
+      // 跳躍の細かい記録（a.details、2026-10-14）と走高跳・棒高跳の高さごとの結果（a.heightSeries）は送らない。
+      // 送るなら同意の一覧と AI_CONSENT_VERSION、プライバシーポリシーの 5. も一緒に変える
       attemptsLast14Days: attempts.map((a) => ({
         day: a.day,
         event: a.event,

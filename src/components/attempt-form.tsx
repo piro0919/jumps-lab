@@ -9,6 +9,7 @@ import { saveAttemptAction } from '@/app/actions/today';
 import { safely } from '@/lib/safe-action';
 import { ActionForm } from '@/components/action-form';
 import {
+  DisplayNumber,
   ErrorText,
   Field,
   FieldLabel,
@@ -18,6 +19,14 @@ import {
 } from '@/components/layout-ui';
 import { CountInput, MarkInput, ShortLengthInput, WindInput } from '@/components/measure-inputs';
 import { FormActions } from '@/components/form-actions';
+import {
+  completeSeries,
+  HeightSeriesFields,
+  LIVE_ERRORS,
+  toRows,
+  useSeriesMessage,
+  type HeightRowState,
+} from '@/components/height-series-fields';
 import { cn } from '@/lib/cn';
 import {
   DETAIL_RANGES,
@@ -29,6 +38,7 @@ import {
 } from '@/lib/attempt-details';
 import type { Attempt } from '@/lib/data';
 import { hasWind, type JumpEvent } from '@/lib/events';
+import { checkSeries, hasHeightSeries, summarize, type SeriesError } from '@/lib/height-series';
 import { NOTE_MAX_LENGTH } from '@/lib/limits';
 import {
   feetInchesToMeters,
@@ -40,6 +50,9 @@ import {
 
 /** サーバーが範囲の外の欄を返すときの鍵の頭（src/lib/attempt-details.ts の detailsError） */
 const DETAIL_RANGE_PREFIX = 'detailRange.';
+
+/** サーバーが高さごとの結果を弾いたときの鍵の頭（src/app/actions/today.ts） */
+const SERIES_PREFIX = 'series.';
 
 /** 4分の1インチ（メートル） */
 const QUARTER_INCH_M = 0.00635;
@@ -145,14 +158,31 @@ export function AttemptForm({
   const tErrors = useTranslations('errors');
   const tProfile = useTranslations('profile');
   const rangeMessage = useDetailRangeMessage(units);
+  const seriesMessage = useSeriesMessage(units);
   const router = useRouter();
   const [event, setEvent] = useState<JumpEvent>(initialEvent);
+  // 走高跳・棒高跳の高さごとの結果。種目を変えても残し（戻せば出る）、送るのは高さを持つ種目のときだけ
+  const [rows, setRows] = useState<HeightRowState[]>(() => toRows(initial?.heightSeries ?? null));
+  const bySeries = hasHeightSeries(event) && rows.length > 0;
+  const complete = completeSeries(rows, units);
+  const best = complete ? summarize(complete).bestM : null;
   const [kind, setKind] = useState<'practice' | 'competition'>(initial?.kind ?? 'practice');
   const [state, action, pending] = useActionState(async (previous: unknown, formData: FormData) => {
     const result = await safely(() => saveAttemptAction(null, formData));
     if (result?.ok) router.push(backHref);
     return result;
   }, null);
+
+  /**
+   * サーバーが弾いた理由の文。どの高さかは、送った行をここでも確かめて出す。
+   * 高さの欄の下にその場で出している理由（LIVE_ERRORS）は、同じ文を2度出さない
+   */
+  const seriesError = (error: SeriesError) => {
+    if (LIVE_ERRORS.includes(error)) return null;
+    const checked = complete ? checkSeries(complete) : null;
+    const index = checked && !checked.ok ? checked.index : 0;
+    return seriesMessage(error, complete?.[index]?.heightM ?? null);
+  };
 
   return (
     <ActionForm action={action} className="flex flex-col gap-4">
@@ -176,9 +206,26 @@ export function AttemptForm({
           onChange={setKind}
         />
       </div>
-      <Field label={t('mark')} required={tProfile('required')}>
-        <MarkInput name="markM" units={units} defaultMeters={initial?.markM ?? null} autoFocus />
-      </Field>
+      {/* 高さごとに入れているあいだは、記録はいちばん高く越えた高さ（サーバーも同じく決める）。
+          記録の欄は消さずに隠し、高さをすべて消したら入れていた値に戻る */}
+      <div hidden={bySeries}>
+        <Field label={t('mark')} required={tProfile('required')}>
+          <MarkInput name="markM" units={units} defaultMeters={initial?.markM ?? null} autoFocus />
+        </Field>
+      </div>
+      {bySeries && (
+        <div className="flex flex-col gap-1.5" aria-live="polite">
+          <FieldLabel label={t('markFromHeights')} />
+          {best === null ? (
+            <p className="text-sm text-muted-foreground">{t('noHeightCleared')}</p>
+          ) : (
+            <DisplayNumber size="md">{formatMark(best, units)}</DisplayNumber>
+          )}
+        </div>
+      )}
+      {hasHeightSeries(event) && (
+        <HeightSeriesFields event={event} units={units} rows={rows} onChange={setRows} />
+      )}
       {hasWind(event) && (
         <Field label={t('wind')}>
           <WindInput name="windMs" defaultValue={initial?.windMs ?? null} />
@@ -194,9 +241,11 @@ export function AttemptForm({
         message={
           <ErrorText>
             {state?.ok === false
-              ? state.error.startsWith(DETAIL_RANGE_PREFIX)
-                ? rangeMessage(state.error.slice(DETAIL_RANGE_PREFIX.length) as DetailKey)
-                : tErrors(state.error as 'generic' | 'mark' | 'grip')
+              ? state.error.startsWith(SERIES_PREFIX)
+                ? seriesError(state.error.slice(SERIES_PREFIX.length) as SeriesError)
+                : state.error.startsWith(DETAIL_RANGE_PREFIX)
+                  ? rangeMessage(state.error.slice(DETAIL_RANGE_PREFIX.length) as DetailKey)
+                  : tErrors(state.error as 'generic' | 'mark' | 'grip')
               : null}
           </ErrorText>
         }

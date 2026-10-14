@@ -156,7 +156,16 @@
       "gripHeightM": "グリップの高さは{min}から{max}までで入れてください。",
       "standardsCm": "支柱の位置は{min}から{max}までで入れてください。"
     },
-    "grip": "グリップの高さは、ポールの長さより下にしてください。"
+    "grip": "グリップの高さは、ポールの長さより下にしてください。",
+    "series": {
+      "heightOrder": "高さは前の高さより高くしてください（{height}）。",
+      "heightRange": "{height}はバーの高さの範囲（{min}〜{max}）の外です。",
+      "noTrials": "{height}の結果を入れてください。",
+      "afterEnd": "{height}で、成功やパスのあとに続けて跳んでいます。",
+      "unfinished": "{height}は、成功かパスをしてから次の高さへ進んでください。",
+      "afterElimination": "続けて3回失敗すると競技は終わりです。{height}からあとを消してください。",
+      "noClear": "1つ以上の高さを越えると保存できます。"
+    }
   },
   "home": {
     "goal": "今季の目標",
@@ -231,7 +240,20 @@
     "linePole": "ポール{length}",
     "lineStiffness": "硬さ{lb} lb",
     "lineGrip": "グリップ{length}",
-    "lineStandards": "支柱{length}"
+    "lineStandards": "支柱{length}",
+    "heights": "高さごとの結果",
+    "addHeight": "高さを追加",
+    "removeHeight": "{height}を削除",
+    "barHeight": "バーの高さ",
+    "barHeightN": "{n}つ目の高さ",
+    "barHeightFeet": "{n}つ目の高さのフィート",
+    "barHeightInches": "{n}つ目の高さのインチ",
+    "trialSlot": "{height}の{n}回目：{result, select, cleared {成功} missed {失敗} passed {パス} other {未入力}}",
+    "markFromHeights": "記録（越えたいちばん高い高さ）",
+    "noHeightCleared": "まだ越えた高さがありません",
+    "seriesItem": "{height}：{results}",
+    "trialWord": "{result, select, cleared {成功} missed {失敗} other {パス}}",
+    "lineMisses": "失敗 合計{total}回・最高の高さで{atBest}回"
   },
   "calendar": {
     "add": "追加",
@@ -565,7 +587,7 @@
     "joinTitle": "{team}に参加",
     "joinIntro": "{coaches} さんが、Jumps Lab のチーム「{team}」にあなたを招待しています。参加すると、{team}のコーチは次のものを見られます。",
     "shownProfile": "表示名と種目",
-    "shownAttempts": "試技（日付・種目・練習か大会か・記録・風速・メモ・助走や踏切板やポールの細かい記録）",
+    "shownAttempts": "試技（日付・種目・練習か大会か・記録・風速・メモ・助走や踏切板やポールの細かい記録・走高跳と棒高跳の高さごとの結果）",
     "shownCondition": "日ごとの体調・疲労度・睡眠時間・ケガや違和感のメモ・練習メモ",
     "shownCompetitions": "大会の予定と結果",
     "shownVideos": "動画とそのメモ（送ってから90日で削除されるまで）",
