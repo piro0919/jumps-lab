@@ -21,6 +21,7 @@ import {
   segmentClass,
 } from '@/components/layout-ui';
 import { TrendChart } from '@/components/trend-chart';
+import { EMPTY_DETAILS } from '@/lib/attempt-details';
 import type { Attempt } from '@/lib/data';
 import { addDays, todayIn } from '@/lib/dates';
 import { EVENT_BG, EVENT_MARK, EVENT_TEXT } from '@/lib/events';
@@ -45,7 +46,7 @@ function attempt(
   windMs: number | null,
   note: string | null = null,
 ): Attempt {
-  return { id, day, event, kind, markM, windMs, note };
+  return { id, day, event, kind, markM, windMs, note, details: EMPTY_DETAILS };
 }
 
 /** 見本の練習の日（走幅跳）。記録は m、風は m/s。最後の1本にメモを付ける */

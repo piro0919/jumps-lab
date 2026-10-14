@@ -41,7 +41,8 @@
     "in": "in",
     "lb": "lb",
     "ms": "m/s",
-    "hours": "h"
+    "hours": "h",
+    "steps": "steps"
   },
   "nav": {
     "home": "Home",
@@ -145,7 +146,9 @@
     "teamCoachJoin": "You coach this team, so you cannot join it as an athlete.",
     "guardianTeamCoach": "This person coaches this team, so they cannot join it as an athlete. This link can no longer be used.",
     "comment": "Write a comment of up to 1,000 characters.",
-    "commentLimit": "You've reached the limit of {count, plural, one {# comment} other {# comments}} in 24 hours. Try again later."
+    "commentLimit": "You've reached the limit of {count, plural, one {# comment} other {# comments}} in 24 hours. Try again later.",
+    "details": "Check the details.",
+    "grip": "Grip height can't be more than the pole length."
   },
   "home": {
     "goal": "Season goal",
@@ -205,7 +208,22 @@
     "ok": "OK",
     "deleteConfirm": "Delete this attempt?",
     "best": "Best",
-    "windAided": "Wind-aided"
+    "windAided": "Wind-aided",
+    "details": "Details",
+    "approachSteps": "Approach steps",
+    "approachLength": "Approach length",
+    "boardOffset": "Toe behind the board",
+    "poleLength": "Pole length",
+    "poleStiffness": "Pole stiffness",
+    "gripHeight": "Grip height",
+    "standards": "Standards",
+    "lineSteps": "{count, plural, one {# step} other {# steps}}",
+    "lineApproach": "{length} approach",
+    "lineBoard": "{side, select, behind {{length} behind the board} over {{length} over the board} other {On the board}}",
+    "linePole": "{length} pole",
+    "lineStiffness": "{lb} lb",
+    "lineGrip": "Grip {length}",
+    "lineStandards": "Standards {length}"
   },
   "calendar": {
     "add": "Add",
@@ -539,7 +557,7 @@
     "joinTitle": "Join {team}",
     "joinIntro": "{coaches} invited you to {team} on Jumps Lab. If you join, the coaches of {team} can see the following.",
     "shownProfile": "Display name and events",
-    "shownAttempts": "Attempts: date, event, practice or competition, mark, wind and note",
+    "shownAttempts": "Attempts: date, event, practice or competition, mark, wind, note and the approach, board and pole details",
     "shownCondition": "Condition, fatigue, sleep, pain notes and practice notes for each day",
     "shownCompetitions": "Competitions and their results",
     "shownVideos": "Videos and their notes, until they are deleted 90 days after upload",

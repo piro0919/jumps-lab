@@ -2,18 +2,42 @@
 
 // 線（components/progress.tsx）を出すため、移るのは @bprogress の useRouter で
 import { useRouter } from '@bprogress/next/app';
+import { ChevronDown } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useActionState, useState } from 'react';
 import { saveAttemptAction } from '@/app/actions/today';
 import { safely } from '@/lib/safe-action';
 import { ActionForm } from '@/components/action-form';
-import { ErrorText, Field, FieldLabel, segmentClass, TextArea } from '@/components/layout-ui';
-import { MarkInput, WindInput } from '@/components/measure-inputs';
+import {
+  ErrorText,
+  Field,
+  FieldLabel,
+  LABEL,
+  segmentClass,
+  TextArea,
+} from '@/components/layout-ui';
+import { CountInput, MarkInput, ShortLengthInput, WindInput } from '@/components/measure-inputs';
 import { FormActions } from '@/components/form-actions';
 import { cn } from '@/lib/cn';
+import {
+  detailFieldsFor,
+  EMPTY_DETAILS,
+  hasDetails,
+  type AttemptDetails,
+} from '@/lib/attempt-details';
 import type { Attempt } from '@/lib/data';
 import { hasWind, type JumpEvent } from '@/lib/events';
-import { NOTE_MAX_LENGTH } from '@/lib/limits';
+import {
+  APPROACH_STEPS_MAX,
+  APPROACH_STEPS_MIN,
+  BOARD_OFFSET_MAX_CM,
+  BOARD_OFFSET_MIN_CM,
+  NOTE_MAX_LENGTH,
+  POLE_STIFFNESS_MAX_LB,
+  POLE_STIFFNESS_MIN_LB,
+  STANDARDS_MAX_CM,
+  STANDARDS_MIN_CM,
+} from '@/lib/limits';
 import type { Units } from '@/lib/units';
 
 /** 2つ以上から1つを選ぶ、横並びの切り替え（練習・大会、種目） */
@@ -115,13 +139,98 @@ export function AttemptForm({
       <Field label={t('attemptNote')}>
         <TextArea name="note" maxLength={NOTE_MAX_LENGTH} defaultValue={initial?.note ?? ''} />
       </Field>
+      <DetailsFields event={event} units={units} initial={initial?.details ?? EMPTY_DETAILS} />
       <FormActions
         label={t('save')}
         pending={pending}
         message={
-          <ErrorText>{state?.ok === false ? tErrors(state.error as 'generic') : null}</ErrorText>
+          <ErrorText>
+            {state?.ok === false ? tErrors(state.error as 'generic' | 'details' | 'grip') : null}
+          </ErrorText>
         }
       />
     </ActionForm>
+  );
+}
+
+/**
+ * 跳躍の細かい記録の欄（任意）。選んだ種目の欄だけ出す（src/lib/attempt-details.ts の detailFieldsFor）。
+ * ふだんは閉じた「詳細」の中に置いて、記録だけ入れる人の画面を長くしない。直すときに1つでも入っていれば開いておく。
+ * 閉じた details の中の欄も送られる。出していない種目の欄は送られず、サーバーでも種目に合わない欄は捨てる
+ */
+function DetailsFields({
+  event,
+  units,
+  initial,
+}: {
+  event: JumpEvent;
+  units: Units;
+  initial: AttemptDetails;
+}) {
+  const t = useTranslations('today');
+  const tUnits = useTranslations('units');
+  const fields = detailFieldsFor(event);
+  const shows = (key: keyof AttemptDetails) => fields.includes(key);
+
+  return (
+    <details open={hasDetails(initial)} className="group">
+      <summary className={cn('flex cursor-pointer list-none items-center gap-1', LABEL)}>
+        {t('details')}
+        <ChevronDown aria-hidden className="size-4 transition-transform group-open:rotate-180" />
+      </summary>
+      <div className="mt-3 grid gap-4 sm:grid-cols-2">
+        <Field label={t('approachSteps')}>
+          <CountInput
+            name="approachSteps"
+            unit={tUnits('steps')}
+            min={APPROACH_STEPS_MIN}
+            max={APPROACH_STEPS_MAX}
+            defaultValue={initial.approachSteps}
+          />
+        </Field>
+        <Field label={t('approachLength')}>
+          <MarkInput name="approachLengthM" units={units} defaultMeters={initial.approachLengthM} />
+        </Field>
+        {shows('boardOffsetCm') && (
+          <Field label={t('boardOffset')}>
+            <ShortLengthInput
+              name="boardOffsetCm"
+              units={units}
+              minCm={BOARD_OFFSET_MIN_CM}
+              maxCm={BOARD_OFFSET_MAX_CM}
+              defaultCm={initial.boardOffsetCm}
+            />
+          </Field>
+        )}
+        {shows('poleLengthM') && (
+          <>
+            <Field label={t('poleLength')}>
+              <MarkInput name="poleLengthM" units={units} defaultMeters={initial.poleLengthM} />
+            </Field>
+            <Field label={t('poleStiffness')}>
+              <CountInput
+                name="poleStiffnessLb"
+                unit={tUnits('lb')}
+                min={POLE_STIFFNESS_MIN_LB}
+                max={POLE_STIFFNESS_MAX_LB}
+                defaultValue={initial.poleStiffnessLb}
+              />
+            </Field>
+            <Field label={t('gripHeight')}>
+              <MarkInput name="gripHeightM" units={units} defaultMeters={initial.gripHeightM} />
+            </Field>
+            <Field label={t('standards')}>
+              <ShortLengthInput
+                name="standardsCm"
+                units={units}
+                minCm={STANDARDS_MIN_CM}
+                maxCm={STANDARDS_MAX_CM}
+                defaultCm={initial.standardsCm}
+              />
+            </Field>
+          </>
+        )}
+      </div>
+    </details>
   );
 }

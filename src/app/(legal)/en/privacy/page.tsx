@@ -36,7 +36,11 @@ export default function PrivacyEn() {
           Your profile (name, grade, date of birth, gender, height, weight, events, units, season
           start, week start and time zone)
         </li>
-        <li>Your marks (date, event, practice or competition, mark, wind and note)</li>
+        <li>
+          Your marks (date, event, practice or competition, mark, wind and note, and, if you enter
+          them, approach steps and length, distance from the take-off board, pole length and
+          stiffness, grip height and standards setting)
+        </li>
         <li>
           Your condition, fatigue, sleep, injuries or discomfort and practice notes for each day
         </li>
@@ -127,10 +131,11 @@ export default function PrivacyEn() {
         <dt>What team coaches see</dt>
         <dd>
           The coaches of a team you join can see, without being able to change anything, your
-          display name and events, your attempts (date, event, practice or competition, mark, wind
-          and note), your condition, fatigue, sleep, injuries or discomfort and practice notes for
-          each day, your competitions and their results, and your videos and their notes. They do
-          not see your email address. Coaches cannot change or delete your records
+          display name and events, your attempts (date, event, practice or competition, mark, wind,
+          note and the approach, board and pole details), your condition, fatigue, sleep, injuries
+          or discomfort and practice notes for each day, your competitions and their results, and
+          your videos and their notes. They do not see your email address. Coaches cannot change or
+          delete your records
         </dd>
         <dt>Comments</dt>
         <dd>

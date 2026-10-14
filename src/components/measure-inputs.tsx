@@ -5,7 +5,9 @@ import { useState } from 'react';
 import { Input } from '@/components/layout-ui';
 import {
   cmToFeetInches,
+  cmToQuarterInches,
   feetInchesToCm,
+  inchesToCm,
   feetInchesToMeters,
   kgToLb,
   lbToKg,
@@ -157,6 +159,86 @@ export function MarkInput({
         />
       )}
     </>
+  );
+}
+
+/** 短い長さの欄の刻み（cm のとき 1cm、インチのとき4分の1インチ） */
+const SHORT_STEP_CM = 1;
+const SHORT_STEP_IN = 0.25;
+
+/**
+ * 短い長さ（cm）。踏切板からの距離や支柱の位置。imperial はインチで受け、4分の1インチ刻み。
+ * 範囲は cm で受けて、インチの欄にはその換算を出す
+ */
+export function ShortLengthInput({
+  name,
+  units,
+  defaultCm = null,
+  minCm,
+  maxCm,
+}: {
+  name: string;
+  units: Units;
+  defaultCm?: number | null;
+  minCm: number;
+  maxCm: number;
+}) {
+  const t = useTranslations('units');
+  const [shown, setShown] = useState(() =>
+    // metric は持っている値のまま（インチで入れた -3.2 を -3 に丸めると、そのまま保存しても値が変わる）
+    defaultCm === null ? '' : String(units === 'metric' ? defaultCm : cmToQuarterInches(defaultCm)),
+  );
+  const parsed = parse(shown);
+  const value = parsed === null ? '' : String(units === 'metric' ? parsed : inchesToCm(parsed));
+  const metric = units === 'metric';
+
+  return (
+    <>
+      <input type="hidden" name={name} value={value} />
+      <div className="flex items-center gap-2">
+        <Input
+          inputMode="decimal"
+          type="number"
+          step={metric ? SHORT_STEP_CM : SHORT_STEP_IN}
+          min={metric ? minCm : cmToQuarterInches(minCm)}
+          max={metric ? maxCm : cmToQuarterInches(maxCm)}
+          value={shown}
+          onChange={(e) => setShown(e.target.value)}
+        />
+        <Unit>{metric ? t('cm') : t('in')}</Unit>
+      </div>
+    </>
+  );
+}
+
+/** 整数の欄（助走の歩数、ポールの硬さのポンド）。単位は国によらない */
+export function CountInput({
+  name,
+  unit,
+  defaultValue = null,
+  min,
+  max,
+}: {
+  name: string;
+  /** 欄の右に出す単位（訳した文字） */
+  unit: string;
+  defaultValue?: number | null;
+  min: number;
+  max: number;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <Input
+        name={name}
+        type="number"
+        inputMode="numeric"
+        step={1}
+        min={min}
+        max={max}
+        defaultValue={defaultValue ?? ''}
+      />
+      <Unit>{unit}</Unit>
+    </div>
   );
 }
 

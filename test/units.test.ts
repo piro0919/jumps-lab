@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
   cmToFeetInches,
+  cmToQuarterInches,
   feetInchesToCm,
   feetInchesToMeters,
   formatMark,
   formatMarkParts,
+  formatShortLength,
+  inchesToCm,
   kgToLb,
   lbToKg,
   metersToFeetInches,
@@ -82,6 +85,26 @@ describe('metric の表示', () => {
     expect(formatMark(1.8542, 'metric')).toBe('1.85 m');
     expect(formatMark(1.8599, 'metric')).toBe('1.85 m');
     expect(formatMark(1.86, 'metric')).toBe('1.86 m');
+  });
+});
+
+describe('短い長さ（踏切板からの距離・支柱の位置）', () => {
+  it('インチは 0.1cm で持ち、4分の1インチ刻みの値はインチに戻る', () => {
+    const quarters = [0.25, 4.75, 18, 31.5];
+    expect(quarters.map((inches) => cmToQuarterInches(inchesToCm(inches)))).toEqual(quarters);
+    expect(inchesToCm(18)).toBe(45.7);
+  });
+
+  it('metric は 1cm に丸め、imperial はいちばん近い4分の1インチで書く', () => {
+    expect(formatShortLength(12.4, 'metric')).toBe('12 cm');
+    expect(formatShortLength(12.6, 'metric')).toBe('13 cm');
+    expect(formatShortLength(45.7, 'imperial')).toBe('18"');
+    expect(formatShortLength(12, 'imperial')).toBe('4¾"');
+  });
+
+  it('ポールの長さは記録と同じ書き方（15 フィートは 15\' 0"）', () => {
+    expect(formatMark(feetInchesToMeters({ feet: 15, inches: 0 }), 'imperial')).toBe(`15' 0"`);
+    expect(formatMark(4.572, 'metric')).toBe('4.57 m');
   });
 });
 

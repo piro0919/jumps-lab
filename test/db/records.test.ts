@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   addAttempt,
-  type Attempt,
+  type AttemptInput,
   type Competition,
   deleteAttempt,
   deleteCompetition,
@@ -21,6 +21,7 @@ import {
   saveDayLog,
   updateAttempt,
 } from '@/lib/data';
+import { type AttemptDetails, EMPTY_DETAILS } from '@/lib/attempt-details';
 import { addProfile } from './seed';
 
 /**
@@ -28,7 +29,7 @@ import { addProfile } from './seed';
  * （id はブラウザから来るので、ほかの人の id を送られても触れない）
  */
 
-const jump: Omit<Attempt, 'id' | 'day'> = {
+const jump: Omit<AttemptInput, 'day'> = {
   event: 'long_jump',
   kind: 'practice',
   markM: 6.1234,
@@ -89,6 +90,7 @@ describe('試技', () => {
       markM: 13.05,
       windMs: null,
       note: null,
+      details: EMPTY_DETAILS,
     });
     await deleteAttempt(userId, attempt.id);
     expect(await getAttempt(userId, attempt.id)).toBeNull();
@@ -110,6 +112,63 @@ describe('試技', () => {
     expect(await listAttemptsBetween(userId, '2026-10-13', '2026-10-14')).toHaveLength(1);
     expect(await listAllAttempts(userId)).toHaveLength(3);
     expect(await getActivityCounts(userId)).toEqual({ jumps: 3, daysLogged: 2 });
+  });
+});
+
+describe('試技の細かい記録', () => {
+  const vaultDetails: AttemptDetails = {
+    ...EMPTY_DETAILS,
+    approachSteps: 16,
+    // 助走 126' 0"、ポール 15' 0"、グリップ 14' 5"、支柱 18"（フィート・インチで入れた値）
+    approachLengthM: 38.4048,
+    poleLengthM: 4.572,
+    poleStiffnessLb: 160,
+    gripHeightM: 4.3942,
+    standardsCm: 45.7,
+  };
+  const vault: Omit<AttemptInput, 'day'> = {
+    event: 'pole_vault',
+    kind: 'practice',
+    markM: 4.2,
+    windMs: null,
+    note: null,
+    details: vaultDetails,
+  };
+
+  it('入れた値が 0.1mm・0.1cm まで数で戻り、書き換えで空にもできる', async () => {
+    const userId = await addProfile();
+    await addAttempt(userId, { ...vault, day: '2026-10-14' });
+    const [saved] = await listAttemptsBetween(userId, '2026-10-14', '2026-10-14');
+    expect(saved?.details).toEqual(vaultDetails);
+
+    await addAttempt(userId, {
+      ...jump,
+      day: '2026-10-13',
+      details: { ...EMPTY_DETAILS, approachSteps: 20, boardOffsetCm: -2.5 },
+    });
+    const [longJump] = await listAttemptsBetween(userId, '2026-10-13', '2026-10-13');
+    expect(longJump?.details).toEqual({ ...EMPTY_DETAILS, approachSteps: 20, boardOffsetCm: -2.5 });
+
+    await updateAttempt(userId, saved!.id, { ...vault, details: EMPTY_DETAILS });
+    expect((await getAttempt(userId, saved!.id))?.details).toEqual(EMPTY_DETAILS);
+  });
+
+  it('範囲の外、種目に合わない欄、ポールより高いグリップは DB が弾く', async () => {
+    const userId = await addProfile();
+    const day = '2026-10-14';
+    const tries = [
+      { ...jump, details: { ...EMPTY_DETAILS, approachSteps: 31 } },
+      { ...jump, details: { ...EMPTY_DETAILS, approachLengthM: 60.5 } },
+      { ...jump, details: { ...EMPTY_DETAILS, boardOffsetCm: -31 } },
+      { ...jump, details: { ...EMPTY_DETAILS, poleLengthM: 4.5 } },
+      { ...vault, event: 'high_jump' as const },
+      { ...vault, details: { ...vaultDetails, standardsCm: 81 } },
+      { ...vault, details: { ...vaultDetails, poleStiffnessLb: 49 } },
+      { ...vault, details: { ...vaultDetails, gripHeightM: 4.6 } },
+    ];
+    const results = await Promise.allSettled(tries.map((t) => addAttempt(userId, { ...t, day })));
+    expect(results.map((r) => r.status)).toEqual(tries.map(() => 'rejected'));
+    expect(await listAttemptsBetween(userId, day, day)).toEqual([]);
   });
 });
 

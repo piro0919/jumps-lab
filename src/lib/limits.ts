@@ -47,3 +47,29 @@ export const COMMENT_MAX_LENGTH = 1000;
  * 押し続け・作りの誤りで知らせが鳴り続けるのを止める
  */
 export const COMMENTS_PER_DAY = 100;
+
+/*
+ * 試技の細かい記録の範囲（db/migrations/0024_attempt_details.sql の check と同じ値）。
+ * 長さはメートル、短い長さは cm、ポールの硬さはポンド
+ */
+/** 助走の歩数 */
+export const APPROACH_STEPS_MIN = 1;
+export const APPROACH_STEPS_MAX = 30;
+/** 助走の距離（メートル） */
+export const APPROACH_LENGTH_MIN_M = 1;
+export const APPROACH_LENGTH_MAX_M = 60;
+/** 踏切板からの距離（cm）。負は踏切線を越えた（ファウル） */
+export const BOARD_OFFSET_MIN_CM = -30;
+export const BOARD_OFFSET_MAX_CM = 100;
+/** ポールの長さ（メートル） */
+export const POLE_LENGTH_MIN_M = 2;
+export const POLE_LENGTH_MAX_M = 6;
+/** ポールの硬さ（ポンド） */
+export const POLE_STIFFNESS_MIN_LB = 50;
+export const POLE_STIFFNESS_MAX_LB = 250;
+/** グリップの高さ（メートル） */
+export const GRIP_HEIGHT_MIN_M = 1;
+export const GRIP_HEIGHT_MAX_M = 6;
+/** 支柱の位置（cm）。規則で 0〜80cm */
+export const STANDARDS_MIN_CM = 0;
+export const STANDARDS_MAX_CM = 80;

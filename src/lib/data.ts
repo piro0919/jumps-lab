@@ -4,6 +4,12 @@ import { todayIn } from '@/lib/dates';
 import { COMMENTS_PER_DAY } from '@/lib/limits';
 import { db } from '@/lib/db';
 import type { JumpEvent } from '@/lib/events';
+import {
+  DETAIL_KEYS,
+  EMPTY_DETAILS,
+  type AttemptDetails,
+  type DetailKey,
+} from '@/lib/attempt-details';
 import type { Locale } from '@/i18n/locales';
 import type { ReminderRow } from '@/lib/meet-reminder';
 import type { Menu, MenuLevel } from '@/lib/menu';
@@ -537,15 +543,32 @@ export type Attempt = {
   markM: number;
   windMs: number | null;
   note: string | null;
+  /** 跳躍の細かい記録（任意。種目に合う欄だけ入る） */
+  details: AttemptDetails;
 };
 
-type AttemptRow = Omit<Attempt, 'markM' | 'windMs'> & { markM: string; windMs: string | null };
+/** 足す・書き換えるときの値。細かい記録は省けば空 */
+export type AttemptInput = Omit<Attempt, 'id' | 'details'> & { details?: AttemptDetails };
 
-const attemptColumns = `id, to_char(day, 'YYYY-MM-DD') as day, event, kind, "markM", "windMs", note`;
+type AttemptRow = Omit<Attempt, 'markM' | 'windMs' | 'details'> & {
+  markM: string;
+  windMs: string | null;
+} & Record<DetailKey, string | number | null>;
+
+const attemptColumns = `id, to_char(day, 'YYYY-MM-DD') as day, event, kind, "markM", "windMs", note,
+  ${DETAIL_KEYS.map((key) => `"${key}"`).join(', ')}`;
 
 function toAttempt(row: AttemptRow): Attempt {
-  return { ...row, markM: Number(row.markM), windMs: num(row.windMs) };
+  const { id, day, event, kind, note } = row;
+  const details = Object.fromEntries(
+    DETAIL_KEYS.map((key) => [key, row[key] === null ? null : Number(row[key])]),
+  ) as AttemptDetails;
+  return { id, day, event, kind, note, markM: Number(row.markM), windMs: num(row.windMs), details };
 }
+
+/** 細かい記録を DETAIL_KEYS の順に並べた値（insert と update の引数） */
+const detailValues = (details: AttemptDetails = EMPTY_DETAILS) =>
+  DETAIL_KEYS.map((key) => details[key]);
 
 /** 1種目の記録すべて。古い順 */
 export async function listAttempts(userId: string, event: JumpEvent): Promise<Attempt[]> {
@@ -571,11 +594,22 @@ export async function listAttemptsBetween(
   return rows.map(toAttempt);
 }
 
-export async function addAttempt(userId: string, input: Omit<Attempt, 'id'>): Promise<void> {
+export async function addAttempt(userId: string, input: AttemptInput): Promise<void> {
+  const values = [
+    userId,
+    input.day,
+    input.event,
+    input.kind,
+    input.markM,
+    input.windMs,
+    input.note,
+    ...detailValues(input.details),
+  ];
   await db().query(
-    `insert into attempt ("userId", day, event, kind, "markM", "windMs", note)
-     values ($1, $2, $3, $4, $5, $6, $7)`,
-    [userId, input.day, input.event, input.kind, input.markM, input.windMs, input.note],
+    `insert into attempt ("userId", day, event, kind, "markM", "windMs", note,
+       ${DETAIL_KEYS.map((key) => `"${key}"`).join(', ')})
+     values (${values.map((_, i) => `$${i + 1}`).join(', ')})`,
+    values,
   );
 }
 
@@ -588,16 +622,19 @@ export async function getAttempt(userId: string, id: string): Promise<Attempt | 
   return rows[0] ? toAttempt(rows[0]) : null;
 }
 
-/** 試技を1本書き換える（日は変えない）。本人の試技だけ */
+/** 試技を1本書き換える（日は変えない）。本人の試技だけ。細かい記録も渡した値で置き換える */
 export async function updateAttempt(
   userId: string,
   id: string,
-  input: Omit<Attempt, 'id' | 'day'>,
+  input: Omit<AttemptInput, 'day'>,
 ): Promise<void> {
+  const values = [userId, id, input.event, input.kind, input.markM, input.windMs, input.note];
+  // 細かい記録の列は、上の値の続きの番号から DETAIL_KEYS の順
+  const setDetails = DETAIL_KEYS.map((key, i) => `"${key}" = $${values.length + i + 1}`).join(', ');
   await db().query(
-    `update attempt set event = $3, kind = $4, "markM" = $5, "windMs" = $6, note = $7
+    `update attempt set event = $3, kind = $4, "markM" = $5, "windMs" = $6, note = $7, ${setDetails}
       where "userId" = $1 and id = $2`,
-    [userId, id, input.event, input.kind, input.markM, input.windMs, input.note],
+    [...values, ...detailValues(input.details)],
   );
 }
 

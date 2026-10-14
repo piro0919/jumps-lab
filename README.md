@@ -6,7 +6,7 @@ https://jumpslab.kkweb.io
 
 ## Features
 
-- Log each attempt with its mark, wind and note, as practice or competition
+- Log each attempt with its mark, wind and note, as practice or competition, and optional jump details: approach steps and length for every event, distance from the take-off board for long and triple jump, and pole length, stiffness, grip height and standards for pole vault
 - Personal best, season best and practice best per event, with wind-aided marks kept out of PB and SB
 - A day page with every event's attempts, plus condition (physical condition, fatigue, sleep, injury) and a practice note
 - A log of past days, as a list or a calendar

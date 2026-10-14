@@ -11,6 +11,7 @@ import {
   updateAttempt,
 } from '@/lib/data';
 import { isDay, todayIn } from '@/lib/dates';
+import { attemptDetailsSchema, keepDetailsFor } from '@/lib/attempt-details';
 import { EVENTS, hasWind } from '@/lib/events';
 import { type ActionResult, optionalNumber, optionalText } from '@/lib/form';
 import {
@@ -72,7 +73,10 @@ const attemptSchema = z.object({
   note: optionalText(NOTE_MAX_LENGTH),
 });
 
-/** 試技を1本足すか書き換える。種目は本人の選んだ種目だけ（書き換えは元の種目のままでもよい）。風は走幅跳と三段跳だけ残す */
+/**
+ * 試技を1本足すか書き換える。種目は本人の選んだ種目だけ（書き換えは元の種目のままでもよい）。風は走幅跳と三段跳だけ残す。
+ * 跳躍の細かい記録（src/lib/attempt-details.ts）は、種目に合う欄だけ残す
+ */
 export async function saveAttemptAction(
   _previous: ActionResult,
   formData: FormData,
@@ -83,8 +87,13 @@ export async function saveAttemptAction(
     ...raw,
     markM: raw.markM === '' ? undefined : raw.markM,
   });
+  // 細かい記録は種目に合わない欄も含めて読み、範囲を確かめてから種目に合う欄だけ残す（keepDetailsFor）
+  const details = attemptDetailsSchema.safeParse(raw);
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message === 'mark' ? 'mark' : 'generic' };
+  }
+  if (!details.success) {
+    return { ok: false, error: details.error.issues[0]?.message === 'grip' ? 'grip' : 'details' };
   }
   const profile = await getProfile(viewer.userId);
   const { id, ...input } = parsed.data;
@@ -98,7 +107,12 @@ export async function saveAttemptAction(
   if (!profile || !allowed || (!existing && !openDay(input.day, profile.timeZone))) {
     return { ok: false, error: 'generic' };
   }
-  const values = { ...input, event, windMs: hasWind(event) ? input.windMs : null };
+  const values = {
+    ...input,
+    event,
+    windMs: hasWind(event) ? input.windMs : null,
+    details: keepDetailsFor(event, details.data),
+  };
   try {
     if (id) await updateAttempt(viewer.userId, id, values);
     else await addAttempt(viewer.userId, values);

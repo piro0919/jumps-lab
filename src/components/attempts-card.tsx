@@ -1,16 +1,17 @@
 'use client';
 
 import { Pencil, Plus, Trash2, Video } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useState, useTransition } from 'react';
 import { deleteAttemptAction } from '@/app/actions/today';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { Badge, Card, CardTitle, DisplayNumber, EmptyState } from '@/components/layout-ui';
 import { Button, buttonVariants } from '@/components/ui/button';
+import type { AttemptDetails } from '@/lib/attempt-details';
 import type { Attempt } from '@/lib/data';
 import { EVENT_BG, isWindAided, type JumpEvent } from '@/lib/events';
-import { formatMark, type Units } from '@/lib/units';
+import { formatMark, formatShortLength, type Units } from '@/lib/units';
 
 /**
  * その日の記録。種目ごとにまとめて1本ずつ並べ、種目ごとにいちばん良い1本に印を付ける。
@@ -133,6 +134,7 @@ export function AttemptsCard({
                             .filter(Boolean)
                             .join(' · ')}
                         </span>
+                        <DetailsLine details={attempt.details} units={units} />
                       </span>
                       {/* 行の操作はアイコンだけのボタン（大会の一覧と同じ）。直すのは別の画面 */}
                       {!readOnly && (
@@ -177,5 +179,46 @@ export function AttemptsCard({
         }}
       />
     </Card>
+  );
+}
+
+/**
+ * 試技の細かい記録を1行で（入っている欄だけ）。欄ごとに文の形の訳を作り、並べるのは言語の書き方の並べ方
+ * （Intl.ListFormat）に任せる。コードで語をつながない。長さは本人の単位、ポールの硬さはどちらでもポンド
+ */
+function DetailsLine({ details, units }: { details: AttemptDetails; units: Units }) {
+  const t = useTranslations('today');
+  const format = useFormatter();
+  const d = details;
+  const board = d.boardOffsetCm;
+  const phrases = [
+    d.approachSteps === null ? null : t('lineSteps', { count: d.approachSteps }),
+    d.approachLengthM === null
+      ? null
+      : t('lineApproach', { length: formatMark(d.approachLengthM, units) }),
+    board === null
+      ? null
+      : t('lineBoard', {
+          side: board > 0 ? 'behind' : board < 0 ? 'over' : 'on',
+          length: formatShortLength(Math.abs(board), units),
+        }),
+    d.poleLengthM === null ? null : t('linePole', { length: formatMark(d.poleLengthM, units) }),
+    d.poleStiffnessLb === null ? null : t('lineStiffness', { lb: d.poleStiffnessLb }),
+    d.gripHeightM === null ? null : t('lineGrip', { length: formatMark(d.gripHeightM, units) }),
+    d.standardsCm === null
+      ? null
+      : t('lineStandards', { length: formatShortLength(d.standardsCm, units) }),
+  ].filter((phrase) => phrase !== null);
+  if (phrases.length === 0) return null;
+  // 欄ごとの文は途中で折らない（日本語は語の途中でも折れ、「支柱」が2行に割れた）
+  const items = phrases.map((phrase) => (
+    <span key={phrase} className="whitespace-nowrap">
+      {phrase}
+    </span>
+  ));
+  return (
+    <span className="text-xs text-muted-foreground">
+      {format.list(items, { type: 'unit', style: 'short' })}
+    </span>
   );
 }

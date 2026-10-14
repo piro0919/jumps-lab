@@ -45,10 +45,34 @@ export function feetInchesToMeters({ feet, inches }: FeetInches): number {
 export function formatMark(meters: number, units: Units): string {
   if (units === 'metric') return `${(Math.floor(meters * 100 + FLOAT_SLACK) / 100).toFixed(2)} m`;
   const { feet, inches } = metersToFeetInches(meters);
+  // 目標までの差のような1フィート未満の長さは、インチだけで書く
+  return feet === 0 ? quarterInches(inches) : `${feet}' ${quarterInches(inches)}`;
+}
+
+/** 4分の1インチ刻みのインチを「4¾"」の形に */
+function quarterInches(inches: number): string {
   const whole = Math.floor(inches);
   const fraction = ['', '¼', '½', '¾'][Math.round((inches - whole) * QUARTERS_PER_INCH)];
-  // 目標までの差のような1フィート未満の長さは、インチだけで書く
-  return feet === 0 ? `${whole}${fraction}"` : `${feet}' ${whole}${fraction}"`;
+  return `${whole}${fraction}"`;
+}
+
+/** インチを cm へ。0.1cm で丸める（DB の列と同じ桁。4分の1インチ刻みの値はこれで戻る） */
+export function inchesToCm(inches: number): number {
+  return Math.round(inches * CM_PER_INCH * ONE_DECIMAL) / ONE_DECIMAL;
+}
+
+/** cm をいちばん近い4分の1インチへ。入力の欄に戻すときと表示に使う */
+export function cmToQuarterInches(cm: number): number {
+  return Math.round((cm / CM_PER_INCH) * QUARTERS_PER_INCH) / QUARTERS_PER_INCH;
+}
+
+/**
+ * 踏切板からの距離や支柱の位置のような、短い長さ（cm。0 以上）の表示。metric は「12 cm」（1cm に丸める）、
+ * imperial は「4¾"」（いちばん近い4分の1インチ）。記録ではないので、切り捨てずに丸める
+ */
+export function formatShortLength(cm: number, units: Units): string {
+  if (units === 'metric') return `${Math.round(cm)} cm`;
+  return quarterInches(cmToQuarterInches(cm));
 }
 
 /**

@@ -12,6 +12,10 @@ const emptyToNull = (value: unknown) =>
 export const optionalNumber = (min: number, max: number) =>
   z.preprocess(emptyToNull, z.coerce.number().min(min).max(max).nullable());
 
+/** 整数だけの欄（歩数・ポンド）。小数は弾く */
+export const optionalInteger = (min: number, max: number) =>
+  z.preprocess(emptyToNull, z.coerce.number().int().min(min).max(max).nullable());
+
 export const optionalText = (max: number) =>
   z.preprocess(
     (value) => emptyToNull(typeof value === 'string' ? value.trim() : value),
