@@ -129,7 +129,7 @@ Copy the shape of `~/Repository/onigiri` (which itself copies vocafy). Read its 
 - The consent screen needs privacy policy and terms URLs that open without signing in. Keep those URLs fixed once submitted
 - Use Google's own sign-in button design (unaltered G logo, white / #131314 / gray, Roboto)
 - `useSession` returns null while pending: check `isPending` before treating someone as signed out
-- Only devices that have signed in before ask for the session (vocafy's localStorage flag)
+- There is no device flag for "signed in before" (vocafy's localStorage flag was not carried over; checked 2026-10-14). The proxy only checks for the session cookie, and signed-out pages never ask for the session
 
 ### Server code
 
