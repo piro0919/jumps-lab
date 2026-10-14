@@ -96,10 +96,10 @@ export function PushSetting({
         <p className="text-sm text-muted-foreground">{t('unsupported')}</p>
       ) : (
         <div className="flex flex-col gap-1.5">
-          <span className={LABEL}>{t('meetTomorrow')}</span>
+          <span className={LABEL}>{t('notices')}</span>
           <div
             role="radiogroup"
-            aria-label={t('meetTomorrow')}
+            aria-label={t('notices')}
             className={cn(SEGMENTS, 'grid w-full grid-cols-2')}
           >
             {([false, true] as const).map((value) => (

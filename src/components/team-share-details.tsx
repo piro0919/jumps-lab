@@ -8,6 +8,7 @@ const SHOWN = [
   'shownCondition',
   'shownCompetitions',
   'shownVideos',
+  'shownComments',
 ] as const;
 
 /**

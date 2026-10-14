@@ -1753,3 +1753,157 @@ export async function listMemberVideosForCoach(
   );
   return rows.map(toVideo);
 }
+
+/*
+ * コーチと選手のコメント（2026-10-14。migration 0023）。やりとりは「選手・日・チーム」ごと。
+ * コーチの読み書きは COACH_SEES を同じ文に入れる（選手が抜けたときから、そのチームのコーチは読めず書けない）。
+ * 選手本人は、自分の日のやりとりをすべて読め、いま入っているチームにだけ書ける
+ */
+
+/** コメント1つ。byCoach は書き手が選手本人でないこと（＝そのチームのコーチ） */
+export type DayComment = {
+  id: string;
+  teamId: string;
+  day: string;
+  authorId: string;
+  authorName: string;
+  byCoach: boolean;
+  body: string;
+  createdAt: Date;
+};
+
+const commentColumns = `d.id, d."teamId", to_char(d.day, 'YYYY-MM-DD') as day, d."authorId",
+  u.name as "authorName", d."authorId" <> d."athleteId" as "byCoach", d.body, d."createdAt"`;
+
+/** 選手本人が見る、その日のやりとり（どのチームのものも。古い順）。チームの名前つき */
+export async function listDayComments(
+  userId: string,
+  day: string,
+): Promise<(DayComment & { teamName: string })[]> {
+  const { rows } = await db().query<DayComment & { teamName: string }>(
+    `select ${commentColumns}, t.name as "teamName"
+       from day_comment d join "user" u on u.id = d."authorId" join team t on t.id = d."teamId"
+      where d."athleteId" = $1 and d.day = $2
+      order by d."createdAt", d.id`,
+    [userId, day],
+  );
+  return rows;
+}
+
+/** コーチが見る、選手の from から to までの、そのチームのやりとり（古い順） */
+export async function listMemberCommentsForCoach(
+  access: CoachAccess,
+  from: string,
+  to: string,
+): Promise<DayComment[]> {
+  const { rows } = await db().query<DayComment>(
+    `select ${commentColumns}
+       from day_comment d join "user" u on u.id = d."authorId"
+      where d."athleteId" = $3 and d."teamId" = $2 and d.day between $4 and $5 and ${COACH_SEES}
+      order by d."createdAt", d.id`,
+    [...accessParams(access), from, to],
+  );
+  return rows;
+}
+
+/** コーチが選手の日にコメントを書く。コーチでないか、相手がいまの選手でなければ書かずに false */
+export async function addCommentAsCoach(
+  access: CoachAccess,
+  day: string,
+  body: string,
+): Promise<boolean> {
+  const { rowCount } = await db().query(
+    `insert into day_comment ("athleteId", day, "authorId", "teamId", body)
+     select $3, $4, $1, $2, $5 where ${COACH_SEES}`,
+    [...accessParams(access), day, body],
+  );
+  return rowCount === 1;
+}
+
+/** 選手が自分の日に、いま入っているチームのやりとりへ書く。入っていなければ書かずに false */
+export async function addCommentAsAthlete(
+  userId: string,
+  teamId: string,
+  day: string,
+  body: string,
+): Promise<boolean> {
+  const { rowCount } = await db().query(
+    `insert into day_comment ("athleteId", day, "authorId", "teamId", body)
+     select $1, $3, $1, $2, $4
+      where exists (select 1 from team_member m where m."teamId" = $2 and m."userId" = $1)`,
+    [userId, teamId, day, body],
+  );
+  return rowCount === 1;
+}
+
+/**
+ * 自分のコメントを消す。選手本人は自分の日のものをいつでも、コーチはいまも見られるもの（COACH_SEES と同じ確かめ）だけ。
+ * 消せたら true
+ */
+export async function deleteComment(userId: string, id: string): Promise<boolean> {
+  const { rowCount } = await db().query(
+    `delete from day_comment d
+      where d.id = $2 and d."authorId" = $1
+        and (d."athleteId" = $1
+             or exists (select 1 from team_coach c join team_member m on m."teamId" = c."teamId"
+                         where c."teamId" = d."teamId" and c."userId" = $1 and m."userId" = d."athleteId"))`,
+    [userId, id],
+  );
+  return rowCount === 1;
+}
+
+/** コメントの知らせの宛先と、知らせに載せる名前（選手の表示名とチームの名前） */
+export type CommentPushTargets = {
+  athleteName: string;
+  teamName: string;
+  targets: (PushTarget & { locale: Locale })[];
+};
+
+/**
+ * コメントの知らせを送る宛先。toCoaches なら、そのチームのコーチ（書いた人を除く）の端末、
+ * そうでなければ選手の端末。選手がもうチームにいなければ空（書いたあとに抜けた）
+ */
+export async function commentPushTargets(input: {
+  teamId: string;
+  athleteId: string;
+  authorId: string;
+  toCoaches: boolean;
+}): Promise<CommentPushTargets | null> {
+  const { rows } = await db().query<{
+    athleteName: string;
+    teamName: string;
+    endpoint: string | null;
+    p256dh: string | null;
+    auth: string | null;
+    locale: Locale | null;
+  }>(
+    `select u.name as "athleteName", t.name as "teamName", s.endpoint, s.p256dh, s.auth, s.locale
+       from team_member m
+       join team t on t.id = m."teamId"
+       join "user" u on u.id = m."userId"
+       left join push_subscription s on
+         case when $4::boolean
+              then s."userId" in (select c."userId" from team_coach c
+                                   where c."teamId" = $1 and c."userId" <> $3)
+              else s."userId" = $2 end
+      where m."teamId" = $1 and m."userId" = $2
+      order by s."createdAt"`,
+    [input.teamId, input.athleteId, input.authorId, input.toCoaches],
+  );
+  if (rows.length === 0) return null;
+  return {
+    athleteName: rows[0]!.athleteName,
+    teamName: rows[0]!.teamName,
+    targets: rows.flatMap((row) =>
+      row.endpoint && row.p256dh && row.auth && row.locale
+        ? [
+            {
+              endpoint: row.endpoint,
+              keys: { p256dh: row.p256dh, auth: row.auth },
+              locale: row.locale,
+            },
+          ]
+        : [],
+    ),
+  };
+}

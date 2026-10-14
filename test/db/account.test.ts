@@ -96,6 +96,11 @@ async function seedEverything(userId: string): Promise<string> {
     `insert into team_member ("teamId", "userId", "consentedAt", "consentBy") values ($1, $2, now(), 'self')`,
     [joined!.id, userId],
   );
+  // 入っているチームへ書いたコメント（選手本人で書き手）
+  await query(
+    `insert into day_comment ("athleteId", day, "authorId", "teamId", body) values ($1, $2, $1, $3, 'hi')`,
+    [userId, day, joined!.id],
+  );
   return objectKey;
 }
 

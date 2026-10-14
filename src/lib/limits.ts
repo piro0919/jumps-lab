@@ -38,3 +38,6 @@ export const TEAM_NAME_MAX_LENGTH = 50;
 
 /** 利用者の id（Better Auth が振る文字列）の長さの上限。これより長いものは探さない（コーチの画面と Server Action） */
 export const USER_ID_MAX_LENGTH = 200;
+
+/** コーチと選手のコメントの字数（DB の上限は 2000。余裕を持たせる） */
+export const COMMENT_MAX_LENGTH = 1000;

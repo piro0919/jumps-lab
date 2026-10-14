@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import { z } from 'zod';
 import { AttemptsCard } from '@/components/attempts-card';
+import { CommentThread } from '@/components/comment-thread';
 import { CompetitionItem } from '@/components/competitions-board';
 import { ConditionCard } from '@/components/condition-card';
 import {
@@ -15,12 +16,14 @@ import {
 } from '@/components/layout-ui';
 import { RemoveMemberButton } from '@/components/team-buttons';
 import { VideosCard } from '@/components/videos-card';
+import { commentOpen, commentRole, MEMBER_RECENT_DAYS } from '@/lib/comments';
 import { competitionResults } from '@/lib/competition-results';
 import {
   type CoachAccess,
   getCoachedTeam,
   getMemberForCoach,
   listMemberAttemptsForCoach,
+  listMemberCommentsForCoach,
   listMemberCompetitionAttemptsForCoach,
   listMemberCompetitionsForCoach,
   listMemberDayLogsForCoach,
@@ -32,12 +35,12 @@ import { viewUrl } from '@/lib/r2';
 import { formatMark } from '@/lib/units';
 import { requireProfile, requireViewer } from '@/lib/viewer';
 
-/** 選手の記録を見る日数（選手の時間帯の今日を含む直近14日） */
-const RECENT_DAYS = 14;
+/** 選手の記録を見る日数（選手の時間帯の今日を含む直近14日）。コメントを書ける日も同じ */
+const RECENT_DAYS = MEMBER_RECENT_DAYS;
 
 /**
  * コーチが見る、選手1人の記録（2026-10-14）。見るだけで、直す・消す・目印を置くは出さない。
- * 直近14日の日ごとの試技・体調（痛みのメモと練習メモも）・動画と、大会。動画は開くたびに期限つきの URL を作る（本人の画面と同じ）。
+ * 直近14日の日ごとの試技・体調（痛みのメモと練習メモも）・動画・コメントのやりとりと、大会。動画は開くたびに期限つきの URL を作る（本人の画面と同じ）。
  * 押した人がそのチームのコーチで、相手がいまそのチームの選手でなければ開かない。読む文のどれもが同じことを確かめる
  * （src/lib/data.ts の COACH_SEES）。抜けた・外された選手は、その時点から見えない
  */
@@ -57,12 +60,13 @@ export default async function TeamMember({
 
   const today = todayIn(member.timeZone);
   const from = addDays(today, 1 - RECENT_DAYS);
-  const [attempts, logs, videos, competitions, competitionAttempts] = await Promise.all([
+  const [attempts, logs, videos, competitions, competitionAttempts, comments] = await Promise.all([
     listMemberAttemptsForCoach(access, from, today),
     listMemberDayLogsForCoach(access, from, today),
     listMemberVideosForCoach(access, from, today),
     listMemberCompetitionsForCoach(access),
     listMemberCompetitionAttemptsForCoach(access),
+    listMemberCommentsForCoach(access, from, today),
   ]);
   const videoItems = await Promise.all(
     videos.map(async (video) => {
@@ -88,11 +92,14 @@ export default async function TeamMember({
       ...attempts.map((a) => a.day),
       ...logs.map((l) => l.day),
       ...videos.map((v) => v.day),
+      // 記録の無い日に選手が書いたコメントも、その日を出して読めるようにする
+      ...comments.map((c) => c.day),
     ]),
   ].toSorted((a, b) => b.localeCompare(a));
   const results = competitionResults(competitionAttempts);
 
   const t = await getTranslations('teams');
+  const tComments = await getTranslations('comments');
   const tNav = await getTranslations('nav');
   const format = await getFormatter();
 
@@ -116,7 +123,7 @@ export default async function TeamMember({
               const log = logs.find((l) => l.day === day) ?? null;
               const dayVideos = videoItems.filter((v) => v.day === day).map((v) => v.item);
               return (
-                <section key={day} className="flex flex-col gap-3">
+                <section key={day} id={`day-${day}`} className="flex scroll-mt-20 flex-col gap-3">
                   <div className="px-4 pt-3">
                     <SectionTitle>
                       {format.dateTime(new Date(`${day}T00:00:00Z`), {
@@ -140,6 +147,22 @@ export default async function TeamMember({
                   {dayVideos.length > 0 && (
                     <VideosCard videos={dayVideos} timeZone={coach.timeZone} readOnly />
                   )}
+                  <CommentThread
+                    title={tComments('title')}
+                    timeZone={coach.timeZone}
+                    comments={comments
+                      .filter((c) => c.day === day)
+                      .map((c) => ({
+                        id: c.id,
+                        authorName: c.authorName,
+                        role: commentRole(c, viewer.userId),
+                        body: c.body,
+                        createdAt: c.createdAt.toISOString(),
+                      }))}
+                    form={
+                      commentOpen(day, today) ? { teamId: team.id, day, athleteId: userId } : null
+                    }
+                  />
                 </section>
               );
             })

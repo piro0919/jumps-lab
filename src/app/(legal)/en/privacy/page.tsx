@@ -76,6 +76,10 @@ export default function PrivacyEn() {
           If you are under 16 and join a team: your parent&apos;s or guardian&apos;s email address,
           and when they agreed
         </li>
+        <li>
+          Comments that team coaches and athletes write on each day (the text, who wrote it, which
+          athlete and day it belongs to, which team, and when it was written)
+        </li>
       </ul>
       <p>
         Grade, date of birth, gender, height, weight and the injury field are optional. Write only
@@ -98,12 +102,16 @@ export default function PrivacyEn() {
           If you are under 16, to email your parent or guardian a request to agree to the AI coach
           and to keep a record of their agreement
         </li>
-        <li>To remind you the day before a competition, if you turn notifications on</li>
+        <li>
+          To remind you the day before a competition and to tell you a comment has arrived, if you
+          turn notifications on
+        </li>
         <li>
           To show your records to the coaches of a team you join, with your consent (or, if you are
           under 16, your parent&apos;s or guardian&apos;s consent, including emailing them a request
           and keeping a record of their agreement)
         </li>
+        <li>To let team coaches and athletes exchange comments about each day&apos;s records</li>
         <li>To sign you in and confirm who you are</li>
       </ol>
       <p>We use it for nothing else. We do not use it for advertising or sell it to anyone.</p>
@@ -122,7 +130,13 @@ export default function PrivacyEn() {
           display name and events, your attempts (date, event, practice or competition, mark, wind
           and note), your condition, fatigue, sleep, injuries or discomfort and practice notes for
           each day, your competitions and their results, and your videos and their notes. They do
-          not see your email address. Coaches cannot change or delete anything
+          not see your email address. Coaches cannot change or delete your records
+        </dd>
+        <dt>Comments</dt>
+        <dd>
+          Coaches can comment on each of your last 14 days, and you can reply. Comments are kept per
+          team, and only you and that team&apos;s coaches can see them (coaches of your other teams
+          cannot). Only the person who wrote a comment can delete it
         </dd>
         <dt>Consent</dt>
         <dd>
@@ -135,8 +149,8 @@ export default function PrivacyEn() {
         <dt>Stopping</dt>
         <dd>
           You can leave a team anytime from Teams in your account menu. Coaches can no longer see
-          your records from the moment you leave, a coach removes you, the team is deleted or you
-          delete your account
+          your records or comments from the moment you leave, a coach removes you, the team is
+          deleted or you delete your account. The comments of a team you left stay visible to you
         </dd>
       </dl>
       <p>We use your information jointly as follows.</p>
@@ -223,9 +237,10 @@ export default function PrivacyEn() {
         <dt>Browser and OS push services (Google, Apple, Mozilla, Microsoft)</dt>
         <dd>
           Only if you turn notifications on: the notification (that a competition is tomorrow and
-          its name) is delivered to your device through the push service your browser uses. It is
-          sent encrypted. Notifications never include your marks, notes, condition, injuries or
-          discomfort
+          its name, or that a comment has arrived and the team name, plus the athlete&apos;s display
+          name in notifications to coaches) is delivered to your device through the push service
+          your browser uses. It is sent encrypted. Notifications never include the text of comments,
+          your marks, notes, condition, injuries or discomfort
         </dd>
         <dt>Sentry</dt>
         <dd>
@@ -246,10 +261,12 @@ export default function PrivacyEn() {
         expires (7 days after it is sent) if it was not used to agree; if it was, we keep it as the
         record of their agreement until a newer agreement replaces it or you delete your account
         (for joining a team, until you leave or are removed from that team). We keep teams and
-        invite links until a coach deletes the team or the team has no coach left. We keep the rest
-        of the information until you delete your account. When you do, we delete all of the
-        information above. Your videos are deleted at that time too, and any that could not be
-        deleted then are removed within 91 days of their upload.
+        invite links until a coach deletes the team or the team has no coach left. We delete a
+        comment when its writer deletes it, when the team is deleted, or when its writer or the
+        athlete it belongs to deletes their account. We keep the rest of the information until you
+        delete your account. When you do, we delete all of the information above. Your videos are
+        deleted at that time too, and any that could not be deleted then are removed within 91 days
+        of their upload.
       </p>
 
       <h2>8. Access, correction and deletion</h2>

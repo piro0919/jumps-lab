@@ -143,7 +143,8 @@
     "teamName": "チームの名前を入れてください（50文字まで）。",
     "teamInviteInvalid": "この招待のリンクはもう使えません。",
     "teamCoachJoin": "このチームのコーチなので、選手としては参加できません。",
-    "guardianTeamCoach": "この方はこのチームのコーチのため、選手としては参加できません。このリンクはもう使えません。"
+    "guardianTeamCoach": "この方はこのチームのコーチのため、選手としては参加できません。このリンクはもう使えません。",
+    "comment": "コメントは1,000文字までで書いてください。"
   },
   "home": {
     "goal": "今季の目標",
@@ -457,7 +458,7 @@
   },
   "push": {
     "title": "通知",
-    "meetTomorrow": "大会の前日",
+    "notices": "大会の前日の知らせとコメント",
     "off": "オフ",
     "on": "オン",
     "unsupported": "このブラウザでは通知を受け取れません。",
@@ -465,7 +466,11 @@
     "denied": "通知がブロックされています。ブラウザの設定で、このサイトの通知を許可してください。",
     "failedOn": "通知をオンにできませんでした。もう一度お試しください。",
     "failedOff": "通知をオフにできませんでした。もう一度お試しください。",
-    "meetTomorrowTitle": "明日は大会です"
+    "meetTomorrowTitle": "明日は大会です",
+    "commentFromCoachTitle": "コーチからコメントが届きました",
+    "commentFromAthleteTitle": "{name}さんからコメントが届きました",
+    "commentFromAthleteTitleNoName": "選手からコメントが届きました",
+    "commentBody": "チーム：{team}"
   },
   "guardianConsent": {
     "metaTitle": "保護者の方の同意",
@@ -534,8 +539,9 @@
     "shownCondition": "日ごとの体調・疲労度・睡眠時間・ケガや違和感のメモ・練習メモ",
     "shownCompetitions": "大会の予定と結果",
     "shownVideos": "動画とそのメモ（送ってから90日で削除されるまで）",
+    "shownComments": "選手が日ごとにチームへ書いたコメント",
     "notShown": "メールアドレスは見せません。",
-    "readOnly": "コーチは見るだけで、直したり消したりはできません。",
+    "readOnly": "コーチは記録を直したり消したりできません。日ごとにコメントを書くことができ、選手は返事ができます。",
     "leaveAnytime": "アカウントのメニューの「チーム」から、いつでも抜けられます。抜けたときから、コーチはあなたの記録を見られなくなります。",
     "join": "同意して参加",
     "joining": "参加しています…",
@@ -552,5 +558,17 @@
     "guardianLeave": "{name} さんは、アカウントのメニューの「チーム」からいつでも抜けられます。抜けたときから、コーチは記録を見られなくなります。",
     "rosterLine": "{last, select, none {まだ記録がありません} other {最後の記録 {last}}}{condition, select, none {} other {・体調 {condition}（{conditionDate}）}}{fatigue, select, none {} other {・疲労 {fatigue}（{fatigueDate}）}}・{days}日間の動画 {videos}本",
     "guardianAlready": "{name} さんはもう{team}に参加しています。これ以上の手続きはありません。"
+  },
+  "comments": {
+    "title": "コメント",
+    "titleTeam": "{team} とのコメント",
+    "empty": "コメントはまだありません。",
+    "you": "あなた",
+    "coach": "コーチ",
+    "write": "コメントを書く",
+    "placeholder": "コメントを書く…",
+    "send": "送信",
+    "delete": "コメントを削除",
+    "deleteConfirm": "このコメントを削除しますか？"
   }
 }

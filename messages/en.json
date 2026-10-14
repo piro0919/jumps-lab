@@ -143,7 +143,8 @@
     "teamName": "Enter a team name (up to 50 characters).",
     "teamInviteInvalid": "This invite link is no longer valid.",
     "teamCoachJoin": "You coach this team, so you cannot join it as an athlete.",
-    "guardianTeamCoach": "This person coaches this team, so they cannot join it as an athlete. This link can no longer be used."
+    "guardianTeamCoach": "This person coaches this team, so they cannot join it as an athlete. This link can no longer be used.",
+    "comment": "Write a comment of up to 1,000 characters."
   },
   "home": {
     "goal": "Season goal",
@@ -457,7 +458,7 @@
   },
   "push": {
     "title": "Notifications",
-    "meetTomorrow": "The day before a competition",
+    "notices": "Competition reminders and comments",
     "off": "Off",
     "on": "On",
     "unsupported": "This browser can't receive notifications.",
@@ -465,7 +466,11 @@
     "denied": "Notifications are blocked. Allow them for this site in your browser settings.",
     "failedOn": "Couldn't turn notifications on. Try again.",
     "failedOff": "Couldn't turn notifications off. Try again.",
-    "meetTomorrowTitle": "Competition tomorrow"
+    "meetTomorrowTitle": "Competition tomorrow",
+    "commentFromCoachTitle": "New comment from your coach",
+    "commentFromAthleteTitle": "New comment from {name}",
+    "commentFromAthleteTitleNoName": "New comment from an athlete",
+    "commentBody": "Team: {team}"
   },
   "guardianConsent": {
     "metaTitle": "Parent or guardian consent",
@@ -534,8 +539,9 @@
     "shownCondition": "Condition, fatigue, sleep, pain notes and practice notes for each day",
     "shownCompetitions": "Competitions and their results",
     "shownVideos": "Videos and their notes, until they are deleted 90 days after upload",
+    "shownComments": "Comments the athlete writes to the team on each day",
     "notShown": "Your email address is not shown.",
-    "readOnly": "Coaches can only look. They cannot change or delete anything.",
+    "readOnly": "Coaches cannot change or delete any records. They can comment on each day, and the athlete can reply.",
     "leaveAnytime": "You can leave anytime from Teams in your account menu. From then on, the coaches can no longer see your records.",
     "join": "Join and share",
     "joining": "Joining…",
@@ -552,5 +558,17 @@
     "guardianLeave": "{name} can leave the team anytime from Teams in the account menu. From then on, the coaches can no longer see their records.",
     "rosterLine": "{last, select, none {Nothing logged yet} other {Last logged {last}}}{condition, select, none {} other { · condition {condition} on {conditionDate}}}{fatigue, select, none {} other { · fatigue {fatigue} on {fatigueDate}}} · {videos, plural, =0 {no videos} one {# video} other {# videos}} in {days} days",
     "guardianAlready": "{name} is already in {team}. There is nothing more to do."
+  },
+  "comments": {
+    "title": "Comments",
+    "titleTeam": "Comments with {team}",
+    "empty": "No comments yet.",
+    "you": "You",
+    "coach": "Coach",
+    "write": "Write a comment",
+    "placeholder": "Write a comment…",
+    "send": "Send",
+    "delete": "Delete comment",
+    "deleteConfirm": "Delete this comment?"
   }
 }

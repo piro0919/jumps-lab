@@ -2,11 +2,20 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import { AttemptsCard } from '@/components/attempts-card';
+import { CommentThread } from '@/components/comment-thread';
 import { ConditionCard } from '@/components/condition-card';
 import { PageTitle, HALVES } from '@/components/layout-ui';
 import { buttonVariants } from '@/components/ui/button';
 import { VideosCard } from '@/components/videos-card';
-import { getDayLog, hasMenu, listAttemptsBetween, listVideosOnDay } from '@/lib/data';
+import { commentOpen, commentRole } from '@/lib/comments';
+import {
+  getDayLog,
+  hasMenu,
+  listAttemptsBetween,
+  listDayComments,
+  listMemberships,
+  listVideosOnDay,
+} from '@/lib/data';
 import { resolveLogDay, todayIn } from '@/lib/dates';
 import { downloadUrl, viewUrl } from '@/lib/r2';
 import { formatMark } from '@/lib/units';
@@ -15,7 +24,9 @@ import { requireProfile, requireViewer } from '@/lib/viewer';
 /**
  * 1日分の試技と体調と動画。/log/today は本人の時間帯での今日を開く。
  * 先の日は記録できないので今日へ送る（日付の形でないものも同じ）。この画面は見るだけで、
- * 試技を足すのは /log/[day]/new、コンディションを直すのは /log/[day]/condition
+ * 試技を足すのは /log/[day]/new、コンディションを直すのは /log/[day]/condition。
+ * チームに入っていれば、チームごとにコーチとのコメントのやりとりを出す（書けるのは直近14日の日だけ）。
+ * 抜けたチームのやりとりは見るだけで残す
  */
 export default async function LogDay({ params }: PageProps<'/log/[day]'>) {
   const viewer = await requireViewer();
@@ -24,12 +35,27 @@ export default async function LogDay({ params }: PageProps<'/log/[day]'>) {
   const day = resolveLogDay((await params).day, today);
   if (!day) redirect('/log/today');
 
-  const [log, attempts, videos, menuMade] = await Promise.all([
+  const [log, attempts, videos, menuMade, comments, memberships] = await Promise.all([
     getDayLog(viewer.userId, day),
     listAttemptsBetween(viewer.userId, day, day),
     listVideosOnDay(viewer.userId, day),
     hasMenu(viewer.userId, day),
+    listDayComments(viewer.userId, day),
+    listMemberships(viewer.userId),
   ]);
+  // やりとりはチームごと。いま入っているチーム（入った順）のあとに、抜けたチームのやりとりを見るだけで並べる
+  const threads = [
+    ...memberships.map((team) => ({ teamId: team.id, name: team.name, current: true })),
+    ...[...new Map(comments.map((c) => [c.teamId, c.teamName])).entries()]
+      .filter(([teamId]) => !memberships.some((team) => team.id === teamId))
+      .map(([teamId, name]) => ({ teamId, name, current: false })),
+  ].filter(
+    // 書けない日（14日より前）は、やりとりのあるチームだけ
+    (thread) =>
+      (thread.current && commentOpen(day, today)) ||
+      comments.some((c) => c.teamId === thread.teamId),
+  );
+  const open = commentOpen(day, today);
   // 動画は開くたびに期限つきの URL（見る用と保存する用）を作る。結び付けた試技は「2. 6.12 m」のように、試技の欄と同じ番号で出す
   const videoItems = await Promise.all(
     videos.map(async (video) => {
@@ -64,6 +90,7 @@ export default async function LogDay({ params }: PageProps<'/log/[day]'>) {
   const t = await getTranslations('log');
   const tNav = await getTranslations('nav');
   const tMenu = await getTranslations('menu');
+  const tComments = await getTranslations('comments');
   const format = await getFormatter();
 
   return (
@@ -106,6 +133,27 @@ export default async function LogDay({ params }: PageProps<'/log/[day]'>) {
           videos={videoItems}
           timeZone={profile.timeZone}
         />
+        {threads.length > 0 && (
+          <div id="comments" className="flex scroll-mt-20 flex-col gap-3">
+            {threads.map((thread) => (
+              <CommentThread
+                key={thread.teamId}
+                title={tComments('titleTeam', { team: thread.name })}
+                timeZone={profile.timeZone}
+                comments={comments
+                  .filter((c) => c.teamId === thread.teamId)
+                  .map((c) => ({
+                    id: c.id,
+                    authorName: c.authorName,
+                    role: commentRole(c, viewer.userId),
+                    body: c.body,
+                    createdAt: c.createdAt.toISOString(),
+                  }))}
+                form={thread.current && open ? { teamId: thread.teamId, day } : null}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </main>
   );

@@ -3,7 +3,14 @@ import { sendPushBatch } from '@piro0919/next-push/server';
 import { createTranslator } from 'next-intl';
 import { env } from '@/env';
 import type { Locale } from '@/i18n/locales';
-import { claimPushKeys, deletePushEndpoints, listReminderRows, releasePushKeys } from '@/lib/data';
+import { commentNotice, type CommentNoticeInput } from '@/lib/comment-notice';
+import {
+  claimPushKeys,
+  commentPushTargets,
+  deletePushEndpoints,
+  listReminderRows,
+  releasePushKeys,
+} from '@/lib/data';
 import { candidateDays, pickReminders } from '@/lib/meet-reminder';
 import { isValidSubscription } from '@/lib/push-endpoint';
 import en from '../../messages/en.json';
@@ -76,6 +83,7 @@ async function withTimeout<T>(promise: Promise<T>, fallback: T): Promise<T> {
 async function deliver(
   targets: Target[],
   payload: Parameters<typeof sendPushBatch>[1],
+  ttl: number = TTL_SECONDS,
 ): Promise<Outcome> {
   const options = {
     vapidKeys: {
@@ -83,7 +91,7 @@ async function deliver(
       privateKey: env.VAPID_PRIVATE_KEY ?? '',
     },
     subject: env.VAPID_SUBJECT,
-    ttl: TTL_SECONDS,
+    ttl,
     urgency: 'normal' as const,
     concurrency: CONCURRENCY,
   };
@@ -157,4 +165,55 @@ export async function sendMeetReminders(now: Date): Promise<ReminderRun> {
   await deletePushEndpoints(gone);
   await releasePushKeys(unsent);
   return run;
+}
+
+/**
+ * コメントの知らせを通知サービスに預ける時間（24 時間、仮決め）。コメントは急がないが、端末が1日眠っていても
+ * 起きたときに届くように。next-push の既定の 60 秒では、電源を切っていた端末にはまず届かない
+ */
+const COMMENT_TTL_HOURS = 24;
+const COMMENT_TTL_SECONDS = COMMENT_TTL_HOURS * 60 * 60;
+
+/**
+ * コメントを書いたあとに、相手の端末へ知らせる（Server Action が after() で呼ぶ。返事を待たせない）。
+ * コーチが書けば選手へ、選手が書けばそのチームのコーチ（書いた人を除く）へ。文言は宛先の言語で組み、
+ * 本文は載せない（src/lib/comment-notice.ts）。鍵が無ければ何もしない。無効と返された宛先は消す
+ */
+export async function sendCommentPush(input: {
+  teamId: string;
+  athleteId: string;
+  authorId: string;
+  day: string;
+}): Promise<{ sent: number; failed: number }> {
+  if (!pushReady()) return { sent: 0, failed: 0 };
+  const toCoaches = input.authorId === input.athleteId;
+  const found = await commentPushTargets({ ...input, toCoaches });
+  if (!found || found.targets.length === 0) return { sent: 0, failed: 0 };
+  const notice: CommentNoticeInput = {
+    toCoaches,
+    athleteId: input.athleteId,
+    athleteName: found.athleteName,
+    teamId: input.teamId,
+    teamName: found.teamName,
+    day: input.day,
+  };
+  const outcomes = await Promise.all(
+    (['en', 'ja'] as const satisfies Locale[]).map((locale) => {
+      const targets = found.targets
+        .filter((t) => t.locale === locale && isValidSubscription(t))
+        .map(({ endpoint, keys }) => ({ endpoint, keys }));
+      if (targets.length === 0) return Promise.resolve({ sent: 0, gone: [], failed: 0 });
+      return withTimeout(
+        deliver(targets, commentNotice(notice, locale), COMMENT_TTL_SECONDS).catch(() =>
+          FAILED_ALL(targets),
+        ),
+        FAILED_ALL(targets),
+      );
+    }),
+  );
+  await deletePushEndpoints(outcomes.flatMap((o) => o.gone));
+  return {
+    sent: outcomes.reduce((sum, o) => sum + o.sent, 0),
+    failed: outcomes.reduce((sum, o) => sum + o.failed, 0),
+  };
 }
