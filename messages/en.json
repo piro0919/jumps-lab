@@ -87,6 +87,20 @@
     "choosePrefecture": "Choose a prefecture",
     "openSchedule": "Open"
   },
+  "meetImport": {
+    "title": "Import competitions",
+    "open": "Import from a schedule",
+    "source": "Read from",
+    "fromUrl": "Web page",
+    "fromFile": "PDF or photo",
+    "url": "Page address",
+    "file": "File",
+    "read": "Read",
+    "reading": "Reading…",
+    "found": "{count, plural, one {# competition} other {# competitions}}",
+    "addThis": "Add {name}",
+    "added": "Added"
+  },
   "profile": {
     "sectionProfile": "Profile",
     "sectionRecords": "How you log",
@@ -165,7 +179,14 @@
       "unfinished": "At {height}, clear it or pass before going to the next height.",
       "afterElimination": "Three misses in a row end the competition. Remove the jumps from {height} on.",
       "noClear": "Clear at least one height to save this attempt."
-    }
+    },
+    "importUrl": "Enter the address of a web page (starting with http:// or https://).",
+    "importUnreachable": "Couldn't open that page. Check the address, or save the page as a PDF and send the file.",
+    "importTooLarge": "The file is too large. Send a PDF or photo of up to 3 MB.",
+    "importType": "This file can't be read. Send a PDF or a photo.",
+    "importNone": "No upcoming competitions were found in it.",
+    "importLimit": "You've reached the limit for importing competitions. Try again tomorrow.",
+    "importFailed": "Couldn't read the competitions. Try again later."
   },
   "home": {
     "goal": "Season goal",
@@ -485,9 +506,9 @@
   },
   "aiConsent": {
     "title": "Before you use the AI coach",
-    "changed": "What the AI coach sends has changed, so please read it again. New: your personal best and season best for each event.",
+    "changed": "What Jumps Lab sends to the AI has changed, so please read it again. New: the schedule page, PDF or photo you choose when importing competitions.",
     "askAgeNow": "We now ask your age before you use the AI coach. Please answer the question below.",
-    "intro": "To make and revise your menu, the AI coach sends the following to OpenAI, a company in the United States.",
+    "intro": "To make and revise your menu and to import competitions, Jumps Lab sends the following to OpenAI, a company in the United States.",
     "sentDate": "Today's date",
     "sentProfile": "Age, gender, height, weight and events",
     "sentBests": "Personal best and season best for each event",
@@ -496,6 +517,7 @@
     "sentCompetitions": "How many days are left to competitions in the next 8 weeks, and which one is the main goal",
     "sentSession": "Today's intensity and its reasons, the practice time and note entered, and in the chat the current menu and the messages",
     "sentMeet": "On a competition day, that meet's venue, call room place and time, start time and notes",
+    "sentImport": "When you import competitions, the address of the page and its content, or the PDF or photo you choose. It is not saved; only the competitions read from it are shown to you",
     "notSent": "Your name and email address are not sent.",
     "abroadTitle": "Where the data goes",
     "country": "Country: the United States.",

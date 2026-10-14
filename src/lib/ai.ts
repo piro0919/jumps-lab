@@ -26,8 +26,9 @@ export function aiEnabled(profile: Pick<Profile, 'plan' | 'inTeamPlan'>): boolea
  * AI コーチの同意の画面の版。送る項目を変えたら（src/app/actions/menu.ts の menuContext）上げる。
  * 前の版に同意した人には、もう一度同意の画面を出す。
  * 2: 自己ベストと今季ベストを足した（2026-10-14）
+ * 3: 大会の取り込みで選んだページ・PDF・写真を足した（2026-10-15、src/app/actions/meet-import.ts）
  */
-export const AI_CONSENT_VERSION = 2;
+export const AI_CONSENT_VERSION = 3;
 
 /** 同意を取る相手を決めるのに使うプロフィールの項目 */
 type ConsentProfile = Pick<
@@ -176,6 +177,31 @@ export function classifyAiFailure({
 }
 
 /**
+ * 材料に添える資料（大会の取り込み: src/lib/meet-import.ts）。PDF はファイルとして、写真は画像として渡す。
+ * data は base64（data: の頭は付けない）
+ */
+export type AiAttachment =
+  { kind: 'pdf'; data: string } | { kind: 'image'; mimeType: string; data: string };
+
+/** Responses API の input。資料が無ければ文字だけ、あれば文字と資料を1つの発言にまとめる */
+function responsesInput(input: string, attachment: AiAttachment | undefined) {
+  if (!attachment) return input;
+  const file =
+    attachment.kind === 'pdf'
+      ? {
+          type: 'input_file',
+          filename: 'source.pdf',
+          file_data: `data:application/pdf;base64,${attachment.data}`,
+        }
+      : {
+          type: 'input_image',
+          image_url: `data:${attachment.mimeType};base64,${attachment.data}`,
+          detail: 'high',
+        };
+  return [{ role: 'user', content: [{ type: 'input_text', text: input }, file] }];
+}
+
+/**
  * 指示（instructions）と材料（input）を渡し、schema の形の JSON を受け取る。
  * 形はモデル側が守る（strict）が、中身の数の検査は呼んだ側で行う
  */
@@ -185,12 +211,18 @@ export async function askJson<T>({
   input,
   schemaName,
   schema,
+  attachment,
+  timeoutMs = TIMEOUT_MS,
 }: {
   model: string;
   instructions: string;
   input: string;
   schemaName: string;
   schema: Record<string, unknown>;
+  /** 材料に添える PDF か写真 */
+  attachment?: AiAttachment;
+  /** 返事を待つ上限（ミリ秒）。長い日程表を読む大会の取り込みだけ長くする */
+  timeoutMs?: number;
 }): Promise<T> {
   const key = env.OPENAI_API_KEY;
   if (!key) throw new AiError('auth', 'AI のキーがありません: OPENAI_API_KEY を入れてください');
@@ -202,12 +234,12 @@ export async function askJson<T>({
       body: JSON.stringify({
         model,
         instructions,
-        input,
+        input: responsesInput(input, attachment),
         // 会話を OpenAI 側に残さない
         store: false,
         text: { format: { type: 'json_schema', name: schemaName, schema, strict: true } },
       }),
-      signal: AbortSignal.timeout(TIMEOUT_MS),
+      signal: AbortSignal.timeout(timeoutMs),
     });
   } catch (thrown) {
     throw new AiError(classifyAiFailure({ thrown }), 'AI に届きませんでした', { cause: thrown });

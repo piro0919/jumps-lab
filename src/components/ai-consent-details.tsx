@@ -7,7 +7,7 @@ const US_SYSTEM_URL =
   'https://www.ppc.go.jp/enforcement/infoprovision/laws/offshore_report_america/';
 const OPENAI_DATA_URL = 'https://developers.openai.com/api/docs/guides/your-data';
 
-/** 送るものの並び。src/app/actions/menu.ts の menuContext と、送る入力・相談に合わせる */
+/** 送るものの並び。src/app/actions/menu.ts の menuContext と、送る入力・相談、大会の取り込み（src/app/actions/meet-import.ts）に合わせる */
 const SENT = [
   'sentDate',
   'sentProfile',
@@ -17,6 +17,7 @@ const SENT = [
   'sentCompetitions',
   'sentSession',
   'sentMeet',
+  'sentImport',
 ] as const;
 
 /** 出典へのリンク。別のタブで開く */

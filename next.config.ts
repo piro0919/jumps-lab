@@ -11,6 +11,13 @@ const nextConfig: NextConfig = {
   // スマホから手元の開発サーバーを開くため（http://MacBook-Pro.local:3000 のように Mac の名前で開く）。
   // 開発サーバーは、localhost 以外から開かれると画面を動かす部品を渡さない
   allowedDevOrigins: ['*.local'],
+  experimental: {
+    serverActions: {
+      // 大会の取り込みで、要項の PDF と日程表の写真を Server Action で受け取る（src/lib/limits.ts の MEET_FILE_MAX_BYTES）。
+      // 既定は 1MB。Vercel の関数が受け取れるのは 4.5MB まで
+      bodySizeLimit: '4mb',
+    },
+  },
   async headers() {
     return [
       {

@@ -4,10 +4,10 @@ import { refresh } from 'next/cache';
 import { getLocale } from 'next-intl/server';
 import { z } from 'zod';
 import { AI_CONSENT_VERSION, AiError, aiConsenter, aiEnabled, aiUsable, askJson } from '@/lib/ai';
+import { overAiLimit } from '@/lib/ai-limit';
 import { eventBests } from '@/lib/bests';
 import {
   consentToAi,
-  countAiCalls,
   getMenu,
   getProfile,
   getTargets,
@@ -25,7 +25,6 @@ import { addDays, daysBetween, todayIn } from '@/lib/dates';
 import { type ActionResult, optionalText } from '@/lib/form';
 import { NOTE_MAX_LENGTH } from '@/lib/limits';
 import {
-  AI_CALL_LIMITS,
   CHAT_MODEL,
   checkMenu,
   type Menu,
@@ -133,13 +132,6 @@ async function menuContext(userId: string, profile: Profile, today: string) {
   };
 }
 
-/** 今日・今月の AI の呼び出しが上限に達しているか */
-async function overLimit(userId: string, today: string, kind: 'menu' | 'chat'): Promise<boolean> {
-  const used = await countAiCalls(userId, today, kind);
-  const limit = AI_CALL_LIMITS[kind];
-  return used.today >= limit.perDay || used.month >= limit.perMonth;
-}
-
 /**
  * AI が答えられなかったときに画面へ返すエラー。理由は種類だけで伝え、キーや支払いのことは選手に言わない
  * （残高切れも「今は使えない、記録はつけられる」と出す）。分からないものは今までどおり menuFailed
@@ -210,7 +202,7 @@ export async function createMenuAction(
 
   try {
     if (await getMenu(viewer.userId, today)) return { ok: true };
-    if (await overLimit(viewer.userId, today, 'menu')) return { ok: false, error: 'menuLimit' };
+    if (await overAiLimit(viewer.userId, today, 'menu')) return { ok: false, error: 'menuLimit' };
     const { advice, meetDay, data } = await menuContext(viewer.userId, profile, today);
     const input = JSON.stringify({
       ...data,
@@ -273,7 +265,7 @@ export async function askMenuAction(
   try {
     const current = await getMenu(viewer.userId, today);
     if (!current) return { ok: false, error: 'generic' };
-    if (await overLimit(viewer.userId, today, 'chat')) return { ok: false, error: 'chatLimit' };
+    if (await overAiLimit(viewer.userId, today, 'chat')) return { ok: false, error: 'chatLimit' };
     const [{ advice, data }, history] = await Promise.all([
       menuContext(viewer.userId, profile, today),
       listMenuMessages(viewer.userId, today),

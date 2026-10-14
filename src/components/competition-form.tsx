@@ -20,6 +20,7 @@ import { cn } from '@/lib/cn';
 import { FormActions } from '@/components/form-actions';
 import type { Competition } from '@/lib/data';
 import { LONG_NOTE_MAX_LENGTH, URL_MAX_LENGTH } from '@/lib/limits';
+import type { ImportedMeet } from '@/lib/meet-import';
 
 /**
  * 大会の入力（/competitions/new と /competitions/[id]/edit の画面）。追加と編集で同じものを使う。
@@ -27,14 +28,21 @@ import { LONG_NOTE_MAX_LENGTH, URL_MAX_LENGTH } from '@/lib/limits';
  */
 export function CompetitionForm({
   initial,
+  draft = null,
   defaultDay,
   defaultEntryUrl,
+  returnTo = '/competitions',
 }: {
   initial: Competition | null;
+  /** 取り込んだ大会の下書き（src/lib/meet-import.ts）。新しい大会のはじめの値にする */
+  draft?: ImportedMeet | null;
   defaultDay: string;
   /** 新しい大会の申し込みのサイトのはじめの値。日本の人は日本陸連の申し込みサイト、ほかの国は空 */
   defaultEntryUrl: string;
+  /** 保存したあとに移る画面。取り込みから来たときは取り込みの一覧へ戻る */
+  returnTo?: string;
 }) {
+  const values = initial ?? draft;
   const router = useRouter();
   const t = useTranslations('calendar');
   const tErrors = useTranslations('errors');
@@ -42,7 +50,7 @@ export function CompetitionForm({
   const [isTarget, setIsTarget] = useState(initial?.isTarget ?? false);
   const [state, action, pending] = useActionState(async (previous: unknown, formData: FormData) => {
     const result = await safely(() => saveCompetitionAction(null, formData));
-    if (result?.ok) router.push('/competitions');
+    if (result?.ok) router.push(returnTo);
     return result;
   }, null);
 
@@ -50,23 +58,23 @@ export function CompetitionForm({
     <ActionForm action={action} className="flex flex-col gap-4">
       <input type="hidden" name="id" value={initial?.id ?? ''} />
       <Field label={t('competitionName')} required={tProfile('required')}>
-        <Input name="name" defaultValue={initial?.name ?? ''} required maxLength={200} />
+        <Input name="name" defaultValue={values?.name ?? ''} required maxLength={200} />
       </Field>
       <div className="grid grid-cols-2 gap-4">
         <Field label={t('day')} required={tProfile('required')}>
-          <Input name="day" type="date" defaultValue={initial?.day ?? defaultDay} required />
+          <Input name="day" type="date" defaultValue={values?.day ?? defaultDay} required />
         </Field>
         <Field label={t('venue')}>
-          <Input name="venue" defaultValue={initial?.venue ?? ''} maxLength={200} />
+          <Input name="venue" defaultValue={values?.venue ?? ''} maxLength={200} />
         </Field>
         <Field label={t('callRoomPlace')}>
-          <Input name="callRoomPlace" defaultValue={initial?.callRoomPlace ?? ''} maxLength={200} />
+          <Input name="callRoomPlace" defaultValue={values?.callRoomPlace ?? ''} maxLength={200} />
         </Field>
         <Field label={t('callRoomTime')}>
-          <Input name="callRoomTime" type="time" defaultValue={initial?.callRoomTime ?? ''} />
+          <Input name="callRoomTime" type="time" defaultValue={values?.callRoomTime ?? ''} />
         </Field>
         <Field label={t('startTime')}>
-          <Input name="startTime" type="time" defaultValue={initial?.startTime ?? ''} />
+          <Input name="startTime" type="time" defaultValue={values?.startTime ?? ''} />
         </Field>
       </div>
       {/* 主目標の大会。今日のアドバイスが、この大会の前2週間を調整期にする */}
@@ -98,14 +106,14 @@ export function CompetitionForm({
           name="entryUrl"
           type="url"
           inputMode="url"
-          defaultValue={initial ? (initial.entryUrl ?? '') : defaultEntryUrl}
+          defaultValue={initial ? (initial.entryUrl ?? '') : (draft?.entryUrl ?? defaultEntryUrl)}
           maxLength={URL_MAX_LENGTH}
         />
       </Field>
       <Field label={t('notes')}>
         <TextArea
           name="notes"
-          defaultValue={initial?.notes ?? ''}
+          defaultValue={values?.notes ?? ''}
           maxLength={LONG_NOTE_MAX_LENGTH}
         />
       </Field>

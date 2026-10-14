@@ -22,6 +22,8 @@ export const CHAT_MODEL = 'gpt-6-luna';
 export const AI_CALL_LIMITS = {
   menu: { perDay: 4, perMonth: 62 },
   chat: { perDay: 20, perMonth: 300 },
+  // 大会の取り込み（src/lib/meet-import.ts）。日程表を1回読めば足りるので少なめ
+  meetImport: { perDay: 10, perMonth: 60 },
 } as const;
 
 /** チャットの返事の字数の上限（menu_message の柵と同じ） */

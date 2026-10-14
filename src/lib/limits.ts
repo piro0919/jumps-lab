@@ -90,3 +90,8 @@ export const HEIGHT_SERIES_MAX_ROWS = 40;
 export const ANGLES_PER_VIDEO = 30;
 /** 動画の本来の幅・高さの上限（ピクセル、8K の長い辺。DB の check と同じ） */
 export const ANGLE_FRAME_MAX_PX = 8192;
+
+/** 大会の取り込みで送れるファイル（要項の PDF・日程表の写真）の大きさ。Server Action の上限（next.config の 4MB）に収める */
+export const MEET_FILE_MAX_BYTES = 3_145_728; // 3MB
+/** 大会の取り込みで送る前に写真を縮める、長い辺の画素数（日程表の小さな字が読める大きさ。仮決め） */
+export const MEET_IMAGE_MAX_EDGE_PX = 2048;
