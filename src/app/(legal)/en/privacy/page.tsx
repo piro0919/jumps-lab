@@ -162,7 +162,17 @@ export default function PrivacyEn() {
       <p>We use your information jointly as follows.</p>
       <dl>
         <dt>Information used jointly</dt>
-        <dd>All of the information in section 2</dd>
+        {/* Items are listed, not "all of section 2" (2026-10-14): see the note in the Japanese page */}
+        <dd>
+          The following information in section 2: your Google account identifier, email address,
+          display name and profile image URL; your profile; your marks, including attempt details;
+          your condition, fatigue, sleep, injuries or discomfort and practice notes; your
+          competitions; your goal marks and the bests you enter by hand; your videos; your plan;
+          your AI coach menus, conversations, consent time and usage times and counts; whether you
+          are 16 or older; a parent or guardian&apos;s email address and the time they agreed; your
+          notification destinations and their language; team information (team names, coach and
+          membership records, consent records and invite links); and team comments
+        </dd>
         <dt>Joint users</dt>
         <dd>kk-web and Renya Nakamoto (中元廉弥)</dd>
         <dt>Purposes</dt>
