@@ -326,7 +326,16 @@ function useEvents(initial: Profile | null) {
 }
 
 /** 初回（ようこそ画面）。1枚のカードに2つを見出しで分けて並べ、一度に保存してホームへ */
-export function ProfileForm({ defaultName, locale }: { defaultName: string; locale: string }) {
+export function ProfileForm({
+  defaultName,
+  locale,
+  next = null,
+}: {
+  defaultName: string;
+  locale: string;
+  /** 保存したあとに戻る先（招待の画面）。無ければホーム */
+  next?: string | null;
+}) {
   const t = useTranslations('profile');
   const [state, action, pending] = useActionState(saveProfile, null);
   const [units, setUnits] = useState<Units>('metric');
@@ -343,6 +352,7 @@ export function ProfileForm({ defaultName, locale }: { defaultName: string; loca
   return (
     <ActionForm action={action}>
       <TimeZoneInput initial="UTC" />
+      {next && <input type="hidden" name="next" value={next} />}
       <Card className="flex flex-col gap-6">
         <div>
           <CardTitle>{t('sectionProfile')}</CardTitle>

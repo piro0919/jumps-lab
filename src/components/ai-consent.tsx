@@ -23,7 +23,7 @@ import { safely } from '@/lib/safe-action';
 const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /** 保護者へ送ったお願い。メールアドレスは伏せたもの（g***@example.com） */
-type SentRequest = { email: string; live: boolean };
+export type SentRequest = { email: string; live: boolean };
 
 /**
  * 同意の画面の下の部分。だれが同意するかで替わる（src/lib/guardian.ts）:
@@ -108,16 +108,23 @@ function AiConsentForm({ declared }: { declared: boolean }) {
 
 /**
  * 保護者へお願いを送る（16歳未満）。送ったあとは宛先を伏せて出し、同じ宛先へ送り直すか、宛先を変えて送る。
- * declared は「16歳未満です」と答えて送ること（生年月日の無い人）
+ * declared は「16歳未満です」と答えて送ること（生年月日の無い人）。
+ * チームへの参加（src/components/team-join.tsx）でも使う。そのときは頭の文と、送る欄（purpose と招待の鍵）を渡す
  */
-function GuardianRequestForm({
+export function GuardianRequestForm({
   declared,
   request,
   linkDays,
+  intro,
+  fields = {},
 }: {
   declared: boolean;
   request: SentRequest | null;
   linkDays: number;
+  /** 頭の文。無ければ AI コーチの「保護者の同意が要ります」 */
+  intro?: string;
+  /** 一緒に送る欄（名前と値） */
+  fields?: Record<string, string>;
 }) {
   const t = useTranslations('aiConsent');
   const tErrors = useTranslations('errors');
@@ -142,9 +149,12 @@ function GuardianRequestForm({
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="font-semibold">{t('guardianNeeded')}</p>
+      <p className="font-semibold">{intro ?? t('guardianNeeded')}</p>
       <ActionForm action={action} className="flex flex-col gap-4">
         {declared && <input type="hidden" name="adult" value="no" />}
+        {Object.entries(fields).map(([name, value]) => (
+          <input key={name} type="hidden" name={name} value={value} />
+        ))}
         {showSent ? (
           <>
             <p>

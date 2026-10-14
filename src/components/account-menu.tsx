@@ -1,6 +1,6 @@
 'use client';
 
-import { LogOut, Settings, ShieldCheck } from 'lucide-react';
+import { LogOut, Settings, ShieldCheck, Users } from 'lucide-react';
 // 線（components/progress.tsx）を出すため、移るのは @bprogress の useRouter で
 import { useRouter } from '@bprogress/next/app';
 import { useTranslations } from 'next-intl';
@@ -19,7 +19,7 @@ import {
 /**
  * ヘッダーの右端の、自分のアイコン（Google の顔写真）。押すとメニューが開く（Vercel のアカウントメニューの形）：
  * 上に顔・名前・メール、その下に種目と、跳んだ本数・記録した日（ホームの自分のカードから移した。本人、2026-10-11）。
- * 続けて設定、管理者には管理の画面、ログアウト。設定への入口はここだけ（配色は設定の画面で選ぶ）。
+ * 続けてチーム、設定、管理者には管理の画面、ログアウト。設定とチームへの入口はここだけ（配色は設定の画面で選ぶ）。
  * 写真が無い・読めないときは名前の頭文字を出す
  */
 export type AccountSummary = { events: JumpEvent[]; jumps: number; daysLogged: number };
@@ -86,6 +86,11 @@ export function AccountMenu({
           </div>
         )}
         <DropdownMenuSeparator />
+        {/* チーム（コーチの画面と、入っているチーム）。上の4つの切り替えを増やさず、ここだけに置く（2026-10-14） */}
+        <DropdownMenuItem onClick={() => router.push('/teams')}>
+          <Users aria-hidden />
+          {tNav('teams')}
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={() => router.push('/settings')}>
           <Settings aria-hidden />
           {tNav('settings')}

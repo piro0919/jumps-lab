@@ -12,15 +12,31 @@ import { safely } from '@/lib/safe-action';
  * 保護者が同意するボタン（/guardian-consent/[token]）。同意できたらお礼の文に替える。
  * リンクは1回で使い終わるので、描き直さずにこの場で替える（描き直すと「もう使えません」になる）
  */
-export function GuardianAgreeForm({ token, name }: { token: string; name: string }) {
+export function GuardianAgreeForm({
+  token,
+  name,
+  team,
+}: {
+  token: string;
+  name: string;
+  /** チームへの参加のお願いなら、そのチームの名前（お礼の文を替える） */
+  team?: string;
+}) {
   const t = useTranslations('guardianConsent');
+  const tTeams = useTranslations('teams');
   const tErrors = useTranslations('errors');
   const [state, action, pending] = useActionState(
     () => safely(() => agreeGuardianAction(token)),
     null,
   );
 
-  if (state?.ok) return <p className="font-semibold">{t('done', { name })}</p>;
+  if (state?.ok) {
+    return (
+      <p className="font-semibold">
+        {team === undefined ? t('done', { name }) : tTeams('guardianDone', { name, team })}
+      </p>
+    );
+  }
   return (
     <ActionForm action={action}>
       <FormActions

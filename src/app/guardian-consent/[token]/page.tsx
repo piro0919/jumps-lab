@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
+import { getFormatter, getTranslations } from 'next-intl/server';
 import { AiConsentDetails } from '@/components/ai-consent-details';
 import { GuardianAgreeForm } from '@/components/guardian-agree-form';
+import { TeamShareDetails } from '@/components/team-share-details';
 import { AppIcon, Card, FORM_PAGE, PageTitle, Wordmark } from '@/components/layout-ui';
 import { findGuardianRequest } from '@/lib/data';
 import { guardianLinkState, hashGuardianToken, TOKEN_MAX_LENGTH } from '@/lib/guardian';
@@ -18,7 +19,8 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /**
- * 保護者の同意の画面（16歳未満の人の AI コーチ。2026-10-14）。ログインせずに開く（src/proxy.ts が通す）。
+ * 保護者の同意の画面（16歳未満の人の AI コーチと、チームへの参加。2026-10-14）。
+ * チームへの参加のお願いなら、チームの名前・コーチの表示名と、コーチに見せるもの（招待の画面と同じ）を見せる。ログインせずに開く（src/proxy.ts が通す）。
  * 見せるのは、お願いした人の表示名と、本人の同意の画面と同じ「何を・どこへ送るか」だけ。記録やメールアドレスは見せない。
  * 期限切れ・使用済み・知らないリンクは、どれか言わずに同じ「もう使えません」を出す。
  * 言語はこの画面を開いた人のブラウザ（と言語の Cookie）で決まる
@@ -27,8 +29,14 @@ export default async function GuardianConsent({ params }: PageProps<'/guardian-c
   const { token } = await params;
   const request =
     token.length <= TOKEN_MAX_LENGTH ? await findGuardianRequest(hashGuardianToken(token)) : null;
-  const valid = request !== null && guardianLinkState(request, new Date()) === 'valid';
+  // チームへの参加のお願いは、コーチが招待を切った・期限が過ぎたら使えない（同意しても入れない）
+  const valid =
+    request !== null &&
+    guardianLinkState(request, new Date()) === 'valid' &&
+    (request.team === null || request.team.inviteLive);
   const t = await getTranslations('guardianConsent');
+  const tTeams = await getTranslations('teams');
+  const format = await getFormatter();
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col py-6">
@@ -37,9 +45,28 @@ export default async function GuardianConsent({ params }: PageProps<'/guardian-c
         <Wordmark size="header">Jumps Lab</Wordmark>
       </div>
       <main className={FORM_PAGE}>
-        <PageTitle>{t('title')}</PageTitle>
+        <PageTitle>{request?.team ? tTeams('guardianTitle') : t('title')}</PageTitle>
         <Card>
-          {valid ? (
+          {valid && request.team ? (
+            <div className="flex flex-col gap-4 text-sm">
+              <TeamShareDetails
+                notes={{
+                  notShown: tTeams('guardianNotShown', { name: request.childName }),
+                  leave: tTeams('guardianLeave', { name: request.childName }),
+                }}
+                intro={
+                  <p>
+                    {tTeams('guardianIntro', {
+                      name: request.childName,
+                      team: request.team.name,
+                      coaches: format.list(request.team.coaches),
+                    })}
+                  </p>
+                }
+              />
+              <GuardianAgreeForm token={token} name={request.childName} team={request.team.name} />
+            </div>
+          ) : valid ? (
             <div className="flex flex-col gap-4 text-sm">
               <AiConsentDetails
                 intro={

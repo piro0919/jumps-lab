@@ -4,6 +4,7 @@ import { ProfileForm } from '@/components/profile-form';
 import { PageTitle } from '@/components/layout-ui';
 import { SiteHeader } from '@/components/site-header';
 import { getProfile } from '@/lib/data';
+import { joinReturnPath } from '@/lib/safe-next';
 import { requireViewer } from '@/lib/viewer';
 
 /**
@@ -11,9 +12,12 @@ import { requireViewer } from '@/lib/viewer';
  * ほかの画面と同じヘッダー（ロゴと自分のアイコン）を付ける。付けずにフォームだけを黒い地に浮かせていて、
  * 画面がシュールすぎると言われた（本人、2026-10-11）
  */
-export default async function Welcome() {
+export default async function Welcome({ searchParams }: PageProps<'/welcome'>) {
   const viewer = await requireViewer();
-  if (await getProfile(viewer.userId)) redirect('/');
+  // 招待のリンクから来た人は、プロフィールを作ったあと招待の画面へ戻す（src/lib/safe-next.ts）
+  const { next } = await searchParams;
+  const back = joinReturnPath(typeof next === 'string' ? next : null);
+  if (await getProfile(viewer.userId)) redirect(back ?? '/');
   const t = await getTranslations('profile');
 
   return (
@@ -22,7 +26,7 @@ export default async function Welcome() {
       <main className="mx-auto max-w-lg">
         <PageTitle>{t('welcome')}</PageTitle>
         <div className="pb-8">
-          <ProfileForm defaultName={viewer.name} locale={await getLocale()} />
+          <ProfileForm defaultName={viewer.name} locale={await getLocale()} next={back} />
         </div>
       </main>
     </>

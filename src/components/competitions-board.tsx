@@ -36,6 +36,7 @@ export function CompetitionItem({
   today,
   onDelete,
   sample = false,
+  readOnly = false,
 }: {
   competition: Competition;
   /** その日に大会として入れた記録の、種目ごとの最高 */
@@ -46,6 +47,8 @@ export function CompetitionItem({
   onDelete?: () => void;
   /** LP の見本。リンクの先読みをしない（押せない枠の中でも、Next は画面に入ったリンクを先読みする） */
   sample?: boolean;
+  /** 見るだけ（コーチが選手の大会を見る画面）。直す・消すを出さない */
+  readOnly?: boolean;
 }) {
   const t = useTranslations('calendar');
   const tHome = useTranslations('home');
@@ -142,17 +145,27 @@ export function CompetitionItem({
           </div>
         )}
       </div>
-      <Link
-        href={`/competitions/${competition.id}/edit`}
-        prefetch={sample ? false : undefined}
-        aria-label={t('editCompetition')}
-        className={buttonVariants({ variant: 'ghost', size: 'icon' })}
-      >
-        <Pencil aria-hidden />
-      </Link>
-      <Button variant="ghost" size="icon" type="button" aria-label={t('delete')} onClick={onDelete}>
-        <Trash2 aria-hidden />
-      </Button>
+      {!readOnly && (
+        <>
+          <Link
+            href={`/competitions/${competition.id}/edit`}
+            prefetch={sample ? false : undefined}
+            aria-label={t('editCompetition')}
+            className={buttonVariants({ variant: 'ghost', size: 'icon' })}
+          >
+            <Pencil aria-hidden />
+          </Link>
+          <Button
+            variant="ghost"
+            size="icon"
+            type="button"
+            aria-label={t('delete')}
+            onClick={onDelete}
+          >
+            <Trash2 aria-hidden />
+          </Button>
+        </>
+      )}
     </div>
   );
 }

@@ -36,7 +36,8 @@ export function VideosCard({
   videos,
   timeZone,
 }: {
-  addHref: string;
+  /** 足す画面。無ければ見るだけ（コーチが選手の動画を見る画面）。見比べ・保存・削除も出さない */
+  addHref?: string;
   videos: VideoItem[];
   /** 消える日を出す時間帯（本人の設定。サーバーは UTC で動くので渡す） */
   timeZone: string;
@@ -52,7 +53,7 @@ export function VideosCard({
     <Card>
       <CardTitle
         action={
-          videos.length === 0 ? undefined : (
+          videos.length === 0 || !addHref ? undefined : (
             <Link href={addHref} className={buttonVariants({ size: 'sm' })}>
               <Plus aria-hidden className="size-4" />
               {t('add')}
@@ -63,7 +64,10 @@ export function VideosCard({
         {t('title')}
       </CardTitle>
       {videos.length === 0 ? (
-        <EmptyState message={t('none')} action={{ href: addHref, label: t('addVideo') }} />
+        <EmptyState
+          message={t('none')}
+          action={addHref ? { href: addHref, label: t('addVideo') } : undefined}
+        />
       ) : (
         <ul className="flex flex-col gap-4">
           {videos.map((video) => (
@@ -102,30 +106,34 @@ export function VideosCard({
                   </span>
                 </div>
                 {/* 同じ種目のほかの動画と見比べる画面へ（相手はそこで選ぶ） */}
-                <Link
-                  href={`/videos/compare?a=${video.id}`}
-                  aria-label={t('compare')}
-                  className={buttonVariants({ variant: 'ghost', size: 'icon' })}
-                >
-                  <Columns2 aria-hidden />
-                </Link>
-                <a
-                  href={video.downloadUrl}
-                  download
-                  aria-label={t('download')}
-                  className={buttonVariants({ variant: 'ghost', size: 'icon' })}
-                >
-                  <Download aria-hidden />
-                </a>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  type="button"
-                  aria-label={t('delete')}
-                  onClick={() => setRemoving(video.id)}
-                >
-                  <Trash2 aria-hidden />
-                </Button>
+                {addHref && (
+                  <>
+                    <Link
+                      href={`/videos/compare?a=${video.id}`}
+                      aria-label={t('compare')}
+                      className={buttonVariants({ variant: 'ghost', size: 'icon' })}
+                    >
+                      <Columns2 aria-hidden />
+                    </Link>
+                    <a
+                      href={video.downloadUrl}
+                      download
+                      aria-label={t('download')}
+                      className={buttonVariants({ variant: 'ghost', size: 'icon' })}
+                    >
+                      <Download aria-hidden />
+                    </a>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      type="button"
+                      aria-label={t('delete')}
+                      onClick={() => setRemoving(video.id)}
+                    >
+                      <Trash2 aria-hidden />
+                    </Button>
+                  </>
+                )}
               </div>
             </li>
           ))}

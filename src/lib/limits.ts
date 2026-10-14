@@ -32,3 +32,6 @@ export const MONTHS_PER_YEAR = 12;
 
 /** 保護者のメールアドレスの字数（メールアドレスの上限の 254 文字） */
 export const EMAIL_MAX_LENGTH = 254;
+
+/** チームの名前の字数 */
+export const TEAM_NAME_MAX_LENGTH = 50;

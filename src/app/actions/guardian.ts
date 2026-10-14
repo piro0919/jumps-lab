@@ -9,9 +9,11 @@ import {
   addGuardianRequest,
   agreeAsGuardian,
   declareUnder16,
+  findInvite,
   getProfile,
   latestGuardianRequest,
   releaseGuardianRequest,
+  teamRelation,
 } from '@/lib/data';
 import type { ActionResult } from '@/lib/form';
 import {
@@ -25,6 +27,7 @@ import {
 import { EMAIL_MAX_LENGTH } from '@/lib/limits';
 import { mailReady, sendMail } from '@/lib/mail';
 import { SITE_URL } from '@/lib/site';
+import { hashInviteToken, INVITE_TOKEN_MAX_LENGTH, inviteLinkState } from '@/lib/teams';
 import { requireViewer } from '@/lib/viewer';
 
 const emailSchema = z.email().max(EMAIL_MAX_LENGTH);
@@ -33,12 +36,32 @@ const emailSchema = z.email().max(EMAIL_MAX_LENGTH);
  * 16歳未満の人が、保護者へ AI コーチの同意のお願いをメールで送る（2026-10-14 に本人と決めた）。
  * email が無ければ、前に送った宛先へ送り直す。生年月日の無い人は「16歳未満です」と答えて送る（adult=no）。
  * 送る前に行を入れて24時間の回数を数え（前のリンクはこのとき切る）、送れなければ行を消す。
- * 「16歳未満です」の答えは送れたあとで残し、一度残すと本人の答えでは16歳以上に戻せない（src/lib/data.ts の consentToAi）
+ * 「16歳未満です」の答えは送れたあとで残し、一度残すと本人の答えでは16歳以上に戻せない（src/lib/data.ts の consentToAi）。
+ * purpose=team と招待の鍵（token）があれば、AI コーチではなくチームへの参加のお願いを送る（2026-10-14）。
+ * 年齢の決め方と回数の上限は同じで、保護者の画面とメールはチームの中身（だれに何を見せるか）になる
  */
 export async function sendGuardianRequestAction(formData: FormData): Promise<ActionResult> {
   const viewer = await requireViewer();
   const profile = await getProfile(viewer.userId);
-  if (!profile || !aiEnabled(profile)) return { ok: false, error: 'generic' };
+  if (!profile) return { ok: false, error: 'generic' };
+  // チームへの参加のお願い（purpose=team）は、招待のリンクの鍵で招待を決める（AI コーチのプランとは関係が無い）
+  let team: { inviteId: string; teamId: string; teamName: string; coaches: string[] } | null = null;
+  if (formData.get('purpose') === 'team') {
+    const token = formData.get('token');
+    const invite =
+      typeof token === 'string' && token.length > 0 && token.length <= INVITE_TOKEN_MAX_LENGTH
+        ? await findInvite(hashInviteToken(token))
+        : null;
+    if (!invite || inviteLinkState(invite, new Date()) !== 'valid') {
+      return { ok: false, error: 'teamInviteInvalid' };
+    }
+    const relation = await teamRelation(viewer.userId, invite.teamId);
+    if (relation.coach) return { ok: false, error: 'teamCoachJoin' };
+    if (relation.member) return { ok: false, error: 'generic' };
+    team = invite;
+  } else if (!aiEnabled(profile)) {
+    return { ok: false, error: 'generic' };
+  }
   const declaredMinor = formData.get('adult') === 'no';
   // 生年月日がある人は年齢で決める。無い人は今の答えか、前に残した答えで決める
   const minor =
@@ -55,7 +78,7 @@ export async function sendGuardianRequestAction(formData: FormData): Promise<Act
     if (!parsed.success) return { ok: false, error: 'guardianEmail' };
     guardianEmail = parsed.data;
   } else {
-    const previous = await latestGuardianRequest(viewer.userId);
+    const previous = await latestGuardianRequest(viewer.userId, team?.teamId ?? null);
     if (!previous) return { ok: false, error: 'guardianEmail' };
     guardianEmail = previous.guardianEmail;
   }
@@ -71,10 +94,16 @@ export async function sendGuardianRequestAction(formData: FormData): Promise<Act
       tokenHash: hashGuardianToken(token),
       days: GUARDIAN_LINK_DAYS,
       perDay: GUARDIAN_SENDS_PER_DAY,
+      ...(team ? { inviteId: team.inviteId } : {}),
     });
     if (!id) return { ok: false, error: 'guardianLimit' };
     try {
-      await sendMail({ to: guardianEmail, ...(await guardianMail(profile.name, token)) });
+      await sendMail({
+        to: guardianEmail,
+        ...(team
+          ? await teamGuardianMail(profile.name, team, token)
+          : await guardianMail(profile.name, token)),
+      });
     } catch (error) {
       console.error(error);
       await releaseGuardianRequest(viewer.userId, id);
@@ -103,6 +132,31 @@ async function guardianMail(name: string, token: string) {
   return {
     subject: t('subject'),
     text: t('body', { name: mailSafeName(name) ?? t('unnamed'), url, days: GUARDIAN_LINK_DAYS }),
+  };
+}
+
+/**
+ * チームへの参加の、保護者へのメール。チームの名前とコーチの表示名もコーチが自由に決められるので、
+ * お願いした人の表示名と同じく URL と制御文字を除いて本文に入れ、件名には入れない
+ */
+async function teamGuardianMail(
+  name: string,
+  team: { teamName: string; coaches: string[] },
+  token: string,
+) {
+  const locale = (await getLocale()) === 'ja' ? 'ja' : 'en';
+  const t = await getTranslations({ locale, namespace: 'guardianMail' });
+  const url = `${env.BETTER_AUTH_URL ?? SITE_URL}/guardian-consent/${token}`;
+  const coach = team.coaches.map(mailSafeName).find((coachName) => coachName !== null);
+  return {
+    subject: t('teamSubject'),
+    text: t('teamBody', {
+      name: mailSafeName(name) ?? t('unnamed'),
+      team: mailSafeName(team.teamName) ?? t('unnamedTeam'),
+      coach: coach ?? t('unnamedCoach'),
+      url,
+      days: GUARDIAN_LINK_DAYS,
+    }),
   };
 }
 

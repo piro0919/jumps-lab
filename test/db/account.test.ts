@@ -84,6 +84,18 @@ async function seedEverything(userId: string): Promise<string> {
     `insert into account (id, "accountId", "providerId", "userId", "updatedAt") values ($1, $1, 'google', $2, now())`,
     [randomUUID(), userId],
   );
+  // コーチをしているチームと、選手として入っているチーム
+  const [coached] = await query<{ id: string }>(
+    `insert into team (name) values ('Coached') returning id`,
+  );
+  await query(`insert into team_coach ("teamId", "userId") values ($1, $2)`, [coached!.id, userId]);
+  const [joined] = await query<{ id: string }>(
+    `insert into team (name) values ('Joined') returning id`,
+  );
+  await query(
+    `insert into team_member ("teamId", "userId", "consentedAt", "consentBy") values ($1, $2, now(), 'self')`,
+    [joined!.id, userId],
+  );
   return objectKey;
 }
 

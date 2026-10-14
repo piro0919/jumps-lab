@@ -18,9 +18,12 @@ export default function robots(): MetadataRoute.Robots {
         '/competitions',
         // 保護者の同意の画面（メールのリンク）。ログインせずに開けるが、検索に載せない
         '/guardian-consent/',
+        // チームの招待の画面（リンクで開く）と、チームの画面
+        '/join/',
         '/log',
         '/settings',
         '/sign-in',
+        '/teams',
         '/welcome',
       ],
     },

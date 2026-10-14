@@ -44,6 +44,17 @@ const data = vi.hoisted(() => ({
     async () => true,
   ),
   agreeAsGuardian: vi.fn(async () => true),
+  findInvite: vi.fn(
+    async (): Promise<{
+      inviteId: string;
+      teamId: string;
+      teamName: string;
+      coaches: string[];
+      revokedAt: Date | null;
+      expiresAt: Date;
+    } | null> => null,
+  ),
+  teamRelation: vi.fn(async () => ({ coach: false, member: false })),
 }));
 vi.mock('@/lib/data', () => data);
 
@@ -91,6 +102,8 @@ beforeEach(() => {
   mail.mailReady.mockReturnValue(true);
   data.addGuardianRequest.mockResolvedValue('req-1');
   data.latestGuardianRequest.mockResolvedValue(null);
+  data.findInvite.mockResolvedValue(null);
+  data.teamRelation.mockResolvedValue({ coach: false, member: false });
 });
 
 describe('sendGuardianRequestAction', () => {
@@ -272,5 +285,68 @@ describe('agreeGuardianAction', () => {
       ok: false,
       error: 'guardianLinkInvalid',
     });
+  });
+});
+
+describe('sendGuardianRequestAction（チームへの参加）', () => {
+  const invite = (overrides: { revokedAt?: Date | null } = {}) => ({
+    inviteId: 'invite-1',
+    teamId: 'team-1',
+    teamName: 'Hawks https://evil.example',
+    coaches: ['Coach Ken'],
+    revokedAt: null,
+    expiresAt: new Date(Date.now() + 60_000),
+    ...overrides,
+  });
+
+  it('招待が使えれば、AI コーチのプランが無くても、招待を付けてチームのメールを送る', async () => {
+    profile.current = athlete({ plan: 'free' });
+    data.findInvite.mockResolvedValue(invite());
+    expect(
+      await sendGuardianRequestAction(
+        form({ email: 'parent@example.com', purpose: 'team', token: 'invite-token' }),
+      ),
+    ).toEqual({ ok: true });
+    expect(data.addGuardianRequest).toHaveBeenCalledWith(
+      'u1',
+      expect.objectContaining({ guardianEmail: 'parent@example.com', inviteId: 'invite-1' }),
+    );
+    const sent = mail.sendMail.mock.calls[0]![0];
+    expect(sent.subject).toContain('teamSubject');
+    expect(sent.text).toContain('teamBody');
+    expect(sent.text).toContain('Coach Ken');
+    expect(sent.text).not.toContain('evil.example');
+  });
+
+  it('知らない鍵・切った招待では送らない', async () => {
+    const send = () =>
+      sendGuardianRequestAction(
+        form({ email: 'parent@example.com', purpose: 'team', token: 'invite-token' }),
+      );
+    expect(await send()).toEqual({ ok: false, error: 'teamInviteInvalid' });
+    data.findInvite.mockResolvedValue(invite({ revokedAt: new Date() }));
+    expect(await send()).toEqual({ ok: false, error: 'teamInviteInvalid' });
+    expect(data.addGuardianRequest).not.toHaveBeenCalled();
+  });
+
+  it('そのチームのコーチは送れない', async () => {
+    data.findInvite.mockResolvedValue(invite());
+    data.teamRelation.mockResolvedValue({ coach: true, member: false });
+    expect(
+      await sendGuardianRequestAction(
+        form({ email: 'parent@example.com', purpose: 'team', token: 'invite-token' }),
+      ),
+    ).toEqual({ ok: false, error: 'teamCoachJoin' });
+  });
+
+  it('16歳以上の人は送れない（本人の同意で入る）', async () => {
+    profile.current = athlete({ birthdate: '2008-01-01' });
+    data.findInvite.mockResolvedValue(invite());
+    expect(
+      await sendGuardianRequestAction(
+        form({ email: 'parent@example.com', purpose: 'team', token: 'invite-token' }),
+      ),
+    ).toEqual({ ok: false, error: 'generic' });
+    expect(mail.sendMail).not.toHaveBeenCalled();
   });
 });

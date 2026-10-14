@@ -20,6 +20,12 @@ const PUBLIC = new Set(['/privacy', '/terms', '/en/privacy', '/en/terms']);
  */
 const GUARDIAN_CONSENT = /^\/guardian-consent\/[A-Za-z0-9_-]+$/;
 
+/**
+ * チームの招待の画面（/join/<鍵>）。ログインしていない人はログインの画面へ送り、ログインのあとにここへ戻す
+ * （?next=。戻り先はログインの画面が src/lib/safe-next.ts の joinReturnPath で確かめる）
+ */
+const JOIN = /^\/join\/[A-Za-z0-9_-]+$/;
+
 /** トップ（/）へ送る。?utm_source などのクエリは残す */
 function toTop(request: NextRequest) {
   const url = request.nextUrl.clone();
@@ -52,6 +58,11 @@ export function proxy(request: NextRequest) {
   }
 
   const onSignIn = pathname === '/sign-in';
+  if (!signedIn && JOIN.test(pathname)) {
+    const url = new URL('/sign-in', request.url);
+    url.searchParams.set('next', pathname);
+    return NextResponse.redirect(url);
+  }
   if (!signedIn && !onSignIn) return NextResponse.redirect(new URL('/sign-in', request.url));
   return pass();
 }

@@ -66,6 +66,16 @@ export default function PrivacyEn() {
           If you turn notifications on: where to deliver them on that device (the push service
           address and its encryption keys) and the language of the notification text
         </li>
+        <li>
+          If you use teams: the names of the teams you create, the teams you coach, the teams you
+          are in with when you joined, when consent was given and whether you or your parent or
+          guardian gave it, and invite links (we store their keys only in a form that cannot be
+          turned back into the link) with when they expire
+        </li>
+        <li>
+          If you are under 16 and join a team: your parent&apos;s or guardian&apos;s email address,
+          and when they agreed
+        </li>
       </ul>
       <p>
         Grade, date of birth, gender, height, weight and the injury field are optional. Write only
@@ -89,16 +99,46 @@ export default function PrivacyEn() {
           and to keep a record of their agreement
         </li>
         <li>To remind you the day before a competition, if you turn notifications on</li>
+        <li>
+          To show your records to the coaches of a team you join, with your consent (or, if you are
+          under 16, your parent&apos;s or guardian&apos;s consent, including emailing them a request
+          and keeping a record of their agreement)
+        </li>
         <li>To sign you in and confirm who you are</li>
       </ol>
       <p>We use it for nothing else. We do not use it for advertising or sell it to anyone.</p>
 
       <h2>4. Who can see it</h2>
       <p>
-        Only you and the joint users below can see your information. There is no feature that shows
-        it to other users. Each time you watch a video, we issue an address that stops working after
-        a set time.
+        Only you and the joint users below can see your information, except that if you join a team,
+        we also show what is listed under &quot;Team coaches&quot; below to that team&apos;s coaches
+        (who are Jumps Lab users). There is no other feature that shows it to other users. Each time
+        you watch a video, we issue an address that stops working after a set time.
       </p>
+      <dl>
+        <dt>What team coaches see</dt>
+        <dd>
+          The coaches of a team you join can see, without being able to change anything, your
+          display name and events, your attempts (date, event, practice or competition, mark, wind
+          and note), your condition, fatigue, sleep, injuries or discomfort and practice notes for
+          each day, your competitions and their results, and your videos and their notes. They do
+          not see your email address. Coaches cannot change or delete anything
+        </dd>
+        <dt>Consent</dt>
+        <dd>
+          Showing your records to coaches means providing them to a third party on your behalf, so
+          we ask for your consent when you join a team, after showing what they will see (the
+          &quot;Join and share&quot; button). This includes information about your body, such as
+          injuries or discomfort, so we never show it without consent. If you are under 16, you join
+          when your parent or guardian agrees through the link we email them
+        </dd>
+        <dt>Stopping</dt>
+        <dd>
+          You can leave a team anytime from Teams in your account menu. Coaches can no longer see
+          your records from the moment you leave, a coach removes you, the team is deleted or you
+          delete your account
+        </dd>
+      </dl>
       <p>We use your information jointly as follows.</p>
       <dl>
         <dt>Information used jointly</dt>
@@ -175,9 +215,10 @@ export default function PrivacyEn() {
         <dt>Resend</dt>
         <dd>
           Only when someone under 16 sends their parent or guardian a request to agree to the AI
-          coach: the parent&apos;s or guardian&apos;s email address and the email (the display name
-          of the person asking, what the AI coach sends, and the link to agree). Used to deliver the
-          email. Resend is a US company
+          coach or to joining a team: the parent&apos;s or guardian&apos;s email address and the
+          email (the display name of the person asking, what the AI coach sends or what the
+          team&apos;s coaches see, the team name and the coach&apos;s display name, and the link to
+          agree). Used to deliver the email. Resend is a US company
         </dd>
         <dt>Browser and OS push services (Google, Apple, Mozilla, Microsoft)</dt>
         <dd>
@@ -203,10 +244,12 @@ export default function PrivacyEn() {
         device, when the push service reports it no longer works, or when you delete your account. A
         parent&apos;s or guardian&apos;s email address is deleted within 2 days after its link
         expires (7 days after it is sent) if it was not used to agree; if it was, we keep it as the
-        record of their agreement until a newer agreement replaces it or you delete your account. We
-        keep the rest of the information until you delete your account. When you do, we delete all
-        of the information above. Your videos are deleted at that time too, and any that could not
-        be deleted then are removed within 91 days of their upload.
+        record of their agreement until a newer agreement replaces it or you delete your account
+        (for joining a team, until you leave or are removed from that team). We keep teams and
+        invite links until a coach deletes the team or the team has no coach left. We keep the rest
+        of the information until you delete your account. When you do, we delete all of the
+        information above. Your videos are deleted at that time too, and any that could not be
+        deleted then are removed within 91 days of their upload.
       </p>
 
       <h2>8. Access, correction and deletion</h2>
@@ -218,8 +261,8 @@ export default function PrivacyEn() {
       <h2>9. Minors</h2>
       <p>
         If you are a minor, get your parent&apos;s or guardian&apos;s consent before using Jumps
-        Lab. If you are under 16, you can use the AI coach only after your parent or guardian agrees
-        through the link we email them.
+        Lab. If you are under 16, you can use the AI coach and join a team only after your parent or
+        guardian agrees through the link we email them.
       </p>
 
       <h2>10. Changes</h2>

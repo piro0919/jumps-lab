@@ -18,6 +18,7 @@ import {
   WEIGHT_MIN_KG,
 } from '@/lib/limits';
 import { GRADES } from '@/lib/profile-options';
+import { joinReturnPath } from '@/lib/safe-next';
 import { requireViewer } from '@/lib/viewer';
 
 /** 学年の計算とのずれ（年数）の上限。下限はこの負の値 */
@@ -102,7 +103,7 @@ async function run(save: () => Promise<void>): Promise<ActionResult> {
   return { ok: true };
 }
 
-/** 初回（ようこそ画面）。プロフィールと記録のつけ方をまとめて入れ、ホームへ送る */
+/** 初回（ようこそ画面）。プロフィールと記録のつけ方をまとめて入れ、ホームへ送る（招待のリンクから来た人は招待の画面へ） */
 export async function saveProfileAction(
   _previous: ActionResult,
   formData: FormData,
@@ -120,7 +121,8 @@ export async function saveProfileAction(
     saveProfile(viewer.userId, { ...parsed.data, ...gradeFields(parsed.data) }),
   );
   if (!result?.ok) return result;
-  redirect('/');
+  const next = formData.get('next');
+  redirect(joinReturnPath(typeof next === 'string' ? next : null) ?? '/');
 }
 
 /** 設定の画面の「プロフィール」の区画だけを保存する */

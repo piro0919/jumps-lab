@@ -23,6 +23,15 @@ describe('proxy（ログインしていない人）', () => {
     expect(toSignIn(open('/guardian-consent/abc.def'))).toBe(true);
   });
 
+  it('チームの招待の画面は、ログインの画面へ送り、ログインのあとに戻す（?next=）', () => {
+    expect(open('/join/AbC_12-xyz').headers.get('location')).toBe(
+      'http://localhost:3110/sign-in?next=%2Fjoin%2FAbC_12-xyz',
+    );
+    // 招待の形でない道は、戻り先を付けずに送る
+    expect(toSignIn(open('/join/abc/def'))).toBe(true);
+    expect(toSignIn(open('/teams'))).toBe(true);
+  });
+
   it('アプリの中はログインの画面へ送る', () => {
     expect(toSignIn(open('/log/today/menu/new'))).toBe(true);
   });

@@ -35,7 +35,7 @@ const TOWARD_TARGET_DAYS = 56;
  * 直近 BASELINE_WINDOW_DAYS 日の本人の平均から WORSE_BY 以上悪いときに軽めにする。
  * 決まった線も、本人の平均からの差も、検証された数字は見つかっていない（仮決め）
  */
-const HIGH_FATIGUE = 8;
+export const HIGH_FATIGUE = 8;
 const LOW_CONDITION = 3;
 /** 尺度の端（疲労10・体調1）は、本人の平均にかかわらず軽めにする（いつも疲労が高い人も拾うため。仮決め） */
 const WORST_FATIGUE = 10;

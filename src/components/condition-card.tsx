@@ -17,7 +17,8 @@ export async function ConditionCard({
   sample = false,
 }: {
   log: DayLog | null;
-  editHref: string;
+  /** 直す画面。無ければ見るだけ（コーチが選手の記録を見る画面） */
+  editHref?: string;
   /** 題。無ければ「コンディション」 */
   title?: string;
   /** LP の見本。リンクの先読みをしない（押せない枠の中でも、Next は画面に入ったリンクを先読みする） */
@@ -41,7 +42,7 @@ export async function ConditionCard({
     <Card>
       <CardTitle
         action={
-          empty ? undefined : (
+          empty || !editHref ? undefined : (
             <Link
               href={editHref}
               prefetch={sample ? false : undefined}
@@ -58,7 +59,7 @@ export async function ConditionCard({
       {empty ? (
         <EmptyState
           message={t('noCondition')}
-          action={{ href: editHref, label: t('enterCondition') }}
+          action={editHref ? { href: editHref, label: t('enterCondition') } : undefined}
         />
       ) : (
         <div className="flex flex-col gap-4">

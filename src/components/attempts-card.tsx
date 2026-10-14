@@ -24,6 +24,7 @@ export function AttemptsCard({
   attempts,
   videos = {},
   sample = false,
+  readOnly = false,
 }: {
   day: string;
   /** 本人の選んだ種目 */
@@ -35,6 +36,8 @@ export function AttemptsCard({
   videos?: Record<string, string>;
   /** LP の見本。リンクの先読みをしない（押せない枠の中でも、Next は画面に入ったリンクを先読みする） */
   sample?: boolean;
+  /** 見るだけ（コーチが選手の記録を見る画面）。足す・直す・消すを出さない */
+  readOnly?: boolean;
 }) {
   const t = useTranslations('today');
   const tEvents = useTranslations('events');
@@ -56,7 +59,7 @@ export function AttemptsCard({
       {/* 空のときは題の横の追加を出さず、空の文の下のボタンだけにする（2つ並ばないように） */}
       <CardTitle
         action={
-          groups.length === 0 ? undefined : (
+          groups.length === 0 || readOnly ? undefined : (
             <Link
               href={`/log/${day}/new`}
               prefetch={sample ? false : undefined}
@@ -73,7 +76,7 @@ export function AttemptsCard({
       {groups.length === 0 ? (
         <EmptyState
           message={t('noAttempts')}
-          action={{ href: `/log/${day}/new`, label: t('addAttempt') }}
+          action={readOnly ? undefined : { href: `/log/${day}/new`, label: t('addAttempt') }}
         />
       ) : (
         <div className="flex flex-col gap-4">
@@ -132,23 +135,27 @@ export function AttemptsCard({
                         </span>
                       </span>
                       {/* 行の操作はアイコンだけのボタン（大会の一覧と同じ）。直すのは別の画面 */}
-                      <Link
-                        href={`/attempts/${attempt.id}/edit`}
-                        prefetch={sample ? false : undefined}
-                        aria-label={t('editAttempt')}
-                        className={buttonVariants({ variant: 'ghost', size: 'icon' })}
-                      >
-                        <Pencil aria-hidden />
-                      </Link>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        type="button"
-                        aria-label={t('delete')}
-                        onClick={() => setRemoving(attempt.id)}
-                      >
-                        <Trash2 aria-hidden />
-                      </Button>
+                      {!readOnly && (
+                        <>
+                          <Link
+                            href={`/attempts/${attempt.id}/edit`}
+                            prefetch={sample ? false : undefined}
+                            aria-label={t('editAttempt')}
+                            className={buttonVariants({ variant: 'ghost', size: 'icon' })}
+                          >
+                            <Pencil aria-hidden />
+                          </Link>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            type="button"
+                            aria-label={t('delete')}
+                            onClick={() => setRemoving(attempt.id)}
+                          >
+                            <Trash2 aria-hidden />
+                          </Button>
+                        </>
+                      )}
                     </li>
                   ))}
                 </ol>
