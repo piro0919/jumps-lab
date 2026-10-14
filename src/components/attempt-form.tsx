@@ -4,7 +4,7 @@
 import { useRouter } from '@bprogress/next/app';
 import { ChevronDown } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useActionState, useState } from 'react';
+import { useActionState, useEffect, useRef, useState } from 'react';
 import { saveAttemptAction } from '@/app/actions/today';
 import { safely } from '@/lib/safe-action';
 import { ActionForm } from '@/components/action-form';
@@ -20,25 +20,72 @@ import { CountInput, MarkInput, ShortLengthInput, WindInput } from '@/components
 import { FormActions } from '@/components/form-actions';
 import { cn } from '@/lib/cn';
 import {
+  DETAIL_RANGES,
   detailFieldsFor,
   EMPTY_DETAILS,
   hasDetails,
   type AttemptDetails,
+  type DetailKey,
 } from '@/lib/attempt-details';
 import type { Attempt } from '@/lib/data';
 import { hasWind, type JumpEvent } from '@/lib/events';
+import { NOTE_MAX_LENGTH } from '@/lib/limits';
 import {
-  APPROACH_STEPS_MAX,
-  APPROACH_STEPS_MIN,
-  BOARD_OFFSET_MAX_CM,
-  BOARD_OFFSET_MIN_CM,
-  NOTE_MAX_LENGTH,
-  POLE_STIFFNESS_MAX_LB,
-  POLE_STIFFNESS_MIN_LB,
-  STANDARDS_MAX_CM,
-  STANDARDS_MIN_CM,
-} from '@/lib/limits';
-import type { Units } from '@/lib/units';
+  feetInchesToMeters,
+  formatMark,
+  formatShortLength,
+  metersToFeetInches,
+  type Units,
+} from '@/lib/units';
+
+/** サーバーが範囲の外の欄を返すときの鍵の頭（src/lib/attempt-details.ts の detailsError） */
+const DETAIL_RANGE_PREFIX = 'detailRange.';
+
+/** 4分の1インチ（メートル） */
+const QUARTER_INCH_M = 0.00635;
+
+/**
+ * 下限を本人の単位で。imperial の記録の書き方は4分の1インチの切り捨てなので、下限は1つ上の刻みにする
+ * （切り捨てた値を入れると下限を割って弾かれる）
+ */
+function formatMin(meters: number, units: Units): string {
+  if (units === 'metric') return formatMark(meters, units);
+  const floored = feetInchesToMeters(metersToFeetInches(meters));
+  return formatMark(floored < meters ? floored + QUARTER_INCH_M : meters, units);
+}
+
+/** 細かい記録の欄が範囲の外のときの文（どの欄か、範囲は本人の単位で）。ブラウザの検査とサーバーの答えの両方に使う */
+function useDetailRangeMessage(units: Units) {
+  const tErrors = useTranslations('errors');
+  const tUnits = useTranslations('units');
+  return (key: DetailKey): string => {
+    const { min, max } = DETAIL_RANGES[key];
+    switch (key) {
+      case 'approachSteps':
+        return tErrors(`detailRange.${key}`, { min: String(min), max: String(max) });
+      case 'poleStiffnessLb':
+        return tErrors(`detailRange.${key}`, {
+          min: `${min} ${tUnits('lb')}`,
+          max: `${max} ${tUnits('lb')}`,
+        });
+      case 'boardOffsetCm':
+        return tErrors(`detailRange.${key}`, {
+          over: formatShortLength(-min, units),
+          behind: formatShortLength(max, units),
+        });
+      case 'standardsCm':
+        return tErrors(`detailRange.${key}`, {
+          min: formatShortLength(min, units),
+          max: formatShortLength(max, units),
+        });
+      default:
+        return tErrors(`detailRange.${key}`, {
+          min: formatMin(min, units),
+          max: formatMark(max, units),
+        });
+    }
+  };
+}
 
 /** 2つ以上から1つを選ぶ、横並びの切り替え（練習・大会、種目） */
 export function Segmented<T extends string>({
@@ -97,6 +144,7 @@ export function AttemptForm({
   const tEvents = useTranslations('events');
   const tErrors = useTranslations('errors');
   const tProfile = useTranslations('profile');
+  const rangeMessage = useDetailRangeMessage(units);
   const router = useRouter();
   const [event, setEvent] = useState<JumpEvent>(initialEvent);
   const [kind, setKind] = useState<'practice' | 'competition'>(initial?.kind ?? 'practice');
@@ -145,7 +193,11 @@ export function AttemptForm({
         pending={pending}
         message={
           <ErrorText>
-            {state?.ok === false ? tErrors(state.error as 'generic' | 'details' | 'grip') : null}
+            {state?.ok === false
+              ? state.error.startsWith(DETAIL_RANGE_PREFIX)
+                ? rangeMessage(state.error.slice(DETAIL_RANGE_PREFIX.length) as DetailKey)
+                : tErrors(state.error as 'generic' | 'mark' | 'grip')
+              : null}
           </ErrorText>
         }
       />
@@ -156,7 +208,8 @@ export function AttemptForm({
 /**
  * 跳躍の細かい記録の欄（任意）。選んだ種目の欄だけ出す（src/lib/attempt-details.ts の detailFieldsFor）。
  * ふだんは閉じた「詳細」の中に置いて、記録だけ入れる人の画面を長くしない。直すときに1つでも入っていれば開いておく。
- * 閉じた details の中の欄も送られる。出していない種目の欄は送られず、サーバーでも種目に合わない欄は捨てる
+ * 閉じた details の中の欄も送られる。出していない種目の欄は送られず、サーバーでも種目に合わない欄は捨てる。
+ * 中の欄をブラウザが止めたら開く（閉じたままだと止めた欄へ移れず、保存を押しても何も起きないように見える）
  */
 function DetailsFields({
   event,
@@ -169,11 +222,25 @@ function DetailsFields({
 }) {
   const t = useTranslations('today');
   const tUnits = useTranslations('units');
+  const rangeMessage = useDetailRangeMessage(units);
   const fields = detailFieldsFor(event);
   const shows = (key: keyof AttemptDetails) => fields.includes(key);
+  const ref = useRef<HTMLDetailsElement>(null);
+  const range = (key: DetailKey) => ({ ...DETAIL_RANGES[key], message: rangeMessage(key) });
+
+  useEffect(() => {
+    const details = ref.current;
+    if (!details) return;
+    // invalid は浮き上がらないので、捕まえる向きで聞く。ブラウザが欄へ移る前に開くよう、DOM へ直に書く
+    const open = () => {
+      details.open = true;
+    };
+    details.addEventListener('invalid', open, true);
+    return () => details.removeEventListener('invalid', open, true);
+  }, []);
 
   return (
-    <details open={hasDetails(initial)} className="group">
+    <details ref={ref} open={hasDetails(initial)} className="group">
       <summary className={cn('flex cursor-pointer list-none items-center gap-1', LABEL)}>
         {t('details')}
         <ChevronDown aria-hidden className="size-4 transition-transform group-open:rotate-180" />
@@ -183,21 +250,26 @@ function DetailsFields({
           <CountInput
             name="approachSteps"
             unit={tUnits('steps')}
-            min={APPROACH_STEPS_MIN}
-            max={APPROACH_STEPS_MAX}
+            min={DETAIL_RANGES.approachSteps.min}
+            max={DETAIL_RANGES.approachSteps.max}
             defaultValue={initial.approachSteps}
           />
         </Field>
         <Field label={t('approachLength')}>
-          <MarkInput name="approachLengthM" units={units} defaultMeters={initial.approachLengthM} />
+          <MarkInput
+            name="approachLengthM"
+            units={units}
+            defaultMeters={initial.approachLengthM}
+            range={range('approachLengthM')}
+          />
         </Field>
         {shows('boardOffsetCm') && (
           <Field label={t('boardOffset')}>
             <ShortLengthInput
               name="boardOffsetCm"
               units={units}
-              minCm={BOARD_OFFSET_MIN_CM}
-              maxCm={BOARD_OFFSET_MAX_CM}
+              minCm={DETAIL_RANGES.boardOffsetCm.min}
+              maxCm={DETAIL_RANGES.boardOffsetCm.max}
               defaultCm={initial.boardOffsetCm}
             />
           </Field>
@@ -205,26 +277,36 @@ function DetailsFields({
         {shows('poleLengthM') && (
           <>
             <Field label={t('poleLength')}>
-              <MarkInput name="poleLengthM" units={units} defaultMeters={initial.poleLengthM} />
+              <MarkInput
+                name="poleLengthM"
+                units={units}
+                defaultMeters={initial.poleLengthM}
+                range={range('poleLengthM')}
+              />
             </Field>
             <Field label={t('poleStiffness')}>
               <CountInput
                 name="poleStiffnessLb"
                 unit={tUnits('lb')}
-                min={POLE_STIFFNESS_MIN_LB}
-                max={POLE_STIFFNESS_MAX_LB}
+                min={DETAIL_RANGES.poleStiffnessLb.min}
+                max={DETAIL_RANGES.poleStiffnessLb.max}
                 defaultValue={initial.poleStiffnessLb}
               />
             </Field>
             <Field label={t('gripHeight')}>
-              <MarkInput name="gripHeightM" units={units} defaultMeters={initial.gripHeightM} />
+              <MarkInput
+                name="gripHeightM"
+                units={units}
+                defaultMeters={initial.gripHeightM}
+                range={range('gripHeightM')}
+              />
             </Field>
             <Field label={t('standards')}>
               <ShortLengthInput
                 name="standardsCm"
                 units={units}
-                minCm={STANDARDS_MIN_CM}
-                maxCm={STANDARDS_MAX_CM}
+                minCm={DETAIL_RANGES.standardsCm.min}
+                maxCm={DETAIL_RANGES.standardsCm.max}
                 defaultCm={initial.standardsCm}
               />
             </Field>

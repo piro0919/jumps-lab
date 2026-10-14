@@ -11,7 +11,7 @@ import {
   updateAttempt,
 } from '@/lib/data';
 import { isDay, todayIn } from '@/lib/dates';
-import { attemptDetailsSchema, keepDetailsFor } from '@/lib/attempt-details';
+import { attemptDetailsSchema, detailsError, keepDetailsFor } from '@/lib/attempt-details';
 import { EVENTS, hasWind } from '@/lib/events';
 import { type ActionResult, optionalNumber, optionalText } from '@/lib/form';
 import {
@@ -93,7 +93,8 @@ export async function saveAttemptAction(
     return { ok: false, error: parsed.error.issues[0]?.message === 'mark' ? 'mark' : 'generic' };
   }
   if (!details.success) {
-    return { ok: false, error: details.error.issues[0]?.message === 'grip' ? 'grip' : 'details' };
+    // どの欄が範囲の外かを返す（ブラウザを通らない要求と、ブラウザの検査をすり抜けた値）
+    return { ok: false, error: detailsError(details.error) };
   }
   const profile = await getProfile(viewer.userId);
   const { id, ...input } = parsed.data;

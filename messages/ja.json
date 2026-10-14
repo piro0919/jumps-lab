@@ -147,7 +147,15 @@
     "guardianTeamCoach": "この方はこのチームのコーチのため、選手としては参加できません。このリンクはもう使えません。",
     "comment": "コメントは1,000文字までで書いてください。",
     "commentLimit": "24時間に書けるコメントは{count}件までです。時間をおいて書いてください。",
-    "details": "詳細の値を確かめてください。",
+    "detailRange": {
+      "approachSteps": "助走の歩数は{min}から{max}までで入れてください。",
+      "approachLengthM": "助走の距離は{min}から{max}までで入れてください。",
+      "boardOffsetCm": "踏切板の手前は、{over}越えから{behind}手前までで入れてください。",
+      "poleLengthM": "ポールの長さは{min}から{max}までで入れてください。",
+      "poleStiffnessLb": "ポールの硬さは{min}から{max}までで入れてください。",
+      "gripHeightM": "グリップの高さは{min}から{max}までで入れてください。",
+      "standardsCm": "支柱の位置は{min}から{max}までで入れてください。"
+    },
     "grip": "グリップの高さは、ポールの長さより下にしてください。"
   },
   "home": {

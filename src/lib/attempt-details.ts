@@ -96,18 +96,48 @@ export function hasDetails(details: AttemptDetails): boolean {
   return DETAIL_KEYS.some((key) => details[key] !== null);
 }
 
+/**
+ * 欄ごとの範囲（DB の単位。db/migrations/0024_attempt_details.sql の check と同じ値）。
+ * 画面の欄の min・max、サーバーの検査、範囲の外のときの文言で同じものを使う
+ */
+export const DETAIL_RANGES = {
+  approachSteps: { min: APPROACH_STEPS_MIN, max: APPROACH_STEPS_MAX },
+  approachLengthM: { min: APPROACH_LENGTH_MIN_M, max: APPROACH_LENGTH_MAX_M },
+  boardOffsetCm: { min: BOARD_OFFSET_MIN_CM, max: BOARD_OFFSET_MAX_CM },
+  poleLengthM: { min: POLE_LENGTH_MIN_M, max: POLE_LENGTH_MAX_M },
+  poleStiffnessLb: { min: POLE_STIFFNESS_MIN_LB, max: POLE_STIFFNESS_MAX_LB },
+  gripHeightM: { min: GRIP_HEIGHT_MIN_M, max: GRIP_HEIGHT_MAX_M },
+  standardsCm: { min: STANDARDS_MIN_CM, max: STANDARDS_MAX_CM },
+} as const satisfies Record<DetailKey, { min: number; max: number }>;
+
+const R = DETAIL_RANGES;
+
 /** 送られてきた細かい記録の検査。画面の欄と同じ範囲。グリップはポールの長さを超えない */
 export const attemptDetailsSchema = z
   .object({
-    approachSteps: optionalInteger(APPROACH_STEPS_MIN, APPROACH_STEPS_MAX),
-    approachLengthM: optionalNumber(APPROACH_LENGTH_MIN_M, APPROACH_LENGTH_MAX_M),
-    boardOffsetCm: optionalNumber(BOARD_OFFSET_MIN_CM, BOARD_OFFSET_MAX_CM),
-    poleLengthM: optionalNumber(POLE_LENGTH_MIN_M, POLE_LENGTH_MAX_M),
-    poleStiffnessLb: optionalInteger(POLE_STIFFNESS_MIN_LB, POLE_STIFFNESS_MAX_LB),
-    gripHeightM: optionalNumber(GRIP_HEIGHT_MIN_M, GRIP_HEIGHT_MAX_M),
-    standardsCm: optionalNumber(STANDARDS_MIN_CM, STANDARDS_MAX_CM),
+    approachSteps: optionalInteger(R.approachSteps.min, R.approachSteps.max),
+    approachLengthM: optionalNumber(R.approachLengthM.min, R.approachLengthM.max),
+    boardOffsetCm: optionalNumber(R.boardOffsetCm.min, R.boardOffsetCm.max),
+    poleLengthM: optionalNumber(R.poleLengthM.min, R.poleLengthM.max),
+    poleStiffnessLb: optionalInteger(R.poleStiffnessLb.min, R.poleStiffnessLb.max),
+    gripHeightM: optionalNumber(R.gripHeightM.min, R.gripHeightM.max),
+    standardsCm: optionalNumber(R.standardsCm.min, R.standardsCm.max),
   })
   .refine(
     (d) => d.gripHeightM === null || d.poleLengthM === null || d.gripHeightM <= d.poleLengthM,
     { message: 'grip', path: ['gripHeightM'] },
   );
+
+/** 範囲の外の欄の文言の鍵（errors.detailRange.*） */
+export type DetailError = `detailRange.${DetailKey}` | 'grip';
+
+/**
+ * 弾いた理由を、画面の文言の鍵にする。どの欄が範囲の外かを言う（「詳細を確かめて」では、どれかわからない）。
+ * グリップがポールより高いときは grip
+ */
+export function detailsError(error: z.ZodError | undefined): DetailError {
+  const issue = error?.issues[0];
+  if (issue?.message === 'grip') return 'grip';
+  const key = DETAIL_KEYS.find((k) => k === issue?.path[0]) ?? DETAIL_KEYS[0];
+  return `detailRange.${key}`;
+}

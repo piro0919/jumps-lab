@@ -8,7 +8,7 @@ import { deleteAttemptAction } from '@/app/actions/today';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { Badge, Card, CardTitle, DisplayNumber, EmptyState } from '@/components/layout-ui';
 import { Button, buttonVariants } from '@/components/ui/button';
-import type { AttemptDetails } from '@/lib/attempt-details';
+import type { AttemptDetails, DetailKey } from '@/lib/attempt-details';
 import type { Attempt } from '@/lib/data';
 import { EVENT_BG, isWindAided, type JumpEvent } from '@/lib/events';
 import { formatMark, formatShortLength, type Units } from '@/lib/units';
@@ -191,28 +191,48 @@ function DetailsLine({ details, units }: { details: AttemptDetails; units: Units
   const format = useFormatter();
   const d = details;
   const board = d.boardOffsetCm;
-  const phrases = [
-    d.approachSteps === null ? null : t('lineSteps', { count: d.approachSteps }),
-    d.approachLengthM === null
-      ? null
-      : t('lineApproach', { length: formatMark(d.approachLengthM, units) }),
-    board === null
-      ? null
-      : t('lineBoard', {
-          side: board > 0 ? 'behind' : board < 0 ? 'over' : 'on',
-          length: formatShortLength(Math.abs(board), units),
-        }),
-    d.poleLengthM === null ? null : t('linePole', { length: formatMark(d.poleLengthM, units) }),
-    d.poleStiffnessLb === null ? null : t('lineStiffness', { lb: d.poleStiffnessLb }),
-    d.gripHeightM === null ? null : t('lineGrip', { length: formatMark(d.gripHeightM, units) }),
-    d.standardsCm === null
-      ? null
-      : t('lineStandards', { length: formatShortLength(d.standardsCm, units) }),
-  ].filter((phrase) => phrase !== null);
-  if (phrases.length === 0) return null;
+  // 欄の名前と文の組。key は欄の名前（文は同じになりうるので key にしない）
+  const phrases: [DetailKey, string | null][] = [
+    ['approachSteps', d.approachSteps === null ? null : t('lineSteps', { count: d.approachSteps })],
+    [
+      'approachLengthM',
+      d.approachLengthM === null
+        ? null
+        : t('lineApproach', { length: formatMark(d.approachLengthM, units) }),
+    ],
+    [
+      'boardOffsetCm',
+      board === null
+        ? null
+        : t('lineBoard', {
+            side: board > 0 ? 'behind' : board < 0 ? 'over' : 'on',
+            length: formatShortLength(Math.abs(board), units),
+          }),
+    ],
+    [
+      'poleLengthM',
+      d.poleLengthM === null ? null : t('linePole', { length: formatMark(d.poleLengthM, units) }),
+    ],
+    [
+      'poleStiffnessLb',
+      d.poleStiffnessLb === null ? null : t('lineStiffness', { lb: d.poleStiffnessLb }),
+    ],
+    [
+      'gripHeightM',
+      d.gripHeightM === null ? null : t('lineGrip', { length: formatMark(d.gripHeightM, units) }),
+    ],
+    [
+      'standardsCm',
+      d.standardsCm === null
+        ? null
+        : t('lineStandards', { length: formatShortLength(d.standardsCm, units) }),
+    ],
+  ];
+  const shown = phrases.filter((entry): entry is [DetailKey, string] => entry[1] !== null);
+  if (shown.length === 0) return null;
   // 欄ごとの文は途中で折らない（日本語は語の途中でも折れ、「支柱」が2行に割れた）
-  const items = phrases.map((phrase) => (
-    <span key={phrase} className="whitespace-nowrap">
+  const items = shown.map(([key, phrase]) => (
+    <span key={key} className="whitespace-nowrap">
       {phrase}
     </span>
   ));

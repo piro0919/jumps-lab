@@ -550,20 +550,35 @@ export type Attempt = {
 /** 足す・書き換えるときの値。細かい記録は省けば空 */
 export type AttemptInput = Omit<Attempt, 'id' | 'details'> & { details?: AttemptDetails };
 
-type AttemptRow = Omit<Attempt, 'markM' | 'windMs' | 'details'> & {
+/**
+ * 細かい記録の無い試技。全期間を読んで数える画面（ホーム・分析・記録の一覧・大会の結果）はこれだけ読む。
+ * 細かい記録の列を読むのは、それを出す画面（日の画面・直す画面・コーチの見る日ごとの試技）だけ
+ */
+export type AttemptMark = Omit<Attempt, 'details'>;
+
+type AttemptMarkRow = Omit<AttemptMark, 'markM' | 'windMs'> & {
   markM: string;
   windMs: string | null;
-} & Record<DetailKey, string | number | null>;
+};
+type AttemptRow = AttemptMarkRow & Record<DetailKey, string | number | null>;
 
-const attemptColumns = `id, to_char(day, 'YYYY-MM-DD') as day, event, kind, "markM", "windMs", note,
-  ${DETAIL_KEYS.map((key) => `"${key}"`).join(', ')}`;
+/** 細かい記録の列の名前（引用符付き、DETAIL_KEYS の順）。select・insert・update はここから組む */
+const DETAIL_COLUMN_NAMES = DETAIL_KEYS.map((key) => `"${key}"`);
+const DETAIL_COLUMNS = DETAIL_COLUMN_NAMES.join(', ');
+
+const attemptMarkColumns = `id, to_char(day, 'YYYY-MM-DD') as day, event, kind, "markM", "windMs", note`;
+const attemptColumns = `${attemptMarkColumns}, ${DETAIL_COLUMNS}`;
+
+function toAttemptMark(row: AttemptMarkRow): AttemptMark {
+  const { id, day, event, kind, note } = row;
+  return { id, day, event, kind, note, markM: Number(row.markM), windMs: num(row.windMs) };
+}
 
 function toAttempt(row: AttemptRow): Attempt {
-  const { id, day, event, kind, note } = row;
   const details = Object.fromEntries(
     DETAIL_KEYS.map((key) => [key, row[key] === null ? null : Number(row[key])]),
   ) as AttemptDetails;
-  return { id, day, event, kind, note, markM: Number(row.markM), windMs: num(row.windMs), details };
+  return { ...toAttemptMark(row), details };
 }
 
 /** 細かい記録を DETAIL_KEYS の順に並べた値（insert と update の引数） */
@@ -571,13 +586,13 @@ const detailValues = (details: AttemptDetails = EMPTY_DETAILS) =>
   DETAIL_KEYS.map((key) => details[key]);
 
 /** 1種目の記録すべて。古い順 */
-export async function listAttempts(userId: string, event: JumpEvent): Promise<Attempt[]> {
-  const { rows } = await db().query<AttemptRow>(
-    `select ${attemptColumns} from attempt where "userId" = $1 and event = $2
+export async function listAttempts(userId: string, event: JumpEvent): Promise<AttemptMark[]> {
+  const { rows } = await db().query<AttemptMarkRow>(
+    `select ${attemptMarkColumns} from attempt where "userId" = $1 and event = $2
       order by day, "createdAt"`,
     [userId, event],
   );
-  return rows.map(toAttempt);
+  return rows.map(toAttemptMark);
 }
 
 /** 期間の中の記録（全種目）。カレンダー用 */
@@ -607,7 +622,7 @@ export async function addAttempt(userId: string, input: AttemptInput): Promise<v
   ];
   await db().query(
     `insert into attempt ("userId", day, event, kind, "markM", "windMs", note,
-       ${DETAIL_KEYS.map((key) => `"${key}"`).join(', ')})
+       ${DETAIL_COLUMNS})
      values (${values.map((_, i) => `$${i + 1}`).join(', ')})`,
     values,
   );
@@ -630,7 +645,9 @@ export async function updateAttempt(
 ): Promise<void> {
   const values = [userId, id, input.event, input.kind, input.markM, input.windMs, input.note];
   // 細かい記録の列は、上の値の続きの番号から DETAIL_KEYS の順
-  const setDetails = DETAIL_KEYS.map((key, i) => `"${key}" = $${values.length + i + 1}`).join(', ');
+  const setDetails = DETAIL_COLUMN_NAMES.map(
+    (column, i) => `${column} = $${values.length + i + 1}`,
+  ).join(', ');
   await db().query(
     `update attempt set event = $3, kind = $4, "markM" = $5, "windMs" = $6, note = $7, ${setDetails}
       where "userId" = $1 and id = $2`,
@@ -749,12 +766,13 @@ export async function getActivityCounts(
   return { jumps: Number(rows[0]?.jumps ?? 0), daysLogged: Number(rows[0]?.daysLogged ?? 0) };
 }
 
-export async function listAllAttempts(userId: string): Promise<Attempt[]> {
-  const { rows } = await db().query<AttemptRow>(
-    `select ${attemptColumns} from attempt where "userId" = $1 order by day, "createdAt"`,
+/** 全期間の記録（全種目。古い順）。数えるだけなので細かい記録は読まない */
+export async function listAllAttempts(userId: string): Promise<AttemptMark[]> {
+  const { rows } = await db().query<AttemptMarkRow>(
+    `select ${attemptMarkColumns} from attempt where "userId" = $1 order by day, "createdAt"`,
     [userId],
   );
-  return rows.map(toAttempt);
+  return rows.map(toAttemptMark);
 }
 
 /** 体調とメモのある日すべて。記録の一覧用 */
@@ -1765,16 +1783,17 @@ export async function listMemberCompetitionsForCoach(access: CoachAccess): Promi
  */
 export async function listMemberCompetitionAttemptsForCoach(
   access: CoachAccess,
-): Promise<Attempt[]> {
-  const { rows } = await db().query<AttemptRow>(
-    `select ${attemptColumns} from attempt a
+): Promise<AttemptMark[]> {
+  // 結果は記録だけを使うので、細かい記録は読まない
+  const { rows } = await db().query<AttemptMarkRow>(
+    `select ${attemptMarkColumns} from attempt a
       where a."userId" = $3 and a.kind = 'competition'
         and exists (select 1 from competition c where c."userId" = $3 and c.day = a.day)
         and ${COACH_SEES}
       order by a.day, a."createdAt"`,
     accessParams(access),
   );
-  return rows.map(toAttempt);
+  return rows.map(toAttemptMark);
 }
 
 /** コーチが見る、選手の from から to までの動画（届いていて期限の過ぎていないもの。古い順） */

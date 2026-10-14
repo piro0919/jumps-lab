@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   attemptDetailsSchema,
   detailFieldsFor,
+  detailsError,
   EMPTY_DETAILS,
   hasDetails,
   keepDetailsFor,
@@ -111,5 +112,28 @@ describe('送られた値の検査', () => {
   it('グリップがポールより高いと grip で弾く', () => {
     const result = parse({ poleLengthM: '4.5', gripHeightM: '4.6' });
     expect(result.error?.issues.map((i) => i.message)).toEqual(['grip']);
+  });
+
+  it('弾いた理由を、どの欄かの鍵で返す（グリップがポールより高いときは grip）', () => {
+    const forms = [
+      { approachSteps: '31' },
+      { approachLengthM: '0.5' },
+      { boardOffsetCm: '-31' },
+      { poleLengthM: '7' },
+      { poleStiffnessLb: '49' },
+      { gripHeightM: '6.5' },
+      { standardsCm: '81' },
+      { poleLengthM: '4.5', gripHeightM: '4.6' },
+    ];
+    expect(forms.map((form) => detailsError(parse(form).error))).toEqual([
+      'detailRange.approachSteps',
+      'detailRange.approachLengthM',
+      'detailRange.boardOffsetCm',
+      'detailRange.poleLengthM',
+      'detailRange.poleStiffnessLb',
+      'detailRange.gripHeightM',
+      'detailRange.standardsCm',
+      'grip',
+    ]);
   });
 });

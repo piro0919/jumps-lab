@@ -147,7 +147,15 @@
     "guardianTeamCoach": "This person coaches this team, so they cannot join it as an athlete. This link can no longer be used.",
     "comment": "Write a comment of up to 1,000 characters.",
     "commentLimit": "You've reached the limit of {count, plural, one {# comment} other {# comments}} in 24 hours. Try again later.",
-    "details": "Check the details.",
+    "detailRange": {
+      "approachSteps": "Approach steps must be from {min} to {max}.",
+      "approachLengthM": "Approach length must be from {min} to {max}.",
+      "boardOffsetCm": "Toe behind the board must be from {over} over the board to {behind} behind it.",
+      "poleLengthM": "Pole length must be from {min} to {max}.",
+      "poleStiffnessLb": "Pole stiffness must be from {min} to {max}.",
+      "gripHeightM": "Grip height must be from {min} to {max}.",
+      "standardsCm": "Standards must be from {min} to {max}."
+    },
     "grip": "Grip height can't be more than the pole length."
   },
   "home": {

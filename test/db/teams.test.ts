@@ -271,7 +271,7 @@ describe('コーチが見られるもの', () => {
     expect(await seen(outsiderId, other.teamId, athleteId, day)).toEqual(NOTHING);
   });
 
-  it('コーチの読む試技には、跳躍の細かい記録も入る（大会の結果の試技も）', async () => {
+  it('コーチの読む日ごとの試技には、跳躍の細かい記録も入る（大会の結果の試技は記録だけ）', async () => {
     const team = await teamWithInvite();
     const athleteId = await adult();
     const day = todayIn('Asia/Tokyo');
@@ -298,8 +298,11 @@ describe('コーチが見られるもの', () => {
 
     expect({
       attempts: (await listMemberAttemptsForCoach(access, day, day)).map((a) => a.details),
-      results: (await listMemberCompetitionAttemptsForCoach(access)).map((a) => a.details),
-    }).toEqual({ attempts: [details], results: [details] });
+      results: (await listMemberCompetitionAttemptsForCoach(access)).map((a) => [
+        a.markM,
+        'details' in a,
+      ]),
+    }).toEqual({ attempts: [details], results: [[6.5, false]] });
   });
 
   it('抜けた選手は、抜けたときから見えない。保護者の同意の記録も消える', async () => {

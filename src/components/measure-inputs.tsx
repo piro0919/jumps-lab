@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { type Ref, useEffect, useRef, useState } from 'react';
 import { Input } from '@/components/layout-ui';
 import {
   cmToFeetInches,
@@ -36,6 +36,7 @@ function FeetInchesInput({
   inchStep,
   onChange,
   autoFocus,
+  feetRef,
 }: {
   feet: string;
   inches: string;
@@ -43,11 +44,14 @@ function FeetInchesInput({
   onChange: (feet: string, inches: string) => void;
   /** フィートの欄に、はじめから入る */
   autoFocus?: boolean;
+  /** フィートの欄（合わせた長さの範囲を、この欄で止めるため） */
+  feetRef?: Ref<HTMLInputElement>;
 }) {
   const t = useTranslations('units');
   return (
     <div className="flex items-center gap-2">
       <Input
+        ref={feetRef}
         inputMode="numeric"
         type="number"
         min={0}
@@ -108,40 +112,79 @@ export function WindInput({
   );
 }
 
-/** 記録（メートル）。imperial は 4分の1インチ刻み */
+/**
+ * 保存してある値を、欄が触られるまでそのまま送る。表示の単位に直した文字は丸めてあるので、
+ * それを送り返すと、何も直さずに保存しただけで値が変わる（metric で 4.572 m が 4.57 m に、
+ * imperial で cm で入れた 12 cm が 12.1 cm に、メートルで入れた記録が4分の1インチに切り捨てられていた）。
+ * 欄の文字がはじめと同じなら、書き換えて戻した場合も含めて、持っている値を送る
+ */
+function sentValue(stored: number | null, untouched: boolean, typed: string): string {
+  return stored !== null && untouched ? String(stored) : typed;
+}
+
+/** 範囲（メートル）と、外れたときにブラウザが出す文言（どの欄かを言う、訳した文） */
+export type MeterRange = { min: number; max: number; message: string };
+
+/**
+ * 記録（メートル）。imperial は 4分の1インチ刻み。ポールの長さ・グリップ・助走の距離にも使う（range で範囲を付ける）。
+ * imperial はフィートとインチの2つの欄に分かれていて、ブラウザの min・max では範囲を言えないので、
+ * 合わせた長さが外れたらフィートの欄に自前の検査を付けて止める
+ */
 export function MarkInput({
   name,
   units,
   defaultMeters = null,
   autoFocus,
+  range,
 }: {
   name: string;
   units: Units;
   defaultMeters?: number | null;
   autoFocus?: boolean;
+  range?: MeterRange;
 }) {
   const t = useTranslations('units');
-  const [meters, setMeters] = useState(defaultMeters === null ? '' : defaultMeters.toFixed(2));
-  const [fi, setFi] = useState(() => toFeetInches(defaultMeters, metersToFeetInches));
+  // はじめに出した文字（両方の単位）。いまの文字と比べて、触られたかを見る
+  const [initial] = useState(() => ({
+    meters: defaultMeters === null ? '' : defaultMeters.toFixed(2),
+    fi: toFeetInches(defaultMeters, metersToFeetInches),
+  }));
+  const [meters, setMeters] = useState(initial.meters);
+  const [fi, setFi] = useState(initial.fi);
+  const feetRef = useRef<HTMLInputElement>(null);
+  const metric = units === 'metric';
 
-  const value =
-    units === 'metric'
-      ? meters
-      : fi.feet === '' && fi.inches === ''
-        ? ''
-        : String(
-            feetInchesToMeters({ feet: Number(fi.feet || 0), inches: Number(fi.inches || 0) }),
-          );
+  const untouched = metric
+    ? meters === initial.meters
+    : fi.feet === initial.fi.feet && fi.inches === initial.fi.inches;
+  const typedFeetInches =
+    fi.feet === '' && fi.inches === ''
+      ? null
+      : feetInchesToMeters({ feet: Number(fi.feet || 0), inches: Number(fi.inches || 0) });
+  const typed = metric ? meters : typedFeetInches === null ? '' : String(typedFeetInches);
+  const value = sentValue(defaultMeters, untouched, typed);
+
+  const outside =
+    !metric &&
+    range !== undefined &&
+    !untouched &&
+    typedFeetInches !== null &&
+    (typedFeetInches < range.min || typedFeetInches > range.max);
+  const message = outside ? range.message : '';
+  useEffect(() => {
+    feetRef.current?.setCustomValidity(message);
+  }, [message, metric]);
 
   return (
     <>
       <input type="hidden" name={name} value={value} />
-      {units === 'metric' ? (
+      {metric ? (
         <div className="flex items-center gap-2">
           <Input
             inputMode="decimal"
             type="number"
-            min={0}
+            min={range?.min ?? 0}
+            max={range?.max}
             step={0.01}
             value={meters}
             autoFocus={autoFocus}
@@ -155,6 +198,7 @@ export function MarkInput({
           inches={fi.inches}
           inchStep={0.25}
           autoFocus={autoFocus}
+          feetRef={feetRef}
           onChange={(feet, inches) => setFi({ feet, inches })}
         />
       )}
@@ -162,13 +206,17 @@ export function MarkInput({
   );
 }
 
-/** 短い長さの欄の刻み（cm のとき 1cm、インチのとき4分の1インチ） */
-const SHORT_STEP_CM = 1;
+/**
+ * 短い長さの欄の刻み。cm のときは DB と同じ 0.1cm（インチで入れた 45.7 cm を、1cm 刻みの欄に出すと
+ * ブラウザが送るのを止めていた）。インチのときは4分の1インチ
+ */
+const SHORT_STEP_CM = 0.1;
 const SHORT_STEP_IN = 0.25;
 
 /**
  * 短い長さ（cm）。踏切板からの距離や支柱の位置。imperial はインチで受け、4分の1インチ刻み。
- * 範囲は cm で受けて、インチの欄にはその換算を出す
+ * 範囲は cm で受けて、インチの欄にはその換算を出す（換算はいちばん近い4分の1インチ。持っている値も同じ丸めで
+ * 出すので、範囲の中の値が欄の範囲から外れることはない）
  */
 export function ShortLengthInput({
   name,
@@ -184,13 +232,14 @@ export function ShortLengthInput({
   maxCm: number;
 }) {
   const t = useTranslations('units');
-  const [shown, setShown] = useState(() =>
-    // metric は持っている値のまま（インチで入れた -3.2 を -3 に丸めると、そのまま保存しても値が変わる）
-    defaultCm === null ? '' : String(units === 'metric' ? defaultCm : cmToQuarterInches(defaultCm)),
-  );
-  const parsed = parse(shown);
-  const value = parsed === null ? '' : String(units === 'metric' ? parsed : inchesToCm(parsed));
   const metric = units === 'metric';
+  const [initial] = useState(() =>
+    defaultCm === null ? '' : String(metric ? defaultCm : cmToQuarterInches(defaultCm)),
+  );
+  const [shown, setShown] = useState(initial);
+  const parsed = parse(shown);
+  const typed = parsed === null ? '' : String(metric ? parsed : inchesToCm(parsed));
+  const value = sentValue(defaultCm, shown === initial, typed);
 
   return (
     <>
