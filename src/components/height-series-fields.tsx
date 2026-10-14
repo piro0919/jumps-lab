@@ -255,7 +255,10 @@ export function HeightSeriesFields({
                         onClick={() =>
                           next && update(row.key, { trials: setTrial(row.trials, i, next.value) })
                         }
-                        className={cn(trial === undefined && 'border-dashed')}
+                        // 空き枠の点線は押せる枠と分かる濃さ（3:1 以上）に。線の色のままだと白地で 1.26 だった
+                        className={cn(
+                          trial === undefined && 'border-dashed border-muted-foreground/80',
+                        )}
                       >
                         {trial ? TRIAL_SYMBOL[trial] : ''}
                       </Button>

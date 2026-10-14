@@ -105,16 +105,8 @@ export function AttemptsCard({
                           <DisplayNumber size="md" className="whitespace-nowrap">
                             {formatMark(attempt.markM, units)}
                           </DisplayNumber>
-                          {attempt.markM === best && (
-                            <Badge tone="solid" className={EVENT_BG[event]}>
-                              {t('best')}
-                            </Badge>
-                          )}
-                          {/* 追い風 2.0 m/s 超え。PB・SB には数えていない */}
-                          {isWindAided(attempt.windMs) && (
-                            <Badge tone="neutral">{t('windAided')}</Badge>
-                          )}
-                          {/* 結び付けた動画へ。同じ画面の動画の欄まで飛ぶ。押せる所は 24px 四方（アイコンだけだと 16px だった） */}
+                          {/* 結び付けた動画へ。同じ画面の動画の欄まで飛ぶ。押せる所は 24px 四方（アイコンだけだと 16px だった）。
+                              札より前に置く（札の後ろだと、幅 375px で動画の印だけが次の行に落ちて浮いた。2026-10-15） */}
                           {videos[attempt.id] && (
                             <a
                               href={`#video-${videos[attempt.id]}`}
@@ -123,6 +115,15 @@ export function AttemptsCard({
                             >
                               <Video aria-hidden className="size-4" />
                             </a>
+                          )}
+                          {attempt.markM === best && (
+                            <Badge tone="solid" className={EVENT_BG[event]}>
+                              {t('best')}
+                            </Badge>
+                          )}
+                          {/* 追い風 2.0 m/s 超え。PB・SB には数えていない */}
+                          {isWindAided(attempt.windMs) && (
+                            <Badge tone="neutral">{t('windAided')}</Badge>
                           )}
                         </span>
                         <span className="text-xs break-words text-muted-foreground">
