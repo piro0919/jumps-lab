@@ -24,7 +24,11 @@ const setVideoMarkAction = vi.fn(
     return { ok: true as const, marks };
   },
 );
-vi.mock('@/app/actions/videos', () => ({ setVideoMarkAction }));
+vi.mock('@/app/actions/videos', () => ({
+  setVideoMarkAction,
+  addVideoAngleAction: vi.fn(),
+  deleteVideoAngleAction: vi.fn(),
+}));
 
 const { VideoCompare } = await import('@/components/video-compare');
 
@@ -40,6 +44,7 @@ const a = {
   label: 'Oct 1',
   detail: 'practice',
   marks: {},
+  angles: [],
 };
 const b = {
   id: 'b',
@@ -47,6 +52,7 @@ const b = {
   label: 'Oct 2',
   detail: 'competition',
   marks: {},
+  angles: [],
 };
 
 const show = (marks: { a?: Record<string, number>; b?: Record<string, number> } = {}) => {

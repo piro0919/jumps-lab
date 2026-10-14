@@ -3,7 +3,12 @@
 import { ChevronLeft, ChevronRight, Pause, Play, X } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition } from 'react';
-import { setVideoMarkAction } from '@/app/actions/videos';
+import {
+  addVideoAngleAction,
+  deleteVideoAngleAction,
+  setVideoMarkAction,
+} from '@/app/actions/videos';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import {
   Badge,
   Card,
@@ -17,8 +22,26 @@ import {
   segmentClass,
 } from '@/components/layout-ui';
 import { Button } from '@/components/ui/button';
+import {
+  AngleDraftBar,
+  AngleOverlay,
+  AnglesCard,
+  useAngleLabel,
+  type AngleShape,
+} from '@/components/video-angles';
 import { cn } from '@/lib/cn';
+import { ANGLES_PER_VIDEO } from '@/lib/limits';
 import { safely } from '@/lib/safe-action';
+import {
+  POINTS_NEEDED,
+  atFrame,
+  measure,
+  type Angle,
+  type AngleKind,
+  type AngleName,
+  type Point,
+  type Size,
+} from '@/lib/video-angles';
 import {
   MARKS,
   compareIntervals,
@@ -42,13 +65,17 @@ import {
   type Alignment,
 } from '@/lib/video-sync';
 
-/** 見比べる1本。label は日付、detail は練習か試合とメモ（画面に出す文）、marks は保存してある時間の目印 */
+/**
+ * 見比べる1本。label は日付、detail は練習か試合とメモ（画面に出す文）、marks は保存してある時間の目印、
+ * angles は手で測った角度（時刻の順）
+ */
 export type CompareVideo = {
   id: string;
   url: string;
   label: string;
   detail: string;
   marks: Marks;
+  angles: Angle[];
 };
 
 type Key = 'a' | 'b';
@@ -171,6 +198,31 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
   const [marking, startMarking] = useTransition();
   /** 目印を保存している間は次の押下を受けない（連打や Enter で2回送らないように） */
   const sendingMark = useRef(false);
+
+  // 手で測る角度（src/lib/video-angles.ts）
+  const [angles, setAngles] = useState<Record<Key, Angle[]>>({ a: a.angles, b: b.angles });
+  /** 動画の本来の幅と高さ（読み込むまで null） */
+  const [frames, setFrames] = useState<Record<Key, Size | null>>({ a: null, b: null });
+  /** 動画の要素の画面での大きさ（線を重ねる SVG の大きさ） */
+  const [boxes, setBoxes] = useState<Record<Key, Size | null>>({ a: null, b: null });
+  /** 見積もったコマの速さ（測ったコマから1コマ以内かを決める）。見積もるまで null */
+  const [frameRates, setFrameRates] = useState<Record<Key, number | null>>({ a: null, b: null });
+  const [angleChoice, setAngleChoice] = useState<Record<Key, { name: AngleName; kind: AngleKind }>>(
+    { a: { name: 'knee', kind: 'angle' }, b: { name: 'knee', kind: 'angle' } },
+  );
+  /** 点を打っている途中の測定（1本ずつ） */
+  const [draft, setDraft] = useState<{ key: Key; points: Point[] } | null>(null);
+  /** 角度の保存・削除の誤り。key は打っている途中の動画（削除の誤りは null でカードに出す） */
+  const [angleError, setAngleError] = useState<{
+    key: Key | null;
+    error: 'generic' | 'angleLimit';
+  } | null>(null);
+  const [removingAngle, setRemovingAngle] = useState<{ key: Key; id: string } | null>(null);
+  const [savingAngle, startSavingAngle] = useTransition();
+  /** 角度を保存している間は次の押下を受けない（連打や Enter で2回送らないように） */
+  const sendingAngle = useRef(false);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const angleLabel = useAngleLabel();
 
   const alignment = useMemo(
     () =>
@@ -339,10 +391,23 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
     setDurations((d) => (d[key] === length ? d : { ...d, [key]: length }));
   };
 
+  /** 動画の要素の画面での大きさを読む（線を重ねる SVG を同じ大きさにする） */
+  const readBox = (key: Key, video: HTMLVideoElement) => {
+    const width = video.clientWidth;
+    const height = video.clientHeight;
+    setBoxes((b) =>
+      b[key]?.width === width && b[key]?.height === height ? b : { ...b, [key]: { width, height } },
+    );
+  };
+
   /** 長さと縦横を読む。速さもここで合わせる（読み込み直すとブラウザが 1 に戻すことがある） */
   const readMetadata = (key: Key, video: HTMLVideoElement) => {
     video.playbackRate = speedRef.current;
     setLandscape((l) => ({ ...l, [key]: video.videoWidth > video.videoHeight }));
+    if (video.videoWidth > 0 && video.videoHeight > 0) {
+      setFrames((f) => ({ ...f, [key]: { width: video.videoWidth, height: video.videoHeight } }));
+    }
+    readBox(key, video);
     readLength(key, video);
     if (!probing.current[key]) setLocals((l) => ({ ...l, [key]: video.currentTime }));
   };
@@ -358,6 +423,23 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
     }
     // 付けたときに1回だけ（以降は onLoadedMetadata・onDurationChange と onError が受ける）
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 画面の幅が変わる・並べ方が変わると動画の要素の大きさが変わるので、重ねる SVG も合わせる
+  useEffect(() => {
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(() => {
+      for (const key of KEYS) {
+        const video = videoOf(key);
+        if (video) readBox(key, video);
+      }
+    });
+    for (const key of KEYS) {
+      const video = videoOf(key);
+      if (video) observer.observe(video);
+    }
+    return () => observer.disconnect();
+    // 付けたときに1回だけ（同じ video 要素を使い続ける）
   }, []);
 
   // コマの速さを、続けて描いた2コマの時刻の差から見積もる（requestVideoFrameCallback のあるブラウザだけ）。
@@ -377,7 +459,11 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
         ) {
           const estimate = fpsFromInterval(metadata.mediaTime - previous.mediaTime);
           if (estimate !== null) {
-            fpsRef.current[key] = Math.max(fpsRef.current[key] ?? 0, estimate);
+            const next = Math.max(fpsRef.current[key] ?? 0, estimate);
+            if (next !== fpsRef.current[key]) {
+              fpsRef.current[key] = next;
+              setFrameRates((r) => ({ ...r, [key]: next }));
+            }
           }
         }
         previous = metadata;
@@ -463,6 +549,84 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
     saveMark(key, chosen[key], roundToMs(local));
   };
 
+  /** その動画で点を打ち始める。止めて、線を重ねられる「並べる」にし、動画が見える所へ動かす */
+  const startAngle = (key: Key) => {
+    const video = videoOf(key);
+    if (!video) return;
+    if (playing) pauseAt(key, video.currentTime);
+    setMode('side');
+    setAngleError(null);
+    setDraft({ key, points: [] });
+    stageRef.current?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
+  };
+
+  const placePoint = (key: Key, point: Point) =>
+    setDraft((d) =>
+      d && d.key === key && d.points.length < POINTS_NEEDED[angleChoice[key].kind]
+        ? { ...d, points: [...d.points, point] }
+        : d,
+    );
+
+  /** 打っている測定の度数（点が足りない・重なっているときは null） */
+  const draftFrame = draft ? frames[draft.key] : null;
+  const draftDegrees =
+    draft && draftFrame ? measure(angleChoice[draft.key].kind, draft.points, draftFrame) : null;
+
+  /**
+   * 打った点を保存する。時刻は保存するときに見えているコマ（打ったあとにコマを送っても、見えている絵と合う）。
+   * 度数はサーバーが点から求め直したものを使う
+   */
+  const saveAngle = () => {
+    if (!draft || sendingAngle.current) return;
+    const { key, points } = draft;
+    const video = videoOf(key);
+    const frame = frames[key];
+    const { name: angleName, kind } = angleChoice[key];
+    if (!video || !frame || measure(kind, points, frame) === null) return;
+    sendingAngle.current = true;
+    setAngleError(null);
+    const time = roundToMs(video.currentTime);
+    startSavingAngle(async () => {
+      try {
+        const result = await safely(() =>
+          addVideoAngleAction({
+            videoId: videos[key].id,
+            name: angleName,
+            kind,
+            time,
+            points,
+            frameWidth: frame.width,
+            frameHeight: frame.height,
+          }),
+        );
+        if (result.ok) {
+          const saved = result.angle;
+          setAngles((all) => ({
+            ...all,
+            [key]: [...all[key], saved].toSorted((x, y) => x.time - y.time),
+          }));
+          setDraft(null);
+        } else {
+          setAngleError({ key, error: result.error === 'angleLimit' ? 'angleLimit' : 'generic' });
+        }
+      } finally {
+        sendingAngle.current = false;
+      }
+    });
+  };
+
+  const removeAngle = (key: Key, id: string) => {
+    setAngleError(null);
+    startSavingAngle(async () => {
+      const result = await safely(() => deleteVideoAngleAction(id));
+      if (result.ok) {
+        setAngles((all) => ({ ...all, [key]: all[key].filter((angle) => angle.id !== id) }));
+      } else {
+        setAngleError({ key: null, error: 'generic' });
+      }
+    });
+  };
+
   const clearSync = () => {
     if (playing) pause();
     const cleared = { a: null, b: null };
@@ -481,6 +645,33 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
     });
 
   const name = (key: Key) => t(key === 'a' ? 'videoA' : 'videoB');
+  const degreesText = (value: number) => format.number(value, { maximumFractionDigits: 0 });
+
+  /** 動画に重ねる測定。打っている途中ならそれだけ、止まっていれば今のコマから1コマ以内に測ったもの */
+  const shapesOf = (key: Key): AngleShape[] => {
+    if (draft?.key === key) {
+      return [
+        {
+          id: 'draft',
+          kind: angleChoice[key].kind,
+          points: draft.points,
+          label: draftDegrees === null ? null : t('degrees', { value: degreesText(draftDegrees) }),
+        },
+      ];
+    }
+    if (playing) return [];
+    return angles[key]
+      .filter((angle) => atFrame(angle.time, locals[key], frameRates[key] ?? DEFAULT_FPS))
+      .map((angle) => ({
+        id: angle.id,
+        kind: angle.kind,
+        points: angle.points,
+        label: t('angleOnVideo', {
+          angle: angleLabel(angle.name, angle.kind),
+          value: degreesText(angle.degrees),
+        }),
+      }));
+  };
   const markName = (mark: MarkName) => t(`marks.${mark}`);
   const rows = useMemo(() => compareIntervals(marks.a, marks.b), [marks]);
   /** あいだの時間の数（Stat に渡す）。差は + と − を付ける */
@@ -529,10 +720,26 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
   // （縦に積むと1本で画面が埋まり、見比べられない）
   const stacked = mode === 'side' && (landscape.a || landscape.b);
   const frameClass = cn(
-    'w-full rounded-2xl bg-muted object-contain',
+    'block w-full rounded-2xl bg-muted object-contain',
     stacked ? 'max-h-compare-video-stacked lg:max-h-compare-video' : 'max-h-compare-video',
   );
   const duration = alignment.length;
+  const angleSide = (key: Key) => ({
+    video: name(key),
+    title: videos[key].label,
+    angles: angles[key],
+    name: angleChoice[key].name,
+    kind: angleChoice[key].kind,
+    canMeasure:
+      !failed[key] &&
+      frames[key] !== null &&
+      draft === null &&
+      !savingAngle &&
+      angles[key].length < ANGLES_PER_VIDEO,
+    drafting: draft?.key === key,
+  });
+  const angleErrorText = (error: 'generic' | 'angleLimit') =>
+    error === 'angleLimit' ? t('angleLimit', { max: ANGLES_PER_VIDEO }) : tErrors('generic');
 
   return (
     <div className="flex flex-col gap-3">
@@ -554,7 +761,10 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
       <Card className="flex flex-col gap-4">
         {/* 見せ方を替えても同じ video 要素を使い続ける（作り直すと読み込み直して、位置が頭に戻る） */}
         <div
+          ref={stageRef}
+          // 測り始めたときに動かす先。上のヘッダーと下のタブに隠れないよう、その分を空ける
           className={cn(
+            'scroll-my-20',
             mode === 'overlay'
               ? 'relative'
               : cn('grid gap-3', stacked ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-2'),
@@ -570,15 +780,43 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
                 {mode === 'side' && (
                   <Badge tone={key === 'a' ? 'neutral' : 'accent'}>{name(key)}</Badge>
                 )}
-                {videoElement(
-                  key,
-                  cn(frameClass, onTop && 'h-full'),
-                  onTop ? { opacity: opacity / 100 } : undefined,
-                )}
+                {/* 測った線を重ねる SVG は、この箱（動画の要素と同じ大きさ）にぴったり重ねる */}
+                <div className={cn('relative', onTop && 'h-full')}>
+                  {videoElement(
+                    key,
+                    cn(frameClass, onTop && 'h-full'),
+                    onTop ? { opacity: opacity / 100 } : undefined,
+                  )}
+                  {/* 重ねて見せるときは2本の絵が重なるので、線は並べたときだけ描く */}
+                  {mode === 'side' && (
+                    <AngleOverlay
+                      frame={frames[key]}
+                      box={boxes[key]}
+                      shapes={shapesOf(key)}
+                      placing={draft?.key === key}
+                      label={t(draft?.key === key ? 'placeOn' : 'anglesOn', { video: name(key) })}
+                      onPlace={(point) => placePoint(key, point)}
+                    />
+                  )}
+                </div>
               </div>
             );
           })}
         </div>
+        {draft && (
+          <AngleDraftBar
+            video={name(draft.key)}
+            name={angleChoice[draft.key].name}
+            kind={angleChoice[draft.key].kind}
+            placed={draft.points.length}
+            degrees={draftDegrees}
+            saving={savingAngle}
+            error={angleError?.key === draft.key ? angleErrorText(angleError.error) : null}
+            onUndo={() => setDraft((d) => d && { ...d, points: d.points.slice(0, -1) })}
+            onCancel={() => setDraft(null)}
+            onSave={saveAngle}
+          />
+        )}
         {mode === 'overlay' && (
           <label className="flex flex-col gap-1.5">
             <span className={cn('flex items-baseline justify-between', LABEL)}>
@@ -825,6 +1063,29 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
           </ul>
         )}
       </Card>
+
+      <AnglesCard
+        sides={{ a: angleSide('a'), b: angleSide('b') }}
+        seconds={seconds}
+        error={angleError && angleError.key === null ? angleErrorText(angleError.error) : null}
+        onKind={(key, kind) => setAngleChoice((c) => ({ ...c, [key]: { ...c[key], kind } }))}
+        onName={(key, angleName) =>
+          setAngleChoice((c) => ({ ...c, [key]: { ...c[key], name: angleName } }))
+        }
+        onMeasure={startAngle}
+        onSeek={seekOne}
+        onRemove={(key, angle) => setRemovingAngle({ key, id: angle.id })}
+      />
+      <ConfirmDialog
+        open={removingAngle !== null}
+        title={t('removeAngleConfirm')}
+        onOpenChange={(open) => {
+          if (!open) setRemovingAngle(null);
+        }}
+        onConfirm={() => {
+          if (removingAngle) removeAngle(removingAngle.key, removingAngle.id);
+        }}
+      />
     </div>
   );
 }

@@ -389,7 +389,39 @@
     "interval": "{from} → {to}",
     "approach": "助走",
     "difference": "B − A",
-    "secondsUnit": "秒"
+    "secondsUnit": "秒",
+    "angles": "角度",
+    "noAngles": "まだ角度はありません",
+    "angleComparison": "角度の比較",
+    "kindOf": "{video}の測り方",
+    "angleNameOf": "{video}で測る所",
+    "kinds": {
+      "angle": "3点の角度",
+      "lean": "垂直からの傾き"
+    },
+    "angleNames": {
+      "knee": "膝",
+      "hip": "股関節",
+      "trunk": "体幹",
+      "shin": "すね",
+      "arm": "腕",
+      "other": "その他"
+    },
+    "angleLabel": "{kind, select, angle {{name}の角度} other {{name}の傾き}}",
+    "angleLabelNth": "{kind, select, angle {{name}の角度 {n}} other {{name}の傾き {n}}}",
+    "measure": "{video}で測る",
+    "pointsPlaced": "{needed}点のうち{placed}点",
+    "undoPoint": "1点戻す",
+    "cancelAngle": "やめる",
+    "saveAngle": "保存",
+    "placeOn": "{video}に点を打つ",
+    "anglesOn": "{video}の角度",
+    "degrees": "{value}°",
+    "degreesUnit": "°",
+    "angleOnVideo": "{angle} {value}°",
+    "removeAngle": "{video}の{angle}を削除",
+    "removeAngleConfirm": "この角度を削除しますか？",
+    "angleLimit": "1本の動画に保存できる角度は{max}個までです。"
   },
   "advice": {
     "title": "今日のアドバイス",

@@ -3,7 +3,9 @@
 import { refresh } from 'next/cache';
 import { z } from 'zod';
 import {
+  addVideoAngle,
   completeVideo,
+  deleteVideoAngle,
   deleteVideo,
   getPendingVideo,
   getProfile,
@@ -15,7 +17,7 @@ import {
 import { isDay, todayIn } from '@/lib/dates';
 import { EVENTS } from '@/lib/events';
 import { optionalText } from '@/lib/form';
-import { NOTE_MAX_LENGTH } from '@/lib/limits';
+import { ANGLES_PER_VIDEO, NOTE_MAX_LENGTH } from '@/lib/limits';
 import { deleteObject, objectSize, uploadUrl } from '@/lib/r2';
 import {
   MAX_VIDEO_BYTES,
@@ -24,6 +26,7 @@ import {
   VIDEO_TYPES,
   videoKey,
 } from '@/lib/videos';
+import { angleInputSchema, measure, type Angle, type AngleInput } from '@/lib/video-angles';
 import { markInputSchema, type MarkInput, type Marks } from '@/lib/video-marks';
 import { requireViewer } from '@/lib/viewer';
 
@@ -141,6 +144,47 @@ export async function setVideoMarkAction(
   } catch (error) {
     console.error(error);
     return { ok: false, error: 'generic' };
+  }
+}
+
+/**
+ * 動画に手で測った角度を1つ保存する。本人の、届いていて期限の過ぎていない動画だけ。
+ * 度数はブラウザから受け取らず、点と動画の本来の幅・高さから求め直す（点が重なって決まらなければ保存しない）。
+ * 見比べる画面はその場で描くので refresh しない
+ */
+export async function addVideoAngleAction(
+  input: AngleInput,
+): Promise<{ ok: true; angle: Angle } | { ok: false; error: 'generic' | 'angleLimit' }> {
+  const viewer = await requireViewer();
+  const parsed = angleInputSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: 'generic' };
+  const { videoId, name, kind, time, points, frameWidth, frameHeight } = parsed.data;
+  const degrees = measure(kind, points, { width: frameWidth, height: frameHeight });
+  if (degrees === null) return { ok: false, error: 'generic' };
+  try {
+    const result = await addVideoAngle(
+      viewer.userId,
+      { videoId, name, kind, time, points, frameWidth, frameHeight, degrees },
+      ANGLES_PER_VIDEO,
+    );
+    if (result === 'denied') return { ok: false, error: 'generic' };
+    if (result === 'limit') return { ok: false, error: 'angleLimit' };
+    return { ok: true, angle: result };
+  } catch (error) {
+    console.error(error);
+    return { ok: false, error: 'generic' };
+  }
+}
+
+/** 本人の動画の測定を1つ消す */
+export async function deleteVideoAngleAction(id: string): Promise<{ ok: boolean }> {
+  const viewer = await requireViewer();
+  if (!z.uuid().safeParse(id).success) return { ok: false };
+  try {
+    return { ok: await deleteVideoAngle(viewer.userId, id) };
+  } catch (error) {
+    console.error(error);
+    return { ok: false };
   }
 }
 

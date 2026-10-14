@@ -52,7 +52,8 @@ export default function PrivacyEn() {
         <li>Your goal marks and the bests you enter by hand</li>
         <li>
           Your practice and competition videos (the video files with their date, event, practice or
-          competition, linked attempt and note)
+          competition, linked attempt and note, and the timing marks and the angles you measure by
+          hand on them in the compare view)
         </li>
         <li>Your plan (Free or Premium)</li>
         <li>

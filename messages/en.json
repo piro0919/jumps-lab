@@ -389,7 +389,39 @@
     "interval": "{from} → {to}",
     "approach": "Approach",
     "difference": "B − A",
-    "secondsUnit": "s"
+    "secondsUnit": "s",
+    "angles": "Angles",
+    "noAngles": "No angles yet.",
+    "angleComparison": "Angle comparison",
+    "kindOf": "How to measure on {video}",
+    "angleNameOf": "What to measure on {video}",
+    "kinds": {
+      "angle": "3-point angle",
+      "lean": "Lean from vertical"
+    },
+    "angleNames": {
+      "knee": "Knee",
+      "hip": "Hip",
+      "trunk": "Trunk",
+      "shin": "Shin",
+      "arm": "Arm",
+      "other": "Other"
+    },
+    "angleLabel": "{kind, select, angle {{name} angle} other {{name} lean}}",
+    "angleLabelNth": "{kind, select, angle {{name} angle {n}} other {{name} lean {n}}}",
+    "measure": "Measure on {video}",
+    "pointsPlaced": "{placed} of {needed} points",
+    "undoPoint": "Undo",
+    "cancelAngle": "Cancel",
+    "saveAngle": "Save",
+    "placeOn": "Tap points on {video}",
+    "anglesOn": "Angles on {video}",
+    "degrees": "{value}°",
+    "degreesUnit": "°",
+    "angleOnVideo": "{angle} {value}°",
+    "removeAngle": "Delete {angle} from {video}",
+    "removeAngleConfirm": "Delete this angle?",
+    "angleLimit": "A video can hold up to {max} angles."
   },
   "advice": {
     "title": "Today's advice",

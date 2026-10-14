@@ -20,6 +20,7 @@ import { FLAG_WINDOW_DAYS, rosterFlags } from '@/lib/teams';
 import type { Grade, Plan } from '@/lib/profile-options';
 import type { Units } from '@/lib/units';
 import { toMarks, type MarkName, type Marks } from '@/lib/video-marks';
+import type { Angle, AngleKind, AngleName, Point } from '@/lib/video-angles';
 
 /**
  * DB の読み書き。どの関数も userId を引数に取り、その人の行だけを触る。
@@ -1050,6 +1051,142 @@ export async function setVideoMark(
     [userId, id, mark, time],
   );
   return rows[0] ? toMarks(rows[0].marks) : null;
+}
+
+/** 測定の行。点は列に分けて持つ（範囲を DB の check で縛るため） */
+type AngleRow = {
+  id: string;
+  videoId: string;
+  name: AngleName;
+  kind: AngleKind;
+  timeMs: number;
+  frameWidth: number;
+  frameHeight: number;
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  x3: number | null;
+  y3: number | null;
+  degrees: number;
+};
+
+const angleColumns = `a.id, a."videoId", a.name, a.kind, a."timeMs", a."frameWidth", a."frameHeight",
+  a.x1, a.y1, a.x2, a.y2, a.x3, a.y3, a.degrees`;
+
+const MS_PER_SECOND = 1000;
+
+function toAngle(row: AngleRow): Angle {
+  const points: Point[] = [
+    { x: row.x1, y: row.y1 },
+    { x: row.x2, y: row.y2 },
+  ];
+  if (row.x3 !== null && row.y3 !== null) points.push({ x: row.x3, y: row.y3 });
+  return {
+    id: row.id,
+    name: row.name,
+    kind: row.kind,
+    time: row.timeMs / MS_PER_SECOND,
+    points,
+    frameWidth: row.frameWidth,
+    frameHeight: row.frameHeight,
+    degrees: row.degrees,
+  };
+}
+
+/** 本人の見られる動画（届いていて、期限の過ぎていないもの）の行だけに絞る（v は video） */
+const OWN_LIVE_VIDEO = `v."userId" = $1 and v.status = 'ready' and v."expiresAt" > now()`;
+
+/**
+ * 本人の見られる動画の測定を、動画ごとに時刻の順で。ほかの人の動画・消えた動画の id は空のまま返す
+ */
+export async function listVideoAngles(
+  userId: string,
+  videoIds: string[],
+): Promise<Record<string, Angle[]>> {
+  const { rows } = await db().query<AngleRow>(
+    `select ${angleColumns} from video_angle a join video v on v.id = a."videoId"
+      where ${OWN_LIVE_VIDEO} and v.id = any($2::uuid[])
+      order by a."timeMs", a."createdAt"`,
+    [userId, videoIds],
+  );
+  const byVideo: Record<string, Angle[]> = Object.fromEntries(videoIds.map((id) => [id, []]));
+  for (const row of rows) byVideo[row.videoId]?.push(toAngle(row));
+  return byVideo;
+}
+
+/**
+ * 本人の見られる動画に測定を1つ足す。度数は呼ぶ側が点から求めた値（ブラウザの値ではない）。
+ * 動画の行を for update で押さえてから数えるので、同時に足しても上限を抜けない。
+ * ほかの人の動画・消えた動画なら 'denied'、上限に達していれば 'limit'
+ */
+export async function addVideoAngle(
+  userId: string,
+  angle: Omit<Angle, 'id'> & { videoId: string },
+  limit: number,
+): Promise<Angle | 'denied' | 'limit'> {
+  const client = await db().connect();
+  try {
+    await client.query('begin');
+    const { rowCount: own } = await client.query(
+      `select 1 from video v where v.id = $2 and ${OWN_LIVE_VIDEO} for update`,
+      [userId, angle.videoId],
+    );
+    if (own !== 1) {
+      await client.query('rollback');
+      return 'denied';
+    }
+    // 数えるのはロックを取ったあとの別の文で（同じ文の中で数えると、ロックを待つ前の古い数を見て上限を抜けた）
+    const { rows: counted } = await client.query<{ count: string }>(
+      `select count(*) from video_angle where "videoId" = $1`,
+      [angle.videoId],
+    );
+    if (Number(counted[0]?.count) >= limit) {
+      await client.query('rollback');
+      return 'limit';
+    }
+    const [p1, p2, p3] = angle.points;
+    const { rows } = await client.query<AngleRow>(
+      `insert into video_angle as a ("videoId", name, kind, "timeMs", "frameWidth", "frameHeight",
+                                      x1, y1, x2, y2, x3, y3, degrees)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+       returning ${angleColumns}`,
+      [
+        angle.videoId,
+        angle.name,
+        angle.kind,
+        Math.round(angle.time * MS_PER_SECOND),
+        angle.frameWidth,
+        angle.frameHeight,
+        p1?.x,
+        p1?.y,
+        p2?.x,
+        p2?.y,
+        p3?.x ?? null,
+        p3?.y ?? null,
+        angle.degrees,
+      ],
+    );
+    await client.query('commit');
+    const row = rows[0];
+    if (!row) throw new Error('video_angle insert returned no row');
+    return toAngle(row);
+  } catch (error) {
+    await client.query('rollback');
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+/** 本人の見られる動画の測定を1つ消す。消せたら true（ほかの人の測定・消えた動画のものは消さない） */
+export async function deleteVideoAngle(userId: string, id: string): Promise<boolean> {
+  const { rowCount } = await db().query(
+    `delete from video_angle a using video v
+      where a.id = $2 and v.id = a."videoId" and ${OWN_LIVE_VIDEO}`,
+    [userId, id],
+  );
+  return rowCount === 1;
 }
 
 /** 送れなかった枠を外し、R2 から消すための置き場所を返す */

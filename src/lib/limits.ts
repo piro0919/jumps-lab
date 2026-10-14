@@ -82,3 +82,11 @@ export const BAR_HEIGHT_MIN_M = 0.5;
 export const BAR_HEIGHT_MAX_M = 7;
 /** 1本の試技に入れられる高さの数（DB の check と同じ） */
 export const HEIGHT_SERIES_MAX_ROWS = 40;
+
+/*
+ * 動画の上で手で測る角度（src/lib/video-angles.ts、db/migrations/0026_video_angles.sql）。
+ * 1本に保存できる測定の数（仮決め。踏み切りの前後数コマで膝・腰・体幹を測っても足りる数）
+ */
+export const ANGLES_PER_VIDEO = 30;
+/** 動画の本来の幅・高さの上限（ピクセル、8K の長い辺。DB の check と同じ） */
+export const ANGLE_FRAME_MAX_PX = 8192;

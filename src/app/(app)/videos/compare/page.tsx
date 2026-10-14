@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { Badge, Card, CardTitle, EmptyState, PageTitle } from '@/components/layout-ui';
 import { buttonVariants } from '@/components/ui/button';
 import { VideoCompare, type CompareVideo } from '@/components/video-compare';
-import { getVideo, listComparableVideos, type Video } from '@/lib/data';
+import { getVideo, listComparableVideos, listVideoAngles, type Video } from '@/lib/data';
 import { todayIn } from '@/lib/dates';
 import { EVENT_BG } from '@/lib/events';
 import { viewUrl } from '@/lib/r2';
@@ -97,13 +97,18 @@ export default async function CompareVideos({ searchParams }: PageProps<'/videos
     );
   }
 
-  const [urlA, urlB] = await Promise.all([viewUrl(a.objectKey), viewUrl(b.objectKey)]);
+  const [urlA, urlB, angles] = await Promise.all([
+    viewUrl(a.objectKey),
+    viewUrl(b.objectKey),
+    listVideoAngles(viewer.userId, [a.id, b.id]),
+  ]);
   const item = (video: Video, url: string): CompareVideo => ({
     id: video.id,
     url,
     label: dayLabel(video.day),
     detail: detail(video),
     marks: video.marks,
+    angles: angles[video.id] ?? [],
   });
 
   return (
