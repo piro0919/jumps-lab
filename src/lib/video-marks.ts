@@ -17,7 +17,7 @@ export type MarkName = (typeof MARKS)[number];
 /** 1本の目印。目印の名前 → その動画の中の秒（ミリ秒まで） */
 export type Marks = Partial<Record<MarkName, number>>;
 
-/** 1秒のミリ秒の数 */
+/** 1秒のミリ秒の数。秒とミリ秒の行き来は toMs・fromMs・roundToMs を使う（目印・角度・見比べる画面の時計で共通） */
 const MS_PER_SECOND = 1000;
 
 /**
@@ -26,9 +26,19 @@ const MS_PER_SECOND = 1000;
  */
 export const MARK_MAX_SECONDS = 600;
 
+/** 秒を、整数のミリ秒にする（DB の "timeMs" へ書くとき） */
+export function toMs(seconds: number): number {
+  return Math.round(seconds * MS_PER_SECOND);
+}
+
+/** ミリ秒を秒にする */
+export function fromMs(ms: number): number {
+  return ms / MS_PER_SECOND;
+}
+
 /** ミリ秒に丸める */
 export function roundToMs(seconds: number): number {
-  return Math.round(seconds * MS_PER_SECOND) / MS_PER_SECOND;
+  return fromMs(toMs(seconds));
 }
 
 /** 目印を1つ置く（time が null なら外す）ときの入力。置き直すと上書きする */

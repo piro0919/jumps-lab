@@ -4,13 +4,23 @@ import {
   MARK_MAX_SECONDS,
   approachTime,
   compareIntervals,
+  fromMs,
   intervals,
   markInputSchema,
   nextMark,
   toMarks,
+  toMs,
 } from '@/lib/video-marks';
 
 /** 動画の時間の目印と、あいだの時間の計算（src/lib/video-marks.ts） */
+
+describe('toMs と fromMs', () => {
+  it('秒を整数のミリ秒にし、ミリ秒を秒に戻す（DB の "timeMs" との行き来）', () => {
+    expect([toMs(1.2344), toMs(1.2346), toMs(0), fromMs(1234), fromMs(toMs(2.5))]).toEqual([
+      1234, 1235, 0, 1.234, 2.5,
+    ]);
+  });
+});
 
 describe('intervals', () => {
   it('置いた目印を決まった順に並べ、隣どうしのあいだを出す', () => {

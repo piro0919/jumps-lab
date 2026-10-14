@@ -415,6 +415,7 @@
     "cancelAngle": "やめる",
     "saveAngle": "保存",
     "placeOn": "{video}に点を打つ",
+    "placeKeys": "矢印キーで照準を動かし（Shift で大きく）、Enter で点を打ちます。",
     "anglesOn": "{video}の角度",
     "degrees": "{value}°",
     "degreesUnit": "°",

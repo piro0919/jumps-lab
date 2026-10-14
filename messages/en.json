@@ -415,6 +415,7 @@
     "cancelAngle": "Cancel",
     "saveAngle": "Save",
     "placeOn": "Tap points on {video}",
+    "placeKeys": "Move the crosshair with the arrow keys (Shift for bigger steps) and press Enter to place a point.",
     "anglesOn": "Angles on {video}",
     "degrees": "{value}°",
     "degreesUnit": "°",

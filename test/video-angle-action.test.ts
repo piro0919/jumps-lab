@@ -23,7 +23,7 @@ const data = vi.hoisted(() => ({
 }));
 vi.mock('@/lib/data', () => data);
 
-const { addVideoAngleAction } = await import('@/app/actions/videos');
+const { addVideoAngleAction, deleteVideoAngleAction } = await import('@/app/actions/videos');
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -84,5 +84,23 @@ describe('addVideoAngleAction', () => {
       { ok: false, error: 'angleLimit' },
       { ok: false, error: 'generic' },
     ]);
+  });
+});
+
+describe('deleteVideoAngleAction', () => {
+  it('もう無い測定（2回目の削除）も ok を返し、画面に誤りを出させない。DB が落ちたときだけ ok でない', async () => {
+    const id = randomUUID();
+    data.deleteVideoAngle.mockResolvedValueOnce(true);
+    data.deleteVideoAngle.mockResolvedValueOnce(false);
+    data.deleteVideoAngle.mockRejectedValueOnce(new Error('down'));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const results = [
+      await deleteVideoAngleAction(id),
+      await deleteVideoAngleAction(id),
+      await deleteVideoAngleAction(id),
+      await deleteVideoAngleAction('x'),
+    ];
+    expect(results).toEqual([{ ok: true }, { ok: true }, { ok: false }, { ok: false }]);
+    expect(data.deleteVideoAngle).toHaveBeenCalledWith('me', id);
   });
 });

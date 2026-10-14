@@ -8,9 +8,12 @@ import {
   contentBox,
   leanFromVertical,
   measure,
+  placeLabels,
   toDisplay,
   toNormalized,
+  wholeDegrees,
   type Angle,
+  type LabelBox,
 } from '@/lib/video-angles';
 
 /** 動画の上で手で測る角度の計算と、画面の位置と動画の中の割合の行き来（src/lib/video-angles.ts） */
@@ -175,10 +178,28 @@ describe('compareAngles', () => {
       [angle('knee', 'angle', 2, 162.5), angle('knee', 'lean', 2, 5)],
     );
     expect(rows.map(({ key, a, b, diff }) => ({ key, a, b, diff }))).toEqual([
-      { key: 'knee-angle-1', a: 150, b: 162.5, diff: 12.5 },
+      { key: 'knee-angle-1', a: 150, b: 162.5, diff: 13 },
       { key: 'knee-lean-1', a: null, b: 5, diff: null },
       { key: 'trunk-lean-1', a: 10, b: null, diff: null },
     ]);
+  });
+
+  it('B − A は画面に出す整数の A と B の差にする（0.1° の差を丸めると、見えている A と B と食い違う）', () => {
+    const cases = [
+      [10.4, 10.6],
+      [10.6, 11.4],
+      [150.5, 150.4],
+    ] as const;
+    const rows = cases.map(
+      ([a, b]) => compareAngles([angle('knee', 'angle', 1, a)], [angle('knee', 'angle', 1, b)])[0],
+    );
+    // 見えている数は 10 と 11、11 と 11、151 と 150
+    expect(rows.map((row) => row?.diff)).toEqual([1, 0, -1]);
+    expect(
+      rows.map((row) =>
+        row && row.a !== null && row.b !== null ? wholeDegrees(row.b) - wholeDegrees(row.a) : null,
+      ),
+    ).toEqual(rows.map((row) => row?.diff));
   });
 
   it('同じものがいくつもあれば、時刻の順に1番目どうし、2番目どうしを比べる', () => {
@@ -208,6 +229,12 @@ describe('angleInputSchema', () => {
     frameHeight: 1920,
   } as const;
 
+  it('点の数の上限を、測り方を見る前に落とす（長い配列を受けない）', () => {
+    const many = Array.from({ length: 1000 }, () => ({ x: 0.5, y: 0.5 }));
+    const result = angleInputSchema.safeParse({ ...base, points: many });
+    expect(result.error?.issues[0]).toMatchObject({ code: 'too_big', path: ['points'] });
+  });
+
   it('時刻をミリ秒に丸めて受ける', () => {
     expect(angleInputSchema.parse(base).time).toBe(1.234);
   });
@@ -229,5 +256,57 @@ describe('angleInputSchema', () => {
     expect(bad.map((input) => angleInputSchema.safeParse(input).success)).toEqual(
       bad.map(() => false),
     );
+  });
+});
+
+describe('placeLabels', () => {
+  const box = { width: 200, height: 200 };
+  const size = { width: 80, height: 18 };
+  const hits = (p: LabelBox, q: LabelBox) =>
+    p.x < q.x + q.width && q.x < p.x + p.width && p.y < q.y + q.height && q.y < p.y + p.height;
+
+  it('点の右上に置き、右半分の点なら左上に置く', () => {
+    expect(
+      placeLabels(
+        [
+          { anchor: { x: 20, y: 100 }, size },
+          { anchor: { x: 180, y: 160 }, size },
+        ],
+        box,
+        10,
+      ),
+    ).toEqual([
+      { x: 30, y: 72, ...size },
+      { x: 90, y: 132, ...size },
+    ]);
+  });
+
+  it('同じ所の字は重ならないよう下へずらし、箱の中に収める', () => {
+    const labels = placeLabels(
+      [
+        { anchor: { x: 50, y: 50 }, size },
+        { anchor: { x: 52, y: 52 }, size },
+        { anchor: { x: 54, y: 48 }, size },
+      ],
+      box,
+      10,
+    );
+    expect(labels.map((l) => l.y)).toEqual([22, 40, 58]);
+    expect(labels.every((l, i) => labels.slice(i + 1).every((m) => !hits(l, m)))).toBe(true);
+  });
+
+  it('下に入らなければ上へずらし、箱の外へは出さない', () => {
+    const labels = placeLabels(
+      [
+        { anchor: { x: 10, y: 199 }, size },
+        { anchor: { x: 10, y: 199 }, size },
+      ],
+      { width: 100, height: 200 },
+      10,
+    );
+    expect(labels.map(({ x, y }) => ({ x, y }))).toEqual([
+      { x: 20, y: 171 },
+      { x: 20, y: 153 },
+    ]);
   });
 });

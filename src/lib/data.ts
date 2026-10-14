@@ -19,7 +19,7 @@ import { consenterFor, declaredFromBirthdate } from '@/lib/guardian';
 import { FLAG_WINDOW_DAYS, rosterFlags } from '@/lib/teams';
 import type { Grade, Plan } from '@/lib/profile-options';
 import type { Units } from '@/lib/units';
-import { toMarks, type MarkName, type Marks } from '@/lib/video-marks';
+import { fromMs, toMarks, toMs, type MarkName, type Marks } from '@/lib/video-marks';
 import type { Angle, AngleKind, AngleName, Point } from '@/lib/video-angles';
 
 /**
@@ -1054,7 +1054,7 @@ export async function setVideoMark(
 }
 
 /** 測定の行。点は列に分けて持つ（範囲を DB の check で縛るため） */
-type AngleRow = {
+type VideoAngleRow = {
   id: string;
   videoId: string;
   name: AngleName;
@@ -1074,9 +1074,7 @@ type AngleRow = {
 const angleColumns = `a.id, a."videoId", a.name, a.kind, a."timeMs", a."frameWidth", a."frameHeight",
   a.x1, a.y1, a.x2, a.y2, a.x3, a.y3, a.degrees`;
 
-const MS_PER_SECOND = 1000;
-
-function toAngle(row: AngleRow): Angle {
+function toAngle(row: VideoAngleRow): Angle {
   const points: Point[] = [
     { x: row.x1, y: row.y1 },
     { x: row.x2, y: row.y2 },
@@ -1086,7 +1084,7 @@ function toAngle(row: AngleRow): Angle {
     id: row.id,
     name: row.name,
     kind: row.kind,
-    time: row.timeMs / MS_PER_SECOND,
+    time: fromMs(row.timeMs),
     points,
     frameWidth: row.frameWidth,
     frameHeight: row.frameHeight,
@@ -1104,7 +1102,7 @@ export async function listVideoAngles(
   userId: string,
   videoIds: string[],
 ): Promise<Record<string, Angle[]>> {
-  const { rows } = await db().query<AngleRow>(
+  const { rows } = await db().query<VideoAngleRow>(
     `select ${angleColumns} from video_angle a join video v on v.id = a."videoId"
       where ${OWN_LIVE_VIDEO} and v.id = any($2::uuid[])
       order by a."timeMs", a."createdAt"`,
@@ -1146,7 +1144,7 @@ export async function addVideoAngle(
       return 'limit';
     }
     const [p1, p2, p3] = angle.points;
-    const { rows } = await client.query<AngleRow>(
+    const { rows } = await client.query<VideoAngleRow>(
       `insert into video_angle as a ("videoId", name, kind, "timeMs", "frameWidth", "frameHeight",
                                       x1, y1, x2, y2, x3, y3, degrees)
        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
@@ -1155,7 +1153,7 @@ export async function addVideoAngle(
         angle.videoId,
         angle.name,
         angle.kind,
-        Math.round(angle.time * MS_PER_SECOND),
+        toMs(angle.time),
         angle.frameWidth,
         angle.frameHeight,
         p1?.x,

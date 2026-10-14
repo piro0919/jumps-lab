@@ -36,6 +36,7 @@ import {
   POINTS_NEEDED,
   atFrame,
   measure,
+  wholeDegrees,
   type Angle,
   type AngleKind,
   type AngleName,
@@ -45,6 +46,7 @@ import {
 import {
   MARKS,
   compareIntervals,
+  fromMs,
   nextMark,
   roundToMs,
   type MarkName,
@@ -103,8 +105,8 @@ const TIME_DIGITS = 2;
  * ブラウザが終わりまで読んで長さを決める（durationchange）。決まったら頭へ戻す
  */
 const PROBE_SECONDS = Number.MAX_SAFE_INTEGER;
-/** 1秒のミリ秒の数 */
-const MS_PER_SECOND = 1000;
+/** 測り始めたときに動画を動かす先と、下に貼り付く操作（AngleDraftBar）とのあいだ（ピクセル） */
+const DRAFT_SCROLL_GAP = 8;
 
 /**
  * 共通の時刻（秒）。再生中は毎コマ変わるので state に置かず、ここに置いて位置のつまみだけが読む
@@ -137,11 +139,13 @@ function PositionSlider({
   clock,
   length,
   label,
+  disabled,
   onSeek,
 }: {
   clock: Clock;
   length: number;
   label: string;
+  disabled: boolean;
   onSeek: (time: number) => void;
 }) {
   const time = useSyncExternalStore(clock.subscribe, clock.get, clock.get);
@@ -153,6 +157,7 @@ function PositionSlider({
       max={length}
       step={SCRUB_STEP}
       value={Math.min(time, length)}
+      disabled={disabled}
       onChange={(e) => onSeek(Number(e.target.value))}
       className="h-6 w-full accent-primary"
     />
@@ -210,8 +215,12 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
   const [angleChoice, setAngleChoice] = useState<Record<Key, { name: AngleName; kind: AngleKind }>>(
     { a: { name: 'knee', kind: 'angle' }, b: { name: 'knee', kind: 'angle' } },
   );
-  /** 点を打っている途中の測定（1本ずつ） */
-  const [draft, setDraft] = useState<{ key: Key; points: Point[] } | null>(null);
+  /**
+   * 点を打っている途中の測定（1本ずつ）。time は打ち始めたときのその動画のコマ（保存する時刻）。
+   * 打っている間は、その動画を動かす操作（再生・つまみ・コマ送り・合わせる点・並べ方）を止める
+   * （動かせると、点を打ったコマと保存する時刻・見えている絵がずれた）
+   */
+  const [draft, setDraft] = useState<{ key: Key; time: number; points: Point[] } | null>(null);
   /** 角度の保存・削除の誤り。key は打っている途中の動画（削除の誤りは null でカードに出す） */
   const [angleError, setAngleError] = useState<{
     key: Key | null;
@@ -219,9 +228,12 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
   } | null>(null);
   const [removingAngle, setRemovingAngle] = useState<{ key: Key; id: string } | null>(null);
   const [savingAngle, startSavingAngle] = useTransition();
-  /** 角度を保存している間は次の押下を受けない（連打や Enter で2回送らないように） */
+  /** 角度を保存・削除している間は次の押下を受けない（連打や Enter で2回送らないように） */
   const sendingAngle = useRef(false);
-  const stageRef = useRef<HTMLDivElement>(null);
+  const removingAngleRef = useRef(false);
+  /** 1本ずつの動画の箱（測り始めたときに動かす先）と、打っている途中の操作の箱 */
+  const videoBoxRefs = useRef<Record<Key, HTMLDivElement | null>>({ a: null, b: null });
+  const draftBarRef = useRef<HTMLDivElement>(null);
   const angleLabel = useAngleLabel();
 
   const alignment = useMemo(
@@ -312,7 +324,7 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
     let frame = 0;
     let last: number | null = null;
     const tick = (now: number) => {
-      const elapsed = last === null ? 0 : (now - last) / MS_PER_SECOND;
+      const elapsed = last === null ? 0 : fromMs(now - last);
       last = now;
       const al = alignmentRef.current;
       const lengths = durationsRef.current;
@@ -549,16 +561,42 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
     saveMark(key, chosen[key], roundToMs(local));
   };
 
-  /** その動画で点を打ち始める。止めて、線を重ねられる「並べる」にし、動画が見える所へ動かす */
+  /**
+   * その動画で点を打ち始める。止めて、今のコマを保存する時刻にし、線を重ねられる「並べる」にする。
+   * 動画が見える所へ動かすのは、並べ方が替わって描き直したあと（下の effect）
+   */
   const startAngle = (key: Key) => {
     const video = videoOf(key);
     if (!video) return;
-    if (playing) pauseAt(key, video.currentTime);
+    // 止める前に読み、この動画は動かさない（見ていたコマで測る）
+    const local = video.currentTime;
+    if (playing) pauseAt(key, local);
     setMode('side');
     setAngleError(null);
-    setDraft({ key, points: [] });
-    stageRef.current?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
+    setDraft({ key, time: roundToMs(local), points: [] });
   };
+
+  // 測り始めたら、並べ方が替わって描き直したあとで、その動画と下に貼り付く操作の両方が見える所へ動かし、
+  // 点を打つ SVG に焦点を当てる（キーボードでそのまま打てるように）。同じ処理の中で動かすと、重ねて見せていた
+  // ときの古い並びの位置へ動いた。上のヘッダーは scroll-mt-20 で、下は貼り付く操作（下のタブの上）の分を空ける
+  const draftKey = draft?.key ?? null;
+  useEffect(() => {
+    if (draftKey === null) return;
+    const frame = requestAnimationFrame(() => {
+      const target = videoBoxRefs.current[draftKey];
+      if (!target) return;
+      const bar = draftBarRef.current;
+      if (bar) {
+        const stuckAt = Number.parseFloat(getComputedStyle(bar).bottom) || 0;
+        target.style.scrollMarginBottom = `${bar.offsetHeight + stuckAt + DRAFT_SCROLL_GAP}px`;
+      }
+      target
+        .querySelector<SVGSVGElement>('svg[role="application"]')
+        ?.focus({ preventScroll: true });
+      target.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [draftKey]);
 
   const placePoint = (key: Key, point: Point) =>
     setDraft((d) =>
@@ -573,19 +611,17 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
     draft && draftFrame ? measure(angleChoice[draft.key].kind, draft.points, draftFrame) : null;
 
   /**
-   * 打った点を保存する。時刻は保存するときに見えているコマ（打ったあとにコマを送っても、見えている絵と合う）。
+   * 打った点を保存する。時刻は打ち始めたときのコマ（打っている間はその動画を動かせないので、点を打った絵と合う）。
    * 度数はサーバーが点から求め直したものを使う
    */
   const saveAngle = () => {
     if (!draft || sendingAngle.current) return;
-    const { key, points } = draft;
-    const video = videoOf(key);
+    const { key, points, time } = draft;
     const frame = frames[key];
     const { name: angleName, kind } = angleChoice[key];
-    if (!video || !frame || measure(kind, points, frame) === null) return;
+    if (!frame || measure(kind, points, frame) === null) return;
     sendingAngle.current = true;
     setAngleError(null);
-    const time = roundToMs(video.currentTime);
     startSavingAngle(async () => {
       try {
         const result = await safely(() =>
@@ -615,14 +651,21 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
     });
   };
 
+  /** 測定を1つ消す。消している間の次の押下は受けない（もう消えた測定は、サーバーが消せたとして返す） */
   const removeAngle = (key: Key, id: string) => {
+    if (removingAngleRef.current) return;
+    removingAngleRef.current = true;
     setAngleError(null);
     startSavingAngle(async () => {
-      const result = await safely(() => deleteVideoAngleAction(id));
-      if (result.ok) {
-        setAngles((all) => ({ ...all, [key]: all[key].filter((angle) => angle.id !== id) }));
-      } else {
-        setAngleError({ key: null, error: 'generic' });
+      try {
+        const result = await safely(() => deleteVideoAngleAction(id));
+        if (result.ok) {
+          setAngles((all) => ({ ...all, [key]: all[key].filter((angle) => angle.id !== id) }));
+        } else {
+          setAngleError({ key: null, error: 'generic' });
+        }
+      } finally {
+        removingAngleRef.current = false;
       }
     });
   };
@@ -645,7 +688,11 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
     });
 
   const name = (key: Key) => t(key === 'a' ? 'videoA' : 'videoB');
-  const degreesText = (value: number) => format.number(value, { maximumFractionDigits: 0 });
+  const degreesText = (value: number) =>
+    format.number(wholeDegrees(value), { maximumFractionDigits: 0 });
+  /** 打っている途中は、2本を一緒に動かす操作と並べ方を止める。frozen(key) はその動画を動かす操作 */
+  const drafting = draft !== null;
+  const frozen = (key: Key) => draft?.key === key;
 
   /** 動画に重ねる測定。打っている途中ならそれだけ、止まっていれば今のコマから1コマ以内に測ったもの */
   const shapesOf = (key: Key): AngleShape[] => {
@@ -750,6 +797,8 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
             type="button"
             role="radio"
             aria-checked={mode === m}
+            // 打っている間は替えない（重ねて見せると線が消え、点を打てないまま保存できた）
+            disabled={drafting}
             className={segmentClass(mode === m)}
             onClick={() => setMode(m)}
           >
@@ -761,10 +810,8 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
       <Card className="flex flex-col gap-4">
         {/* 見せ方を替えても同じ video 要素を使い続ける（作り直すと読み込み直して、位置が頭に戻る） */}
         <div
-          ref={stageRef}
-          // 測り始めたときに動かす先。上のヘッダーと下のタブに隠れないよう、その分を空ける
+          data-testid="compare-stage"
           className={cn(
-            'scroll-my-20',
             mode === 'overlay'
               ? 'relative'
               : cn('grid gap-3', stacked ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-2'),
@@ -775,7 +822,14 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
             return (
               <div
                 key={key}
-                className={cn('flex min-w-0 flex-col gap-2', onTop && 'absolute inset-0')}
+                ref={(element) => {
+                  videoBoxRefs.current[key] = element;
+                }}
+                // 測り始めたときに動かす先。上のヘッダーに隠れないよう、その分を空ける（下は effect で決める）
+                className={cn(
+                  'flex min-w-0 scroll-mt-20 flex-col gap-2',
+                  onTop && 'absolute inset-0',
+                )}
               >
                 {mode === 'side' && (
                   <Badge tone={key === 'a' ? 'neutral' : 'accent'}>{name(key)}</Badge>
@@ -795,6 +849,7 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
                       shapes={shapesOf(key)}
                       placing={draft?.key === key}
                       label={t(draft?.key === key ? 'placeOn' : 'anglesOn', { video: name(key) })}
+                      keyHint={t('placeKeys')}
                       onPlace={(point) => placePoint(key, point)}
                     />
                   )}
@@ -804,18 +859,21 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
           })}
         </div>
         {draft && (
-          <AngleDraftBar
-            video={name(draft.key)}
-            name={angleChoice[draft.key].name}
-            kind={angleChoice[draft.key].kind}
-            placed={draft.points.length}
-            degrees={draftDegrees}
-            saving={savingAngle}
-            error={angleError?.key === draft.key ? angleErrorText(angleError.error) : null}
-            onUndo={() => setDraft((d) => d && { ...d, points: d.points.slice(0, -1) })}
-            onCancel={() => setDraft(null)}
-            onSave={saveAngle}
-          />
+          // スマホでは下のタブの上に貼り付け、動画を見ながら押せるようにする（タブの下に隠れていた）
+          <div ref={draftBarRef} className="sticky bottom-tab-bar z-10 lg:bottom-4">
+            <AngleDraftBar
+              video={name(draft.key)}
+              name={angleChoice[draft.key].name}
+              kind={angleChoice[draft.key].kind}
+              placed={draft.points.length}
+              degrees={draftDegrees}
+              saving={savingAngle}
+              error={angleError?.key === draft.key ? angleErrorText(angleError.error) : null}
+              onUndo={() => setDraft((d) => d && { ...d, points: d.points.slice(0, -1) })}
+              onCancel={() => setDraft(null)}
+              onSave={saveAngle}
+            />
+          </div>
         )}
         {mode === 'overlay' && (
           <label className="flex flex-col gap-1.5">
@@ -841,6 +899,7 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
           clock={clock}
           length={duration}
           label={t('position')}
+          disabled={drafting}
           onSeek={(time) => {
             if (playing) pause();
             seekAll(time);
@@ -854,6 +913,7 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
               size="icon"
               type="button"
               aria-label={t('previousFrame')}
+              disabled={drafting}
               onClick={() => stepBoth(-1)}
             >
               <ChevronLeft aria-hidden />
@@ -863,7 +923,7 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
               type="button"
               aria-label={playing ? t('pause') : t('play')}
               // 2本の長さが分かるまでは押せない（時間軸の長さが 0 のまま再生すると、すぐ止まる）
-              disabled={!playing && !ready}
+              disabled={drafting || (!playing && !ready)}
               onClick={playing ? pause : play}
             >
               {playing ? <Pause aria-hidden /> : <Play aria-hidden />}
@@ -873,6 +933,7 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
               size="icon"
               type="button"
               aria-label={t('nextFrame')}
+              disabled={drafting}
               onClick={() => stepBoth(1)}
             >
               <ChevronRight aria-hidden />
@@ -915,6 +976,7 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
                     max={lengthOf(durations[key])}
                     step={SCRUB_STEP}
                     value={locals[key]}
+                    disabled={frozen(key)}
                     onChange={(e) => seekOne(key, Number(e.target.value))}
                     className="h-6 w-full accent-primary"
                   />
@@ -924,6 +986,7 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
                       size="icon"
                       type="button"
                       aria-label={t('previousFrameOf', { video: name(key) })}
+                      disabled={frozen(key)}
                       onClick={() => stepOne(key, -1)}
                     >
                       <ChevronLeft aria-hidden />
@@ -933,6 +996,7 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
                       size="icon"
                       type="button"
                       aria-label={t('nextFrameOf', { video: name(key) })}
+                      disabled={frozen(key)}
                       onClick={() => stepOne(key, 1)}
                     >
                       <ChevronRight aria-hidden />
@@ -944,6 +1008,8 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
                       variant="secondary"
                       size="sm"
                       type="button"
+                      // 合わせる点を置くと、もう片方の動画も動く
+                      disabled={drafting}
                       onClick={() => setSync(key)}
                     >
                       {t('setSync', { video: name(key) })}
@@ -991,6 +1057,7 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
                             <button
                               type="button"
                               className="flex min-w-0 flex-1 items-center justify-between gap-2 py-2 text-left"
+                              disabled={frozen(key)}
                               onClick={() => seekOne(key, time)}
                             >
                               <span className="truncate text-sm font-bold">{markName(mark)}</span>
@@ -1028,6 +1095,7 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
             size="sm"
             type="button"
             className="self-start"
+            disabled={drafting}
             onClick={clearSync}
           >
             {t('clearSync')}

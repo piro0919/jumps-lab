@@ -176,12 +176,16 @@ export async function addVideoAngleAction(
   }
 }
 
-/** 本人の動画の測定を1つ消す */
+/**
+ * 本人の動画の測定を1つ消す。もう無い測定（別の画面で消した・2回目の押下）も、消えているので ok を返す
+ * （画面はその行を外すだけ。ほかの人の測定は deleteVideoAngle が消さないので、ok を返しても何も起きない）
+ */
 export async function deleteVideoAngleAction(id: string): Promise<{ ok: boolean }> {
   const viewer = await requireViewer();
   if (!z.uuid().safeParse(id).success) return { ok: false };
   try {
-    return { ok: await deleteVideoAngle(viewer.userId, id) };
+    await deleteVideoAngle(viewer.userId, id);
+    return { ok: true };
   } catch (error) {
     console.error(error);
     return { ok: false };

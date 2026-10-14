@@ -113,7 +113,7 @@ const load = (
 
 /** 打つための SVG。押した所の計算に使う箱の位置と大きさを与える */
 const stage = (box = { width: 200, height: 200 }) => {
-  const svg = screen.getByRole('button', { name: 'placeOn' });
+  const svg = screen.getByRole('application', { name: 'placeOn' });
   svg.getBoundingClientRect = () =>
     ({ left: 0, top: 0, width: box.width, height: box.height }) as DOMRect;
   return svg;
@@ -137,7 +137,9 @@ describe('角度の道具', () => {
 
   it('3点を打つまで保存できず、1点戻すと打ち直せ、揃えば度数を出して保存する（度数は送らない）', async () => {
     show();
-    load('a');
+    const video = load('a');
+    // 打ち始めたときのコマを保存する
+    video.currentTime = 1.2344;
     act(() => measureButton('a').click());
     const svg = stage();
     tap(svg, 100, 40);
@@ -155,8 +157,8 @@ describe('角度の道具', () => {
     expect(within(draft()!).getByText('90')).not.toBeNull();
     expect(svg.querySelectorAll('circle')).toHaveLength(3);
 
-    const video = screen.getByTestId('compare-video-a') as HTMLVideoElement;
-    video.currentTime = 1.2344;
+    // 打っている間に動画の位置が変わっても（読み込みの都合など）、点を打ったコマの時刻で保存する
+    video.currentTime = 3;
     await act(async () => saveButton().click());
     expect(addVideoAngleAction).toHaveBeenCalledWith({
       videoId: 'a',
@@ -211,7 +213,7 @@ describe('角度の道具', () => {
     tap(stage(), 100, 100);
     act(() => screen.getByRole('button', { name: 'cancelAngle' }).click());
     expect(draft()).toBeNull();
-    expect(screen.queryByRole('button', { name: 'placeOn' })).toBeNull();
+    expect(screen.queryByRole('application', { name: 'placeOn' })).toBeNull();
     expect(addVideoAngleAction).not.toHaveBeenCalled();
   });
 
@@ -268,5 +270,132 @@ describe('角度の道具', () => {
     expect(deleteVideoAngleAction).toHaveBeenCalledWith('b-knee');
     expect(screen.queryByTestId('angle-knee-angle-1')).toBeNull();
     expect(screen.getByText('noAngles')).not.toBeNull();
+  });
+
+  it('打っている間は、その動画を動かす操作と並べ方を止め、やめると戻す', () => {
+    show();
+    load('a');
+    load('b');
+    const disabled = () =>
+      Object.fromEntries(
+        [
+          ['play', screen.getByRole('button', { name: 'play' })],
+          ['previousFrame', screen.getByRole('button', { name: 'previousFrame' })],
+          ['nextFrame', screen.getByRole('button', { name: 'nextFrame' })],
+          ['position', screen.getByRole('slider', { name: 'position' })],
+          ['positionOfA', screen.getAllByRole('slider', { name: 'positionOf' })[0]],
+          ['previousFrameOfA', screen.getAllByRole('button', { name: 'previousFrameOf' })[0]],
+          ['nextFrameOfA', screen.getAllByRole('button', { name: 'nextFrameOf' })[0]],
+          ['nextFrameOfB', screen.getAllByRole('button', { name: 'nextFrameOf' })[1]],
+          ['setSyncA', screen.getAllByRole('button', { name: 'setSync' })[0]],
+          ['overlay', screen.getByRole('radio', { name: 'overlay' })],
+        ].map(([key, element]) => [key, (element as HTMLButtonElement).disabled]),
+      );
+    const before = disabled();
+    act(() => measureButton('a').click());
+    expect(disabled()).toEqual({
+      play: true,
+      previousFrame: true,
+      nextFrame: true,
+      position: true,
+      positionOfA: true,
+      previousFrameOfA: true,
+      nextFrameOfA: true,
+      // もう片方の動画だけを送るのは、打っている絵を動かさない
+      nextFrameOfB: false,
+      setSyncA: true,
+      overlay: true,
+    });
+    act(() => screen.getByRole('button', { name: 'cancelAngle' }).click());
+    expect(disabled()).toEqual(before);
+  });
+
+  it('重ねて見せている間に測り始めると、並べ方が替わってから動画を見える所へ動かし、点を打つ所に焦点を当てる', async () => {
+    show();
+    load('a');
+    act(() => screen.getByRole('radio', { name: 'overlay' }).click());
+    const layouts: string[] = [];
+    const scroll = vi.fn(function record() {
+      layouts.push(screen.getByTestId('compare-stage').className);
+    });
+    Element.prototype.scrollIntoView = scroll;
+    act(() => measureButton('a').click());
+    await act(async () => {
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    });
+    expect(scroll).toHaveBeenCalledTimes(1);
+    expect(layouts[0]).toContain('grid');
+    expect(document.activeElement).toBe(screen.getByRole('application', { name: 'placeOn' }));
+  });
+
+  it('キーボードでも点を打てる（矢印で照準を動かし、Enter で打つ）', () => {
+    show();
+    load('a');
+    act(() => measureButton('a').click());
+    const svg = stage();
+    const press = (key: string, times = 1) => {
+      for (let i = 0; i < times; i += 1) {
+        act(() => {
+          fireEvent.keyDown(svg, { key, shiftKey: true });
+        });
+      }
+    };
+    press('ArrowUp', 4);
+    expect(screen.getByTestId('angle-crosshair')).not.toBeNull();
+    press('Enter');
+    press('ArrowDown', 4);
+    press('Enter');
+    press('ArrowRight', 4);
+    press('Enter');
+    expect(svg.querySelectorAll('circle')).toHaveLength(3);
+    expect(within(draft()!).getByText('90')).not.toBeNull();
+  });
+
+  it('同じコマの2つの値の字は重ねない', () => {
+    const vertex = { x: 0.5, y: 0.5 };
+    show({
+      a: [
+        saved({ id: 'a-knee', degrees: 150 }),
+        saved({
+          id: 'a-hip',
+          name: 'hip',
+          degrees: 120,
+          points: [{ x: 0.4, y: 0.2 }, vertex, { x: 0.2, y: 0.6 }],
+        }),
+      ],
+    });
+    load('a');
+    const texts = [...screen.getByRole('img', { name: 'anglesOn' }).querySelectorAll('text')];
+    expect(texts).toHaveLength(2);
+    const ys = texts.map((text) => Number(text.getAttribute('y')));
+    expect(Math.abs((ys[0] ?? 0) - (ys[1] ?? 0))).toBeGreaterThanOrEqual(18);
+  });
+
+  it('A と B は整数で見せ、B − A もその整数どうしの差にする', () => {
+    show({ a: [saved({ id: 'a-knee', degrees: 150.4 })], b: [saved({ degrees: 150.6 })] });
+    const row = screen.getByTestId('angle-knee-angle-1');
+    expect(row.textContent).toContain('150');
+    expect(row.textContent).toContain('151');
+    expect(row.textContent).not.toContain('150.4');
+    expect(row.textContent).toContain('151degreesUnitvideoB1degreesUnitdifference');
+  });
+
+  it('消している間の2回目の削除は送らない', async () => {
+    let finish: (value: { ok: boolean }) => void = () => {};
+    deleteVideoAngleAction.mockImplementationOnce(
+      () => new Promise((resolve) => (finish = resolve)),
+    );
+    show({ b: [saved({ time: 2 })] });
+    load('b');
+    const remove = async () => {
+      act(() => screen.getByRole('button', { name: 'removeAngle' }).click());
+      await act(async () => screen.getByRole('button', { name: 'ok' }).click());
+    };
+    await remove();
+    await remove();
+    expect(deleteVideoAngleAction).toHaveBeenCalledTimes(1);
+    await act(async () => finish({ ok: true }));
+    expect(screen.queryByTestId('angle-knee-angle-1')).toBeNull();
+    expect(screen.queryByText('generic')).toBeNull();
   });
 });

@@ -26,6 +26,8 @@ export type AngleKind = (typeof ANGLE_KINDS)[number];
 /** 測り方ごとの点の数 */
 const THREE_POINTS = 3;
 export const POINTS_NEEDED: Record<AngleKind, number> = { angle: THREE_POINTS, lean: 2 };
+const MIN_POINTS = Math.min(...Object.values(POINTS_NEEDED));
+const MAX_POINTS = Math.max(...Object.values(POINTS_NEEDED));
 
 /** 動画の中の位置（本来の幅・高さに対する割合、0〜1） */
 export type Point = { x: number; y: number };
@@ -54,6 +56,14 @@ const toDegrees = (radians: number) => (radians * HALF_TURN_DEGREES) / Math.PI;
 /** 度を小数第1位に丸める（手で打つ点のずれは 1° より大きいので、それより細かくは持たない） */
 const DEGREE_STEP = 10;
 const roundDegrees = (degrees: number) => Math.round(degrees * DEGREE_STEP) / DEGREE_STEP;
+
+/**
+ * 画面に出す度数（整数）。手で打つ点のずれは 1° より大きいので、A・B・B − A はどれも整数で見せる。
+ * B − A もこの整数どうしの差にする（0.1° の差を丸めると、見えている A と B の差と食い違った）
+ */
+export function wholeDegrees(degrees: number): number {
+  return Math.round(degrees);
+}
 
 /** 真ん中の点 vertex での、a と c のあいだの角度（0〜180°）。どちらかが vertex と重なれば null */
 export function angleAt(a: Point, vertex: Point, c: Point): number | null {
@@ -129,7 +139,50 @@ export function atFrame(time: number, current: number, fps: number): boolean {
   return Math.abs(time - current) <= 1 / fps + MS_SLACK;
 }
 
-/** 見比べる1行。a・b はそれぞれの度数（無ければ null）、diff は B − A（両方あるときだけ） */
+/** 画面に重ねる字の箱（ピクセル。左上と大きさ） */
+export type LabelBox = Rect;
+
+const overlaps = (p: Rect, q: Rect) =>
+  p.x < q.x + q.width && q.x < p.x + p.width && p.y < q.y + q.height && q.y < p.y + p.height;
+
+/**
+ * 動画に重ねる値の字を置く。それぞれ点（anchor）の右上に置き、点が箱の右半分なら左上に置く（はみ出さないように）。
+ * 箱の中に収め、先に置いた字と重なれば、その下へずらす（下に入らなければ上へ）。同じ入力なら同じ所に置く
+ */
+export function placeLabels(
+  labels: { anchor: { x: number; y: number }; size: Size }[],
+  box: Size,
+  offset: number,
+): LabelBox[] {
+  const placed: LabelBox[] = [];
+  const fit = (value: number, size: number, limit: number) =>
+    Math.max(0, Math.min(value, limit - size));
+  for (const { anchor, size } of labels) {
+    const right = anchor.x > box.width / 2;
+    let label: LabelBox = {
+      x: fit(right ? anchor.x - offset - size.width : anchor.x + offset, size.width, box.width),
+      y: fit(anchor.y - offset - size.height, size.height, box.height),
+      ...size,
+    };
+    // 重なる字の下へ順にずらす。箱の下に出るなら、重なった字の上へ
+    for (let tries = 0; tries <= placed.length; tries += 1) {
+      const hit = placed.find((other) => overlaps(label, other));
+      if (!hit) break;
+      const below = hit.y + hit.height;
+      const y =
+        below + size.height <= box.height
+          ? below
+          : fit(hit.y - size.height, size.height, box.height);
+      label = { ...label, y };
+    }
+    placed.push(label);
+  }
+  return placed;
+}
+
+/**
+ * 見比べる1行。a・b はそれぞれの度数（無ければ null）、diff は画面に出す整数どうしの B − A（両方あるときだけ）
+ */
 export type AngleRow = {
   key: string;
   name: AngleName;
@@ -168,7 +221,8 @@ export function compareAngles(a: Angle[], b: Angle[]): AngleRow[] {
           count,
           a: valueA,
           b: valueB,
-          diff: valueA !== null && valueB !== null ? roundDegrees(valueB - valueA) : null,
+          diff:
+            valueA !== null && valueB !== null ? wholeDegrees(valueB) - wholeDegrees(valueA) : null,
         };
       });
     }),
@@ -189,7 +243,8 @@ export const angleInputSchema = z
     name: z.enum(ANGLE_NAMES),
     kind: z.enum(ANGLE_KINDS),
     time: z.number().finite().min(0).max(MARK_MAX_SECONDS).transform(roundToMs),
-    points: z.array(pointSchema),
+    // 点の数の上限を先に縛る（長い配列を最後まで読んでから refine で落とさない）
+    points: z.array(pointSchema).min(MIN_POINTS).max(MAX_POINTS),
     frameWidth: frameSide,
     frameHeight: frameSide,
   })
