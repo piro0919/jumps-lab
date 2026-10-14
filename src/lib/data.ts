@@ -37,6 +37,10 @@ export type Profile = {
   plan: Plan;
   /** 同意した AI コーチの説明の版。null はまだ（src/lib/ai.ts の aiUsable）。プロフィールの保存では変えない */
   aiConsentVersion: number | null;
+  /** 保護者が同意した AI コーチの説明の版（16歳未満の人。src/lib/guardian.ts）。null はまだ */
+  aiGuardianConsentVersion: number | null;
+  /** 生年月日の無い人が答えた「16歳以上か」。null はまだ答えていない */
+  ageDeclared16Plus: boolean | null;
 };
 
 type ProfileRow = Omit<Profile, 'heightCm' | 'weightKg'> & {
@@ -47,7 +51,8 @@ type ProfileRow = Omit<Profile, 'heightCm' | 'weightKg'> & {
 export async function getProfile(userId: string): Promise<Profile | null> {
   const { rows } = await db().query<ProfileRow>(
     `select u.name, p.grade, p."gradeOffset", to_char(p.birthdate, 'YYYY-MM-DD') as birthdate, p.gender, p."heightCm", p."weightKg", p.events,
-            p.units, p."seasonStartMonth", p."weekStart", p."timeZone", p.plan, p."aiConsentVersion"
+            p.units, p."seasonStartMonth", p."weekStart", p."timeZone", p.plan, p."aiConsentVersion",
+            p."aiGuardianConsentVersion", p."ageDeclared16Plus"
        from profile p join "user" u on u.id = p."userId"
       where p."userId" = $1`,
     [userId],
@@ -57,7 +62,10 @@ export async function getProfile(userId: string): Promise<Profile | null> {
   return { ...row, heightCm: num(row.heightCm), weightKg: num(row.weightKg) };
 }
 
-export type ProfileInput = Omit<Profile, 'plan' | 'aiConsentVersion'> & { goalM: number | null };
+export type ProfileInput = Omit<
+  Profile,
+  'plan' | 'aiConsentVersion' | 'aiGuardianConsentVersion' | 'ageDeclared16Plus'
+> & { goalM: number | null };
 
 /**
  * プロフィールを保存する。名前は Better Auth の user 表に持つ。
@@ -174,12 +182,157 @@ export async function repairTimeZone(
  * AI コーチの説明（version の版）に同意したことを入れる。同じ版にもう同意していれば何もしない。
  * 版が上がって同意し直したときは、時刻も新しい版に同意した時刻に変わる
  */
-export async function consentToAi(userId: string, version: number): Promise<void> {
+export async function consentToAi(
+  userId: string,
+  version: number,
+  declared16Plus?: true,
+): Promise<void> {
   await db().query(
     `update profile set "aiConsentAt" = now(), "aiConsentVersion" = $2, "updatedAt" = now()
       where "userId" = $1 and "aiConsentVersion" is distinct from $2`,
     [userId, version],
   );
+  // 生年月日の無い人が「16歳以上」と答えて同意したときは、答えも残す（次から聞かない）
+  if (declared16Plus) await declareAge(userId, true);
+}
+
+/** 生年月日の無い人の「16歳以上か」の答えを残す */
+export async function declareAge(userId: string, declared16Plus: boolean): Promise<void> {
+  await db().query(
+    `update profile set "ageDeclared16Plus" = $2, "updatedAt" = now() where "userId" = $1`,
+    [userId, declared16Plus],
+  );
+}
+
+/** 本人の画面に出す、保護者へのお願い（いちばん新しい、使われていないもの） */
+export type GuardianRequest = { id: string; guardianEmail: string; live: boolean };
+
+/**
+ * 保護者へのお願いを1件入れる（メールを送る前）。24時間に送った数が perDay に達していれば入れずに null。
+ * 人ごとのロックを取ってから数える（同時に押した2回が、どちらも古い数を見て上限を抜けないように）
+ */
+export async function addGuardianRequest(
+  userId: string,
+  request: { guardianEmail: string; tokenHash: string; days: number; perDay: number },
+): Promise<string | null> {
+  const client = await db().connect();
+  try {
+    await client.query('begin');
+    await client.query(`select pg_advisory_xact_lock(hashtext('guardian:' || $1))`, [userId]);
+    const { rows } = await client.query<{ id: string }>(
+      `insert into guardian_consent_request ("userId", "guardianEmail", "tokenHash", "expiresAt")
+       select $1, $2, $3, now() + make_interval(days => $4::integer)
+        where (select count(*) from guardian_consent_request
+                where "userId" = $1 and "createdAt" > now() - interval '1 day') < $5::integer
+       returning id`,
+      [userId, request.guardianEmail, request.tokenHash, request.days, request.perDay],
+    );
+    await client.query('commit');
+    return rows[0]?.id ?? null;
+  } catch (error) {
+    await client.query('rollback');
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+/** 送れたお願いより前のリンクを切る（送り直したら、古いメールのリンクでは同意できない） */
+export async function supersedeGuardianRequests(userId: string, keepId: string): Promise<void> {
+  await db().query(
+    `update guardian_consent_request set "expiresAt" = now()
+      where "userId" = $1 and id <> $2 and "usedAt" is null and "expiresAt" > now()
+        and "createdAt" <= (select "createdAt" from guardian_consent_request where id = $2)`,
+    [userId, keepId],
+  );
+}
+
+/** メールを送れなかったお願いを消す（送れていないリンクで回数を使わせない） */
+export async function releaseGuardianRequest(userId: string, id: string): Promise<void> {
+  await db().query(`delete from guardian_consent_request where "userId" = $1 and id = $2`, [
+    userId,
+    id,
+  ]);
+}
+
+/** いちばん新しい、使われていないお願い。live は期限の内か */
+export async function latestGuardianRequest(userId: string): Promise<GuardianRequest | null> {
+  const { rows } = await db().query<GuardianRequest>(
+    `select id, "guardianEmail", "expiresAt" > now() as live from guardian_consent_request
+      where "userId" = $1 and "usedAt" is null
+      order by "createdAt" desc limit 1`,
+    [userId],
+  );
+  return rows[0] ?? null;
+}
+
+/** 保護者のリンクの行と、お願いした人の表示名。鍵はハッシュで探す。無ければ null */
+export async function findGuardianRequest(
+  tokenHash: string,
+): Promise<{ childName: string; usedAt: Date | null; expiresAt: Date } | null> {
+  const { rows } = await db().query<{ childName: string; usedAt: Date | null; expiresAt: Date }>(
+    `select u.name as "childName", r."usedAt", r."expiresAt"
+       from guardian_consent_request r join "user" u on u.id = r."userId"
+      where r."tokenHash" = $1`,
+    [tokenHash],
+  );
+  return rows[0] ?? null;
+}
+
+/**
+ * 保護者が同意した（ログインの無い画面から）。リンクが期限の内で使われていなければ、1回だけ使い、
+ * お願いした人に version の版の保護者の同意を入れる。ほかのリンクは切り、前の同意の記録（前の行）は消す。
+ * 使えたら true
+ */
+export async function agreeAsGuardian(tokenHash: string, version: number): Promise<boolean> {
+  const client = await db().connect();
+  try {
+    await client.query('begin');
+    const { rows } = await client.query<{ id: string; userId: string }>(
+      `update guardian_consent_request set "usedAt" = now()
+        where "tokenHash" = $1 and "usedAt" is null and "expiresAt" > now()
+        returning id, "userId"`,
+      [tokenHash],
+    );
+    const used = rows[0];
+    if (!used) {
+      await client.query('rollback');
+      return false;
+    }
+    await client.query(
+      `update profile set "aiGuardianConsentVersion" = $2, "aiGuardianConsentAt" = now(), "updatedAt" = now()
+        where "userId" = $1`,
+      [used.userId, version],
+    );
+    await client.query(
+      `update guardian_consent_request set "expiresAt" = now()
+        where "userId" = $1 and id <> $2 and "usedAt" is null and "expiresAt" > now()`,
+      [used.userId, used.id],
+    );
+    await client.query(
+      `delete from guardian_consent_request where "userId" = $1 and id <> $2 and "usedAt" is not null`,
+      [used.userId, used.id],
+    );
+    await client.query('commit');
+    return true;
+  } catch (error) {
+    await client.query('rollback');
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * 使われずに期限の過ぎたお願いを消す（保護者のメールアドレスを残さない）。期限の翌日まで残すのは、
+ * 24時間に送った回数を数えるため。大会の知らせの Cron が一緒に呼ぶ。消した数を返す
+ */
+export async function purgeGuardianRequests(): Promise<number> {
+  const { rowCount } = await db().query(
+    `delete from guardian_consent_request
+      where "usedAt" is null and "expiresAt" < now() - interval '1 day'`,
+  );
+  return rowCount ?? 0;
 }
 
 /** 設定の画面の「記録」の区画で保存するもの */

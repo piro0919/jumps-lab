@@ -3,7 +3,7 @@
 import { refresh } from 'next/cache';
 import { getLocale } from 'next-intl/server';
 import { z } from 'zod';
-import { AI_CONSENT_VERSION, AiError, aiEnabled, aiUsable, askJson } from '@/lib/ai';
+import { AI_CONSENT_VERSION, AiError, aiConsenter, aiEnabled, aiUsable, askJson } from '@/lib/ai';
 import { eventBests } from '@/lib/bests';
 import {
   consentToAi,
@@ -160,15 +160,24 @@ async function language(): Promise<'en' | 'ja'> {
 }
 
 /**
- * AI コーチを使うことに同意する（/log/[day]/menu/new の同意の画面）。時刻は初めて同意したときのまま残す。
- * 同意したら同じ画面を描き直し、メニューの入力を出す
+ * AI コーチを使うことに本人が同意する（/log/[day]/menu/new の同意の画面）。同意したら同じ画面を描き直し、メニューの入力を出す。
+ * 本人が同意できるのは16歳以上だけ（src/lib/guardian.ts）。生年月日の無い人は「16歳以上です」と答えて押し（adult=yes）、
+ * 答えも残す。生年月日から16歳未満の人は断る（保護者の同意が要る）
  */
-export async function consentAiAction(): Promise<ActionResult> {
+export async function consentAiAction(formData: FormData): Promise<ActionResult> {
   const viewer = await requireViewer();
   const profile = await getProfile(viewer.userId);
   if (!profile || !aiEnabled(profile)) return { ok: false, error: 'generic' };
+  const declaredAdult = formData.get('adult') === 'yes';
+  if (profile.birthdate === null ? !declaredAdult : aiConsenter(profile) !== 'self') {
+    return { ok: false, error: 'generic' };
+  }
   try {
-    await consentToAi(viewer.userId, AI_CONSENT_VERSION);
+    await consentToAi(
+      viewer.userId,
+      AI_CONSENT_VERSION,
+      profile.birthdate === null ? true : undefined,
+    );
   } catch (error) {
     console.error(error);
     return { ok: false, error: 'generic' };

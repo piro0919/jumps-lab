@@ -29,3 +29,6 @@ export const WEIGHT_MAX_KG = 300;
 
 /** シーズンの始まりの月の上限（12月） */
 export const MONTHS_PER_YEAR = 12;
+
+/** 保護者のメールアドレスの字数（メールアドレスの上限の 254 文字） */
+export const EMAIL_MAX_LENGTH = 254;

@@ -29,6 +29,7 @@ vi.mock('@/lib/auth', () => ({
 const data = vi.hoisted(() => ({
   savePushSubscription: vi.fn(async () => {}),
   deletePushSubscription: vi.fn(async () => {}),
+  purgeGuardianRequests: vi.fn(async () => 0),
 }));
 vi.mock('@/lib/data', () => data);
 
@@ -211,18 +212,29 @@ describe('Cron の鍵', () => {
     env.CRON_SECRET = 'secret';
     push.pushReady.mockReturnValue(true);
     push.sendMeetReminders.mockClear();
+    data.purgeGuardianRequests.mockReset();
+    data.purgeGuardianRequests.mockResolvedValue(0);
   });
 
   it('鍵が無い・違う要求は 401 で、送らない', async () => {
     expect((await call()).status).toBe(401);
     expect((await call('Bearer wrong')).status).toBe(401);
     expect(push.sendMeetReminders).not.toHaveBeenCalled();
+    expect(data.purgeGuardianRequests).not.toHaveBeenCalled();
   });
 
-  it('鍵が合えば送る', async () => {
+  it('鍵が合えば送り、期限の過ぎた保護者へのお願いも消す', async () => {
     const response = await call('Bearer secret');
     expect(response.status).toBe(200);
     expect(response.headers.get('cache-control')).toBe('private, no-store');
+    expect(push.sendMeetReminders).toHaveBeenCalledOnce();
+    expect(data.purgeGuardianRequests).toHaveBeenCalledOnce();
+  });
+
+  it('お願いを消せなくても知らせは送る', async () => {
+    data.purgeGuardianRequests.mockRejectedValue(new Error('db down'));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    expect((await call('Bearer secret')).status).toBe(200);
     expect(push.sendMeetReminders).toHaveBeenCalledOnce();
   });
 

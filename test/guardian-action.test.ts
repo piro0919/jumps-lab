@@ -1,0 +1,227 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Profile } from '@/lib/data';
+
+/**
+ * 保護者へのお願いを送る Server Action（src/app/actions/guardian.ts の sendGuardianRequestAction）と、
+ * 本人の同意（src/app/actions/menu.ts の consentAiAction）の年齢の判定。DB とメールは差し替える
+ */
+
+const env = vi.hoisted(() => ({
+  OPENAI_API_KEY: 'sk-test' as string | undefined,
+  BETTER_AUTH_URL: 'http://localhost:3312' as string | undefined,
+}));
+vi.mock('@/env', () => ({ env }));
+vi.mock('next/cache', () => ({ refresh: vi.fn() }));
+vi.mock('next-intl/server', () => ({
+  getLocale: async () => 'ja',
+  getTranslations: async () => (key: string, values?: Record<string, unknown>) =>
+    `${key} ${JSON.stringify(values)}`,
+}));
+vi.mock('@/lib/viewer', () => ({
+  requireViewer: async () => ({
+    userId: 'u1',
+    name: 'Taro',
+    email: 'taro@example.com',
+    image: null,
+  }),
+}));
+
+const profile = vi.hoisted(() => ({ current: null as Profile | null }));
+const data = vi.hoisted(() => ({
+  getProfile: vi.fn(async () => profile.current),
+  addGuardianRequest: vi.fn<
+    (
+      userId: string,
+      request: { guardianEmail: string; tokenHash: string; days: number; perDay: number },
+    ) => Promise<string | null>
+  >(async () => 'req-1'),
+  supersedeGuardianRequests: vi.fn(async () => {}),
+  releaseGuardianRequest: vi.fn(async () => {}),
+  latestGuardianRequest: vi.fn(
+    async (): Promise<{ id: string; guardianEmail: string; live: boolean } | null> => null,
+  ),
+  declareAge: vi.fn(async () => {}),
+  consentToAi: vi.fn(async () => {}),
+  agreeAsGuardian: vi.fn(async () => true),
+}));
+vi.mock('@/lib/data', () => data);
+
+const mail = vi.hoisted(() => ({
+  mailReady: vi.fn(() => true),
+  sendMail: vi.fn<(mail: { to: string; subject: string; text: string }) => Promise<void>>(
+    async () => {},
+  ),
+}));
+vi.mock('@/lib/mail', () => mail);
+
+const { sendGuardianRequestAction, agreeGuardianAction } = await import('@/app/actions/guardian');
+const { consentAiAction } = await import('@/app/actions/menu');
+const { AI_CONSENT_VERSION } = await import('@/lib/ai');
+
+const athlete = (overrides: Partial<Profile> = {}): Profile => ({
+  name: 'Taro',
+  grade: null,
+  gradeOffset: 0,
+  birthdate: '2012-05-01',
+  gender: null,
+  heightCm: null,
+  weightKg: null,
+  events: ['long_jump'],
+  units: 'metric',
+  seasonStartMonth: 1,
+  weekStart: 0,
+  timeZone: 'Asia/Tokyo',
+  plan: 'premium',
+  aiConsentVersion: null,
+  aiGuardianConsentVersion: null,
+  ageDeclared16Plus: null,
+  ...overrides,
+});
+
+const form = (fields: Record<string, string>) => {
+  const formData = new FormData();
+  for (const [key, value] of Object.entries(fields)) formData.set(key, value);
+  return formData;
+};
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  profile.current = athlete();
+  mail.mailReady.mockReturnValue(true);
+  data.addGuardianRequest.mockResolvedValue('req-1');
+  data.latestGuardianRequest.mockResolvedValue(null);
+});
+
+describe('sendGuardianRequestAction', () => {
+  it('16歳未満の人は、保護者へリンク付きのメールを送り、前のリンクを切る', async () => {
+    const result = await sendGuardianRequestAction(form({ email: ' parent@example.com ' }));
+    expect(result).toEqual({ ok: true });
+    expect(data.addGuardianRequest).toHaveBeenCalledWith(
+      'u1',
+      expect.objectContaining({ guardianEmail: 'parent@example.com', days: 7, perDay: 3 }),
+    );
+    // DB に入れるのはハッシュで、メールのリンクには鍵そのもの
+    const { tokenHash } = data.addGuardianRequest.mock.calls[0]![1];
+    const sent = mail.sendMail.mock.calls[0]![0];
+    expect(sent.to).toBe('parent@example.com');
+    const token = /guardian-consent\/([A-Za-z0-9_-]+)/.exec(sent.text)?.[1];
+    expect(token).toBeDefined();
+    expect(sent.text).toContain('http://localhost:3312/guardian-consent/');
+    expect(sent.text).not.toContain(tokenHash);
+    expect(data.supersedeGuardianRequests).toHaveBeenCalledWith('u1', 'req-1');
+  });
+
+  it('16歳以上の人は送れない', async () => {
+    profile.current = athlete({ birthdate: '2008-01-01' });
+    expect(await sendGuardianRequestAction(form({ email: 'parent@example.com' }))).toEqual({
+      ok: false,
+      error: 'generic',
+    });
+    expect(mail.sendMail).not.toHaveBeenCalled();
+  });
+
+  it('生年月日の無い人は「16歳未満」と答えて送り、答えを残す', async () => {
+    profile.current = athlete({ birthdate: null });
+    expect(await sendGuardianRequestAction(form({ email: 'parent@example.com' }))).toEqual({
+      ok: false,
+      error: 'generic',
+    });
+    expect(
+      await sendGuardianRequestAction(form({ email: 'parent@example.com', adult: 'no' })),
+    ).toEqual({ ok: true });
+    expect(data.declareAge).toHaveBeenCalledWith('u1', false);
+  });
+
+  it('自分の Google のアドレスには送らない', async () => {
+    expect(await sendGuardianRequestAction(form({ email: 'Taro@Example.com' }))).toEqual({
+      ok: false,
+      error: 'guardianSelf',
+    });
+    expect(data.addGuardianRequest).not.toHaveBeenCalled();
+  });
+
+  it('メールアドレスの形でなければ送らない', async () => {
+    expect(await sendGuardianRequestAction(form({ email: 'parent' }))).toEqual({
+      ok: false,
+      error: 'guardianEmail',
+    });
+  });
+
+  it('24時間の回数を超えたら送らない', async () => {
+    data.addGuardianRequest.mockResolvedValue(null);
+    expect(await sendGuardianRequestAction(form({ email: 'parent@example.com' }))).toEqual({
+      ok: false,
+      error: 'guardianLimit',
+    });
+    expect(mail.sendMail).not.toHaveBeenCalled();
+  });
+
+  it('メールの設定が無ければ、行も作らずに「今は使えない」', async () => {
+    mail.mailReady.mockReturnValue(false);
+    expect(await sendGuardianRequestAction(form({ email: 'parent@example.com' }))).toEqual({
+      ok: false,
+      error: 'guardianMailUnavailable',
+    });
+    expect(data.addGuardianRequest).not.toHaveBeenCalled();
+  });
+
+  it('送れなかったら行を消し、前のリンクは切らない', async () => {
+    mail.sendMail.mockRejectedValueOnce(new Error('Resend down'));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    expect(await sendGuardianRequestAction(form({ email: 'parent@example.com' }))).toEqual({
+      ok: false,
+      error: 'guardianMailUnavailable',
+    });
+    expect(data.releaseGuardianRequest).toHaveBeenCalledWith('u1', 'req-1');
+    expect(data.supersedeGuardianRequests).not.toHaveBeenCalled();
+  });
+
+  it('宛先が無ければ、前に送った宛先へ送り直す', async () => {
+    data.latestGuardianRequest.mockResolvedValue({
+      id: 'old',
+      guardianEmail: 'parent@example.com',
+      live: true,
+    });
+    expect(await sendGuardianRequestAction(form({}))).toEqual({ ok: true });
+    expect(mail.sendMail.mock.calls[0]![0].to).toBe('parent@example.com');
+  });
+});
+
+describe('consentAiAction（本人の同意）', () => {
+  it('生年月日から16歳未満の人は、本人では同意できない', async () => {
+    expect(await consentAiAction(form({ adult: 'yes' }))).toEqual({ ok: false, error: 'generic' });
+    expect(data.consentToAi).not.toHaveBeenCalled();
+  });
+
+  it('16歳以上の人は同意できる', async () => {
+    profile.current = athlete({ birthdate: '2008-01-01' });
+    expect(await consentAiAction(form({}))).toEqual({ ok: true });
+    expect(data.consentToAi).toHaveBeenCalledWith('u1', AI_CONSENT_VERSION, undefined);
+  });
+
+  it('生年月日の無い人は「16歳以上」と答えたときだけ同意でき、答えも残す', async () => {
+    profile.current = athlete({ birthdate: null });
+    expect(await consentAiAction(form({}))).toEqual({ ok: false, error: 'generic' });
+    expect(await consentAiAction(form({ adult: 'yes' }))).toEqual({ ok: true });
+    expect(data.consentToAi).toHaveBeenCalledWith('u1', AI_CONSENT_VERSION, true);
+  });
+});
+
+describe('agreeGuardianAction', () => {
+  it('鍵をハッシュにして、いまの版で同意を入れる', async () => {
+    expect(await agreeGuardianAction('abc')).toEqual({ ok: true });
+    expect(data.agreeAsGuardian).toHaveBeenCalledWith(
+      expect.stringMatching(/^[0-9a-f]{64}$/),
+      AI_CONSENT_VERSION,
+    );
+  });
+
+  it('使えないリンクは、理由を言わずに同じ誤り', async () => {
+    data.agreeAsGuardian.mockResolvedValueOnce(false);
+    expect(await agreeGuardianAction('abc')).toEqual({ ok: false, error: 'guardianLinkInvalid' });
+    expect(await agreeGuardianAction('x'.repeat(101))).toEqual({
+      ok: false,
+      error: 'guardianLinkInvalid',
+    });
+  });
+});

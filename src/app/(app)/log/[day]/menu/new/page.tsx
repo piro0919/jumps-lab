@@ -1,44 +1,21 @@
-import type { ReactNode } from 'react';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import { AiConsentForm } from '@/components/ai-consent';
+import { AiConsentChoice } from '@/components/ai-consent';
+import { AiConsentDetails } from '@/components/ai-consent-details';
 import { Card, PageTitle, FORM_PAGE, SectionTitle } from '@/components/layout-ui';
 import { MenuForm } from '@/components/menu-form';
-import { aiEnabled, aiUsable } from '@/lib/ai';
-import { getMenu, listCompetitionsBetween } from '@/lib/data';
+import { AI_CONSENT_VERSION, aiConsenter, aiEnabled, aiUsable } from '@/lib/ai';
+import { getMenu, latestGuardianRequest, listCompetitionsBetween } from '@/lib/data';
 import { todayIn } from '@/lib/dates';
+import { GUARDIAN_LINK_DAYS, maskEmail } from '@/lib/guardian';
 import { requireProfile, requireViewer } from '@/lib/viewer';
-
-/** 同意の画面の出典。米国の制度は個人情報保護委員会のまとめ、OpenAI の措置は OpenAI のデータの扱いのページ（2026-10-14 に読んだ） */
-const US_SYSTEM_URL =
-  'https://www.ppc.go.jp/enforcement/infoprovision/laws/offshore_report_america/';
-const OPENAI_DATA_URL = 'https://developers.openai.com/api/docs/guides/your-data';
-
-/** 送るものの並び。src/app/actions/menu.ts の menuContext と、送る入力・相談に合わせる */
-const SENT = [
-  'sentDate',
-  'sentProfile',
-  'sentBests',
-  'sentCondition',
-  'sentAttempts',
-  'sentCompetitions',
-  'sentSession',
-  'sentMeet',
-] as const;
-
-/** 出典へのリンク。別のタブで開く */
-function SourceLink({ href, children }: { href: string; children: ReactNode }) {
-  return (
-    <a href={href} target="_blank" rel="noreferrer" className="text-foreground underline">
-      {children}
-    </a>
-  );
-}
 
 /**
  * 今日のメニューを作る画面。作れるのは今日の分だけで、もう作ってあればメニューの画面へ送る。
  * AI のキーが無い環境と Free の人には開かない。
- * まだ同意していない人には、入力の代わりに、OpenAI（米国）へ何を送るかと同意のボタンを出す（2026-10-14）
+ * まだ同意していない人には、入力の代わりに、OpenAI（米国）へ何を送るかと同意のボタンを出す（2026-10-14）。
+ * 16歳未満（生年月日か本人の答えで決める。src/lib/guardian.ts）の人には、同意のボタンの代わりに
+ * 保護者のメールアドレスの欄を出し、保護者がメールのリンクから同意する
  */
 export default async function NewMenu({ params }: PageProps<'/log/[day]/menu/new'>) {
   const viewer = await requireViewer();
@@ -46,12 +23,14 @@ export default async function NewMenu({ params }: PageProps<'/log/[day]/menu/new
   const today = todayIn(profile.timeZone);
   const requested = (await params).day;
   if (!aiEnabled(profile) || (requested !== 'today' && requested !== today)) redirect('/');
-  const [menu, meets] = await Promise.all([
+  const usable = aiUsable(profile);
+  const [menu, meets, request] = await Promise.all([
     getMenu(viewer.userId, today),
     listCompetitionsBetween(viewer.userId, today, today),
+    usable ? null : latestGuardianRequest(viewer.userId),
   ]);
   // 同意する前に作ったメニューがある人も、相談の前にここで同意してもらう
-  if (menu && aiUsable(profile)) redirect('/log/today/menu');
+  if (menu && usable) redirect('/log/today/menu');
   const t = await getTranslations('menu');
   const tNav = await getTranslations('nav');
   const tConsent = await getTranslations('aiConsent');
@@ -62,36 +41,22 @@ export default async function NewMenu({ params }: PageProps<'/log/[day]/menu/new
         {t('newTitle')}
       </PageTitle>
       <Card>
-        {aiUsable(profile) ? (
+        {usable ? (
           <MenuForm meetDay={meets.length > 0} />
         ) : (
           <div className="flex flex-col gap-4 text-sm">
             <SectionTitle>{tConsent('title')}</SectionTitle>
-            {/* 前の版に同意した人には、聞き直す理由を出す */}
-            {profile.aiConsentVersion !== null && <p>{tConsent('changed')}</p>}
-            <p>{tConsent('intro')}</p>
-            <ul className="flex list-disc flex-col gap-1 pl-5">
-              {SENT.map((key) => (
-                <li key={key}>{tConsent(key)}</li>
-              ))}
-            </ul>
-            <p>{tConsent('notSent')}</p>
-            <SectionTitle>{tConsent('abroadTitle')}</SectionTitle>
-            <ul className="flex flex-col gap-2 text-muted-foreground">
-              <li>{tConsent('country')}</li>
-              <li>
-                {tConsent.rich('system', {
-                  link: (chunks) => <SourceLink href={US_SYSTEM_URL}>{chunks}</SourceLink>,
-                })}
-              </li>
-              <li>
-                {tConsent.rich('measures', {
-                  link: (chunks) => <SourceLink href={OPENAI_DATA_URL}>{chunks}</SourceLink>,
-                })}
-              </li>
-            </ul>
-            <p className="font-semibold">{tConsent('medical')}</p>
-            <AiConsentForm />
+            {/* 前の版に同意した人（本人か保護者）には、聞き直す理由を出す */}
+            {[profile.aiConsentVersion, profile.aiGuardianConsentVersion].some(
+              (version) => version !== null && version !== AI_CONSENT_VERSION,
+            ) && <p>{tConsent('changed')}</p>}
+            <AiConsentDetails intro={<p>{tConsent('intro')}</p>} notSent={tConsent('notSent')} />
+            <AiConsentChoice
+              consenter={aiConsenter(profile)}
+              askAge={profile.birthdate === null}
+              request={request && { email: maskEmail(request.guardianEmail), live: request.live }}
+              linkDays={GUARDIAN_LINK_DAYS}
+            />
           </div>
         )}
       </Card>

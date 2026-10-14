@@ -38,6 +38,11 @@ export const env = createEnv({
     VAPID_SUBJECT: z.string().trim().pipe(z.url()).optional(),
     // Vercel の Cron が付けてくる鍵（Authorization: Bearer）。無ければ Cron の受け口は 503 を返す
     CRON_SECRET: z.string().trim().min(1).optional(),
+    // メール（Resend の HTTP API）。16歳未満の人の保護者へ、AI コーチの同意のお願いを送る（src/lib/mail.ts）。
+    // 2つ揃わなければ送らず、画面は「今は使えません」を出す。MAIL_FROM は "Jumps Lab <noreply@…>" の形で、
+    // そのドメインを Resend で確かめてから入れる
+    RESEND_API_KEY: z.string().trim().min(1).optional(),
+    MAIL_FROM: z.string().trim().min(1).optional(),
   },
   client: {
     // 通知の VAPID の公開鍵。ブラウザが購読するときに渡す
@@ -59,6 +64,8 @@ export const env = createEnv({
     VAPID_PRIVATE_KEY: process.env.VAPID_PRIVATE_KEY,
     VAPID_SUBJECT: process.env.VAPID_SUBJECT,
     CRON_SECRET: process.env.CRON_SECRET,
+    RESEND_API_KEY: process.env.RESEND_API_KEY,
+    MAIL_FROM: process.env.MAIL_FROM,
     NEXT_PUBLIC_VAPID_PUBLIC_KEY: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
   },
   emptyStringAsUndefined: true,

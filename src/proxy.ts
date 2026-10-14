@@ -14,6 +14,12 @@ import { PAGE_LOCALE_HEADER } from '@/i18n/locales';
 // 規約とポリシー。ログインの画面と Google の同意画面の審査から踏まれるので、誰でも開ける
 const PUBLIC = new Set(['/privacy', '/terms', '/en/privacy', '/en/terms']);
 
+/**
+ * 保護者の同意の画面（/guardian-consent/<鍵>）。保護者はアプリの利用者ではないので、ログインせずに開く。
+ * 通すのはこの形の1段だけ（その下の段や、鍵の無い /guardian-consent は通さない）。鍵は画面が確かめる
+ */
+const GUARDIAN_CONSENT = /^\/guardian-consent\/[A-Za-z0-9_-]+$/;
+
 /** トップ（/）へ送る。?utm_source などのクエリは残す */
 function toTop(request: NextRequest) {
   const url = request.nextUrl.clone();
@@ -29,7 +35,7 @@ export function proxy(request: NextRequest) {
   headers.delete(PAGE_LOCALE_HEADER);
   const pass = () => NextResponse.next({ request: { headers } });
 
-  if (PUBLIC.has(pathname)) return pass();
+  if (PUBLIC.has(pathname) || GUARDIAN_CONSENT.test(pathname)) return pass();
 
   const signedIn = getSessionCookie(request) !== null;
 

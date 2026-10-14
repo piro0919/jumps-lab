@@ -51,6 +51,8 @@ describe('saveProfile', () => {
       goalM: undefined,
       plan: 'free',
       aiConsentVersion: null,
+      aiGuardianConsentVersion: null,
+      ageDeclared16Plus: null,
     });
     const targets = await getTargets(userId, ['triple_jump', 'long_jump']);
     expect(targets.get('triple_jump')?.seasonGoalM).toBe(12.5);

@@ -16,7 +16,7 @@ https://jumpslab.kkweb.io
 - Competitions with venue, call room and start time, an entry site link, a countdown to the next one (at the top of home when it is within 14 days), the result from the marks logged that day, and a main goal meet
 - In Japan: new competitions start with the JAAF entry site, and the competitions page links to each prefecture's meet schedule
 - Today's advice on the home screen: how hard to train today from condition, sleep, injuries and the competition schedule, with a source for each reason
-- Today's practice menu written by AI inside that intensity, with capped jump counts, and a chat to adjust it, for people on the Premium plan after they agree to sending their data to OpenAI (only when `OPENAI_API_KEY` is set)
+- Today's practice menu written by AI inside that intensity, with capped jump counts, and a chat to adjust it, for people on the Premium plan after they agree to sending their data to OpenAI; people under 16 need a parent or guardian to agree through an emailed link (only when `OPENAI_API_KEY` is set; the email needs `RESEND_API_KEY` and `MAIL_FROM`)
 - An admin screen at `/admin` to switch people between the Free and Premium plans (only for the emails in `ADMIN_EMAILS`)
 - Analysis per event: count, average, monthly best and the trend of the last 10
 - A push notification the evening before each competition, in each athlete's own time zone, turned on per device in Settings (only when the VAPID keys are set; on iPhone and iPad after adding the app to the Home Screen)

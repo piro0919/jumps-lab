@@ -76,6 +76,11 @@ async function seedEverything(userId: string): Promise<string> {
     [`https://push.example/${randomUUID()}`, userId],
   );
   await query(
+    `insert into guardian_consent_request ("userId", "guardianEmail", "tokenHash", "expiresAt")
+     values ($1, 'parent@example.com', $2, now() + interval '7 days')`,
+    [userId, randomUUID()],
+  );
+  await query(
     `insert into account (id, "accountId", "providerId", "userId", "updatedAt") values ($1, $1, 'google', $2, now())`,
     [randomUUID(), userId],
   );

@@ -16,6 +16,8 @@ export default function robots(): MetadataRoute.Robots {
         '/analysis',
         '/attempts',
         '/competitions',
+        // 保護者の同意の画面（メールのリンク）。ログインせずに開けるが、検索に載せない
+        '/guardian-consent/',
         '/log',
         '/settings',
         '/sign-in',

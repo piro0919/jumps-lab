@@ -31,29 +31,71 @@ describe('aiUsable', () => {
   });
 
   const consented = AI_CONSENT_VERSION;
+  /** 生年月日の無い、16歳以上と答えた Premium の人 */
+  const base = {
+    plan: 'premium' as const,
+    aiConsentVersion: null as number | null,
+    aiGuardianConsentVersion: null as number | null,
+    birthdate: null as string | null,
+    ageDeclared16Plus: true as boolean | null,
+    timeZone: 'Asia/Tokyo',
+  };
+  // 2026-10-14 の昼（日本時間）
+  const now = new Date('2026-10-14T03:00:00Z');
 
   it('Premium でも同意する前は送らない', () => {
     env.OPENAI_API_KEY = 'sk-test';
-    expect(aiUsable({ plan: 'premium', aiConsentVersion: null })).toBe(false);
+    expect(aiUsable(base, now)).toBe(false);
   });
 
   it('Premium で同意した人は使える', () => {
     env.OPENAI_API_KEY = 'sk-test';
-    expect(aiUsable({ plan: 'premium', aiConsentVersion: consented })).toBe(true);
+    expect(aiUsable({ ...base, aiConsentVersion: consented }, now)).toBe(true);
   });
 
   it('同意していても Free の人は使えない', () => {
     env.OPENAI_API_KEY = 'sk-test';
-    expect(aiUsable({ plan: 'free', aiConsentVersion: consented })).toBe(false);
+    expect(aiUsable({ ...base, plan: 'free', aiConsentVersion: consented }, now)).toBe(false);
   });
 
   it('前の版に同意した人には、もう一度聞く', () => {
     env.OPENAI_API_KEY = 'sk-test';
-    expect(aiUsable({ plan: 'premium', aiConsentVersion: AI_CONSENT_VERSION - 1 })).toBe(false);
+    expect(aiUsable({ ...base, aiConsentVersion: AI_CONSENT_VERSION - 1 }, now)).toBe(false);
   });
 
   it('キーが無ければ同意した Premium の人も使えない', () => {
-    expect(aiUsable({ plan: 'premium', aiConsentVersion: consented })).toBe(false);
+    expect(aiUsable({ ...base, aiConsentVersion: consented }, now)).toBe(false);
+  });
+
+  it('16歳未満は、本人が同意していても保護者の同意が要る', () => {
+    env.OPENAI_API_KEY = 'sk-test';
+    const minor = { ...base, birthdate: '2011-01-01', aiConsentVersion: consented };
+    expect(aiUsable(minor, now)).toBe(false);
+    expect(aiUsable({ ...minor, aiGuardianConsentVersion: consented }, now)).toBe(true);
+  });
+
+  it('保護者の同意も、版が上がれば聞き直す', () => {
+    env.OPENAI_API_KEY = 'sk-test';
+    const minor = { ...base, birthdate: '2011-01-01' };
+    expect(aiUsable({ ...minor, aiGuardianConsentVersion: AI_CONSENT_VERSION - 1 }, now)).toBe(
+      false,
+    );
+  });
+
+  it('16歳未満と答えた人も、保護者の同意で使える', () => {
+    env.OPENAI_API_KEY = 'sk-test';
+    const declared = { ...base, ageDeclared16Plus: false, aiConsentVersion: consented };
+    expect(aiUsable(declared, now)).toBe(false);
+    expect(aiUsable({ ...declared, aiGuardianConsentVersion: consented }, now)).toBe(true);
+  });
+
+  it('16歳かどうかは本人の時間帯の今日で数える', () => {
+    env.OPENAI_API_KEY = 'sk-test';
+    // 2010-10-14 生まれ。UTC ではまだ 10月13日（15歳）、東京ではもう 10月14日（16歳）
+    const evening = new Date('2026-10-13T20:00:00Z');
+    const athlete = { ...base, birthdate: '2010-10-14', aiConsentVersion: consented };
+    expect(aiUsable(athlete, evening)).toBe(true);
+    expect(aiUsable({ ...athlete, timeZone: 'UTC' }, evening)).toBe(false);
   });
 });
 

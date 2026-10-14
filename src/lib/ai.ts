@@ -1,6 +1,8 @@
 import 'server-only';
 import { env } from '@/env';
 import type { Profile } from '@/lib/data';
+import { todayIn } from '@/lib/dates';
+import { type Consenter, consenterFor, consentSatisfied } from '@/lib/guardian';
 
 /**
  * AI を呼ぶところ。モデルへの問い合わせはここだけを通す（あとで Anthropic に替えたり、2社を比べたりできるように。
@@ -25,12 +27,40 @@ export function aiEnabled(profile: Pick<Profile, 'plan'>): boolean {
  */
 export const AI_CONSENT_VERSION = 2;
 
+/** 同意を取る相手を決めるのに使うプロフィールの項目 */
+type ConsentProfile = Pick<
+  Profile,
+  | 'plan'
+  | 'aiConsentVersion'
+  | 'aiGuardianConsentVersion'
+  | 'birthdate'
+  | 'ageDeclared16Plus'
+  | 'timeZone'
+>;
+
+/** この人の同意を、本人と保護者のどちらから取るか（src/lib/guardian.ts）。年齢は本人の時間帯の今日で数える */
+export function aiConsenter(profile: ConsentProfile, now: Date = new Date()): Consenter {
+  return consenterFor({
+    birthdate: profile.birthdate,
+    declared16Plus: profile.ageDeclared16Plus,
+    today: todayIn(profile.timeZone, now),
+  });
+}
+
 /**
- * この人の材料を AI に送ってよいか。機能を出す人（aiEnabled）のうち、送るものを読んで同意した人だけ
- * （/log/[day]/menu/new の同意の画面。2026-10-14 に本人・中元さんと決めた）。Server Action はこれで断る
+ * この人の材料を AI に送ってよいか。機能を出す人（aiEnabled）のうち、送るものを読んでいまの版に同意した人だけ
+ * （/log/[day]/menu/new の同意の画面。2026-10-14 に本人・中元さんと決めた）。Server Action はこれで断る。
+ * 16歳未満（と答えた人）は保護者の同意が要る（src/lib/guardian.ts。2026-10-14）
  */
-export function aiUsable(profile: Pick<Profile, 'plan' | 'aiConsentVersion'>): boolean {
-  return aiEnabled(profile) && profile.aiConsentVersion === AI_CONSENT_VERSION;
+export function aiUsable(profile: ConsentProfile, now: Date = new Date()): boolean {
+  return (
+    aiEnabled(profile) &&
+    consentSatisfied(
+      aiConsenter(profile, now),
+      { self: profile.aiConsentVersion, guardian: profile.aiGuardianConsentVersion },
+      AI_CONSENT_VERSION,
+    )
+  );
 }
 
 type ResponsesOutput = {

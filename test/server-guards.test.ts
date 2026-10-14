@@ -38,6 +38,8 @@ describe('Server Action', () => {
   const exempt: Record<string, string> = {
     // 画面の言語を選ぶだけ。ログイン前の画面でも使え、本人の記録には触れない
     setLocaleAction: 'Cookie に言語を書くだけ',
+    // 保護者の同意の画面（ログインの無い画面）。押した人はメールのリンクの鍵で確かめる
+    agreeGuardianAction: 'リンクの鍵（ハッシュで探し、期限の内・1回だけ）で確かめる',
   };
 
   it('action を拾えている（拾い方が壊れて 0 件で通らないように）', () => {

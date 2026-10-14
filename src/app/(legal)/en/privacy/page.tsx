@@ -55,6 +55,11 @@ export default function PrivacyEn() {
           it, and when and how often you used AI
         </li>
         <li>
+          If you are under 16 and use the AI coach: your answer to whether you are 16 or older (only
+          when you have not entered your date of birth), your parent&apos;s or guardian&apos;s email
+          address, and when they agreed
+        </li>
+        <li>
           If you turn notifications on: where to deliver them on that device (the push service
           address and its encryption keys) and the language of the notification text
         </li>
@@ -75,6 +80,10 @@ export default function PrivacyEn() {
         <li>
           To make the day&apos;s practice menu and answer your questions when you use the AI coach
           on Premium
+        </li>
+        <li>
+          If you are under 16, to email your parent or guardian a request to agree to the AI coach
+          and to keep a record of their agreement
         </li>
         <li>To remind you the day before a competition, if you turn notifications on</li>
         <li>To sign you in and confirm who you are</li>
@@ -128,17 +137,17 @@ export default function PrivacyEn() {
         </dd>
         <dt>OpenAI</dt>
         <dd>
-          Only if you use the AI coach, and only after you agree, we send the following to make your
-          menu and answer your questions: the date; your age, gender, height, weight and events;
-          your personal best and season best for each event; your condition, fatigue, sleep,
-          injuries or discomfort and practice notes for the last 14 days; your attempts in the last
-          14 days (event, practice or competition, mark, wind and note); the days left to each
-          competition in the next 8 weeks and which one is your main goal meet; the day&apos;s
-          training level and its reasons; the practice time and note you enter; your messages and
-          the current menu; and on a competition day, that meet&apos;s venue, call room place and
-          time, start time and notes. We never send your name or email address. OpenAI is a US
-          company. The United States has no single federal privacy law; sector-specific federal laws
-          and state laws apply (
+          Only if you use the AI coach, and only after you agree (if you are under 16, after your
+          parent or guardian agrees), we send the following to make your menu and answer your
+          questions: the date; your age, gender, height, weight and events; your personal best and
+          season best for each event; your condition, fatigue, sleep, injuries or discomfort and
+          practice notes for the last 14 days; your attempts in the last 14 days (event, practice or
+          competition, mark, wind and note); the days left to each competition in the next 8 weeks
+          and which one is your main goal meet; the day&apos;s training level and its reasons; the
+          practice time and note you enter; your messages and the current menu; and on a competition
+          day, that meet&apos;s venue, call room place and time, start time and notes. We never send
+          your name or email address. OpenAI is a US company. The United States has no single
+          federal privacy law; sector-specific federal laws and state laws apply (
           <a
             href="https://www.ppc.go.jp/enforcement/infoprovision/laws/offshore_report_america/"
             target="_blank"
@@ -159,6 +168,13 @@ export default function PrivacyEn() {
             OpenAI: Data controls
           </a>
           ). Jumps Lab asks OpenAI not to store the replies for later retrieval
+        </dd>
+        <dt>Resend</dt>
+        <dd>
+          Only when someone under 16 sends their parent or guardian a request to agree to the AI
+          coach: the parent&apos;s or guardian&apos;s email address and the email (the display name
+          of the person asking, what the AI coach sends, and the link to agree). Used to deliver the
+          email. Resend is a US company
         </dd>
         <dt>Browser and OS push services (Google, Apple, Mozilla, Microsoft)</dt>
         <dd>
@@ -181,10 +197,13 @@ export default function PrivacyEn() {
       <p>
         We delete each video 90 days after you upload it, and show the date under each video. We
         delete where to deliver notifications when you turn them off, when you sign out on that
-        device, when the push service reports it no longer works, or when you delete your account.
-        We keep the rest of the information until you delete your account. When you do, we delete
-        all of the information above. Your videos are deleted at that time too, and any that could
-        not be deleted then are removed within 91 days of their upload.
+        device, when the push service reports it no longer works, or when you delete your account. A
+        parent&apos;s or guardian&apos;s email address is deleted within 2 days after its link
+        expires (7 days after it is sent) if it was not used to agree; if it was, we keep it as the
+        record of their agreement until a newer agreement replaces it or you delete your account. We
+        keep the rest of the information until you delete your account. When you do, we delete all
+        of the information above. Your videos are deleted at that time too, and any that could not
+        be deleted then are removed within 91 days of their upload.
       </p>
 
       <h2>8. Access, correction and deletion</h2>
@@ -196,7 +215,8 @@ export default function PrivacyEn() {
       <h2>9. Minors</h2>
       <p>
         If you are a minor, get your parent&apos;s or guardian&apos;s consent before using Jumps
-        Lab.
+        Lab. If you are under 16, you can use the AI coach only after your parent or guardian agrees
+        through the link we email them.
       </p>
 
       <h2>10. Changes</h2>
