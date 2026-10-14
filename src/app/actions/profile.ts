@@ -3,13 +3,7 @@
 import { refresh } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
-import {
-  getProfile,
-  repairTimeZone,
-  saveProfile,
-  saveProfileDetails,
-  saveRecordSettings,
-} from '@/lib/data';
+import { getProfile, saveProfile, saveProfileDetails, saveRecordSettings } from '@/lib/data';
 import { isTimeZone, todayIn } from '@/lib/dates';
 import { EVENTS } from '@/lib/events';
 import { type ActionResult, optionalNumber } from '@/lib/form';
@@ -165,30 +159,4 @@ export async function saveRecordSettingsAction(
   const result = await run(() => saveRecordSettings(viewer.userId, parsed.data));
   refresh();
   return result;
-}
-
-/** 時間帯が UTC のまま保存された人を、ブラウザの時間帯に直す（components/time-zone-repair.tsx） */
-export async function repairTimeZoneAction(value: string): Promise<boolean> {
-  const viewer = await requireViewer();
-  if (value === 'UTC' || !isTimeZone(value)) return false;
-  // UTC の間は学年を計算しないので、手で選んだ学年で持っている。東京に直すと計算に切り替わるので、
-  // 選んだ学年を計算とのずれに持ち替える（そのままだと選んだ学年が消える）
-  const profile = await getProfile(viewer.userId);
-  if (!profile || profile.timeZone !== 'UTC') return false;
-  const grade =
-    computesGrade(profile.birthdate, value) && profile.grade
-      ? {
-          grade: null,
-          gradeOffset: Math.max(
-            -GRADE_OFFSET_LIMIT,
-            Math.min(
-              GRADE_OFFSET_LIMIT,
-              offsetFor(profile.birthdate, profile.grade, todayIn(value)),
-            ),
-          ),
-        }
-      : { grade: profile.grade, gradeOffset: profile.gradeOffset };
-  const repaired = await repairTimeZone(viewer.userId, value, grade);
-  if (repaired) refresh();
-  return repaired;
 }

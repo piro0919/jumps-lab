@@ -7,7 +7,6 @@ import {
   getTargets,
   listUsersForAdmin,
   type ProfileInput,
-  repairTimeZone,
   saveProfile,
   saveProfileDetails,
   saveRecordSettings,
@@ -126,20 +125,6 @@ describe('saveProfileDetails と saveRecordSettings', () => {
       weekStart: 0,
       timeZone: 'America/New_York',
     });
-  });
-});
-
-describe('repairTimeZone', () => {
-  it('UTC のままの人だけを直す', async () => {
-    const [utc, tokyo] = await Promise.all([
-      addProfile({ timeZone: 'UTC' }),
-      addProfile({ timeZone: 'Asia/Tokyo' }),
-    ]);
-    const grade = { grade: null, gradeOffset: 0 };
-    expect(await repairTimeZone(utc, 'Asia/Tokyo', grade)).toBe(true);
-    expect(await repairTimeZone(tokyo, 'Europe/Paris', grade)).toBe(false);
-    expect((await getProfile(utc))?.timeZone).toBe('Asia/Tokyo');
-    expect((await getProfile(tokyo))?.timeZone).toBe('Asia/Tokyo');
   });
 });
 

@@ -18,7 +18,7 @@ The owner will make this app usable worldwide (said 2026-10-11). Do not design a
 - Before adding anything that depends on a country (school years, week start, dates, units, holidays, laws), decide what happens outside Japan first
 - Grade (agreed 2026-10-11): only people in the Asia/Tokyo time zone have one (`usesGrade`). It is computed from the date of birth (Japanese school year: April, born April 2 to April 1) and stored as `gradeOffset` (years off the computation), or picked by hand as `grade` when there is no date of birth. Everyone else sees no grade field and stores none: school systems differ by country and nothing uses the grade yet. Add per-country grades if, say, US high schoolers ask for them
 - Week start (agreed 2026-10-11): Sunday or Monday, a profile column (`weekStart`, migration 0008) set in Settings > Records. Sign-up starts from the browser's region (`src/lib/week.ts`: Intl week info, Saturday regions folded into Sunday; without it, the Americas and Sunday-first East Asian zones get Sunday). Existing people keep Sunday
-- Time zone bug (found 2026-10-11): sign-up and settings saved every time zone as UTC (the hidden input was reset on re-render; now rendered from `useSyncExternalStore`). `TimeZoneRepair` in the app layout rewrites a saved UTC to the browser's zone once on open (owner agreed); other zones are never touched, so travel does not change them. Remove it once no profile in production is UTC
+- Time zone bug (found 2026-10-11): sign-up and settings saved every time zone as UTC (the hidden input was reset on re-render; now rendered from `useSyncExternalStore`). A one-time repair (`TimeZoneRepair`) rewrote saved UTC zones to the browser's zone on open; it was removed on 2026-10-14 after production had no UTC profiles left (4 profiles: Asia/Tokyo 3, Asia/Saigon 1)
 - Terms (agreed 2026-10-11): Japanese law and Japanese text stay authoritative (the operator is in Japan), with one added sentence in Article 8 (ja and en) keeping consumers' mandatory rights under their own country's law, including suing there. Not reviewed by a lawyer
 
 ## Decisions (agreed 2026-10-11)
@@ -208,7 +208,6 @@ Copy the shape of `~/Repository/onigiri` (which itself copies vocafy). Read its 
 - Everything is pushed and live (2026-10-11): the landing page, videos, today's advice with the main goal meet, grade only in Japan, week start, the terms sentence, the shared lint rules at error level, and the UTC time zone fix with its one-time repair
 - Not yet checked:
   - Uploading and playing a video in production (needs the owner's Google sign-in on a phone; works locally against jumps-lab-dev)
-  - How many production profiles were saved as UTC (reading production was blocked by the permission classifier); remove `TimeZoneRepair` once none are left
   - The analysis page at 3:2 was not looked at after the layout change (home was)
 - Not done:
   - Push notifications: live since 2026-10-14. Not yet checked: a real notice on a phone, tapping a notice, `pushsubscriptionchange`, iOS
