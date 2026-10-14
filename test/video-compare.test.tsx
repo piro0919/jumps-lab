@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { createElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -31,6 +31,7 @@ const { VideoCompare } = await import('@/components/video-compare');
 afterEach(() => {
   cleanup();
   setVideoMarkAction.mockClear();
+  vi.restoreAllMocks();
 });
 
 const a = {
@@ -59,6 +60,21 @@ const show = (marks: { a?: Record<string, number>; b?: Record<string, number> } 
   );
 };
 const opacity = () => screen.queryByRole('slider', { name: 'opacity' });
+const videoEl = (key: 'a' | 'b') => screen.getByTestId(`compare-video-${key}`) as HTMLVideoElement;
+/** 動画の長さを決めて、読み込めたことにする（happy-dom は動画を読まないので、長さを外から与える） */
+const load = (key: 'a' | 'b', duration: number) => {
+  const video = videoEl(key);
+  Object.defineProperty(video, 'duration', { configurable: true, get: () => duration });
+  fireEvent.loadedMetadata(video);
+  return video;
+};
+const playButton = () => screen.getByRole('button', { name: 'play' }) as HTMLButtonElement;
+/** 再生の繰り返し（requestAnimationFrame）を回さず、再生中の状態だけを作る */
+const startPlaying = () => {
+  vi.spyOn(globalThis, 'requestAnimationFrame').mockImplementation(() => 0);
+  act(() => playButton().click());
+  expect(screen.getByRole('button', { name: 'pause' })).not.toBeNull();
+};
 
 describe('VideoCompare', () => {
   it('はじめは並べて見せ、重ねたときの濃さのつまみは出さない', () => {
@@ -122,8 +138,8 @@ describe('VideoCompare', () => {
 
     const video = screen.getByTestId('compare-video-a') as HTMLVideoElement;
     video.currentTime = 1.2344;
-    const [selectA] = screen.getAllByRole('combobox', { name: 'markOf' });
-    fireEvent.change(selectA!, { target: { value: 'takeoff' } });
+    const [switchA] = screen.getAllByRole('radiogroup', { name: 'markOf' });
+    act(() => within(switchA!).getByRole('radio', { name: 'markShort.takeoff' }).click());
     const [markA] = screen.getAllByRole('button', { name: 'setMark' });
     await act(async () => markA!.click());
 
@@ -133,9 +149,104 @@ describe('VideoCompare', () => {
     expect(row.textContent).toContain('0.25');
     expect(row.textContent).toContain('0.016');
     // 置いたあとは、次のまだ置いていない目印を選んでおく
+    const [after] = screen.getAllByRole('radiogroup', { name: 'markOf' });
     expect(
-      (screen.getAllByRole('combobox', { name: 'markOf' })[0] as HTMLSelectElement).value,
-    ).toBe('landing');
+      within(after!)
+        .getAllByRole('radio')
+        .filter((r) => r.getAttribute('aria-checked') === 'true')
+        .map((r) => r.textContent),
+    ).toEqual(['markShort.landing']);
+  });
+
+  it('目印は6つの中から1つだけを選ぶ切り替えで、選んだものだけが選ばれた形になる', () => {
+    show();
+    const [switchA] = screen.getAllByRole('radiogroup', { name: 'markOf' });
+    const radios = within(switchA!).getAllByRole('radio');
+    expect(radios.map((r) => r.textContent)).toEqual([
+      'markShort.start',
+      'markShort.step3',
+      'markShort.step2',
+      'markShort.step1',
+      'markShort.takeoff',
+      'markShort.landing',
+    ]);
+    act(() => radios[3]!.click());
+    expect(radios.map((r) => r.getAttribute('aria-checked'))).toEqual([
+      'false',
+      'false',
+      'false',
+      'true',
+      'false',
+      'false',
+    ]);
+  });
+
+  it('2本の長さが分かるまで再生は押せない', () => {
+    show();
+    expect(playButton().disabled).toBe(true);
+    load('a', 4);
+    expect(playButton().disabled).toBe(true);
+    load('b', 6);
+    expect(playButton().disabled).toBe(false);
+  });
+
+  it('長さを持たない webm（Infinity）は終わりの先へ跳んで長さを読み、分かったら頭へ戻して再生できるようにする', () => {
+    show();
+    load('b', 6);
+    const video = load('a', Number.POSITIVE_INFINITY);
+    // 長さを決めさせるために、終わりの先へ跳ぶ。長さが分かるまでは再生できない
+    expect(video.currentTime).toBeGreaterThan(1e6);
+    expect(playButton().disabled).toBe(true);
+    // 跳んでいる間の位置は、1本ごとの秒に出さない
+    fireEvent.timeUpdate(video);
+    expect(screen.getAllByText('seconds')).toHaveLength(2);
+
+    Object.defineProperty(video, 'duration', { configurable: true, get: () => 4.2 });
+    fireEvent.durationChange(video);
+    expect(video.currentTime).toBe(0);
+    expect(playButton().disabled).toBe(false);
+    const [slider] = screen.getAllByRole('slider', { name: 'positionOf' }) as HTMLInputElement[];
+    expect(slider!.max).toBe('4.2');
+  });
+
+  it('1本ごとのコマ送りは、続けて押すと押した数だけ進む（timeupdate を待たない）', () => {
+    show();
+    const video = load('a', 5);
+    load('b', 5);
+    video.currentTime = 1;
+    const [next] = screen.getAllByRole('button', { name: 'nextFrameOf' });
+    act(() => {
+      next!.click();
+      next!.click();
+    });
+    expect(video.currentTime).toBeCloseTo(1 + 2 / 30);
+  });
+
+  it('再生中に目印を置くと、見ていたコマの時刻を置き、その動画を時計へ戻さない', async () => {
+    show();
+    const video = load('a', 5);
+    load('b', 5);
+    startPlaying();
+    // 時計（0）より先のコマを見ている
+    video.currentTime = 1.2344;
+    const [markA] = screen.getAllByRole('button', { name: 'setMark' });
+    await act(async () => markA!.click());
+    expect(setVideoMarkAction).toHaveBeenCalledWith({ videoId: 'a', mark: 'start', time: 1.234 });
+    expect(video.currentTime).toBe(1.2344);
+    // もう片方は、その位置に揃える
+    expect(videoEl('b').currentTime).toBeCloseTo(1.2344);
+  });
+
+  it('再生中に合わせる点を置いても、その動画は見ていたコマから動かさない', () => {
+    show();
+    const video = load('a', 5);
+    load('b', 5);
+    startPlaying();
+    video.currentTime = 2.5;
+    const [syncA] = screen.getAllByRole('button', { name: 'setSync' });
+    act(() => syncA!.click());
+    expect(video.currentTime).toBe(2.5);
+    expect(screen.getByRole('button', { name: 'play' })).not.toBeNull();
   });
 
   it('目印を外すと、そのあいだの時間を消す', async () => {

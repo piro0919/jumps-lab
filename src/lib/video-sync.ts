@@ -27,8 +27,11 @@ export function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
 
-/** 長さ。読み込む前（NaN）や配信中（Infinity）は 0 とみなす */
-function lengthOf(duration: number): number {
+/**
+ * 長さ。読み込む前（NaN）や、まだ分からない間（Infinity。PC のブラウザで撮った MediaRecorder の webm は
+ * 長さを持たず、終わりまで読むまで Infinity）は 0 とみなす。つまみ・並べ方・再生中かの判断はみなこれを通す
+ */
+export function lengthOf(duration: number): number {
   return Number.isFinite(duration) && duration > 0 ? duration : 0;
 }
 
@@ -63,7 +66,47 @@ export function toShared(local: number, start: number): number {
 
 /** その時刻に、その動画が動いている（頭や最後で止まっていない）か */
 export function isPlaying(shared: number, start: number, duration: number): boolean {
-  return shared >= start && shared < start + duration;
+  return shared >= start && shared < start + lengthOf(duration);
+}
+
+/**
+ * 再生できるか。読み込めた動画はどれも長さが分かっていて、1本は読み込めていること
+ * （長さが分からないうちに再生すると、時間軸の長さが 0 ですぐ止まる）
+ */
+export function canPlay(durations: number[], failed: boolean[]): boolean {
+  const loaded = durations.filter((_, i) => !failed[i]);
+  return loaded.length > 0 && loaded.every((duration) => lengthOf(duration) > 0);
+}
+
+/** 再生中に、主でない方の動画がこれ以上ずれたら合わせ直す（秒）。小さいと絶えずシークしてカクつく */
+export const DRIFT_SECONDS = 0.1;
+
+/** 再生中の1コマで、1本の動画の今の様子 */
+export type FollowState = {
+  paused: boolean;
+  /** シークの途中か（途中の currentTime は行き先で、まだ描けていない） */
+  seeking: boolean;
+  current: number;
+  /** 共通の時計から見た、その動画のいるべき秒 */
+  expected: number;
+  /** その時刻に、その動画が動いているはずか（isPlaying） */
+  active: boolean;
+  /** 時計にしている方か（時計の方は合わせ直さない） */
+  master: boolean;
+};
+
+/**
+ * 再生中の1コマで、1本の動画をどうするか。start は止まっている動画を expected から動かす、
+ * seek はずれた動画を expected へ合わせ直す、hold は止めて expected に置く、null は何もしない。
+ * シークの途中は合わせ直さない（毎コマ合わせ直すと、シークが終わらないまま次のシークで上書きし続ける）
+ */
+export function follow(state: FollowState): 'start' | 'seek' | 'hold' | null {
+  const drifted = !state.seeking && Math.abs(state.current - state.expected) > DRIFT_SECONDS;
+  if (state.active) {
+    if (state.paused) return 'start';
+    return !state.master && drifted ? 'seek' : null;
+  }
+  return !state.paused || drifted ? 'hold' : null;
 }
 
 /** コマの速さが分からないときに見なす値（スマホの動画のふつうの速さ） */

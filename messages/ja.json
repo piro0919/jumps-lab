@@ -311,6 +311,14 @@
       "takeoff": "踏み切り",
       "landing": "着地"
     },
+    "markShort": {
+      "start": "助走開始",
+      "step3": "3歩前",
+      "step2": "2歩前",
+      "step1": "1歩前",
+      "takeoff": "踏み切り",
+      "landing": "着地"
+    },
     "timing": "時間",
     "noTiming": "まだ時間はありません",
     "interval": "{from} → {to}",

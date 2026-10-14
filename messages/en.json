@@ -311,6 +311,14 @@
       "takeoff": "Take-off",
       "landing": "Landing"
     },
+    "markShort": {
+      "start": "Start",
+      "step3": "3rd last",
+      "step2": "2nd last",
+      "step1": "Last",
+      "takeoff": "Take-off",
+      "landing": "Landing"
+    },
     "timing": "Timing",
     "noTiming": "No times yet.",
     "interval": "{from} → {to}",

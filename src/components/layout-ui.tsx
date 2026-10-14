@@ -417,6 +417,12 @@ export function segmentClass(active: boolean) {
 
 export const SEGMENTS = 'flex w-fit gap-1 rounded-full bg-muted p-1';
 
+/**
+ * 選ぶものが多く、1列では 375px に収まらない切り替え（動画の目印の6つ）。中身は segmentClass のまま、
+ * 3つずつの2段に並べる。外側は2段を包むので full ではなく 3xl の角
+ */
+export const SEGMENT_GRID = 'grid grid-cols-3 gap-1 rounded-3xl bg-muted p-1';
+
 /** LP の見出しの下の文。LP は読ませる文が主役なので、アプリの本文（text-sm）より1段大きい */
 export const LEAD = 'max-w-md text-base leading-relaxed text-muted-foreground';
 

@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_FPS,
+  DRIFT_SECONDS,
   align,
+  canPlay,
+  follow,
   fpsFromInterval,
   isPlaying,
+  lengthOf,
   stepFrame,
   toLocal,
   toShared,
@@ -84,6 +88,62 @@ describe('isPlaying', () => {
     expect(isPlaying(2, 2, 3)).toBe(true);
     expect(isPlaying(4.9, 2, 3)).toBe(true);
     expect(isPlaying(5, 2, 3)).toBe(false);
+  });
+
+  it('長さが分からない動画（Infinity・NaN）は動いていない。つまみや並べ方と同じ長さの見方をする', () => {
+    expect(isPlaying(3, 2, Number.POSITIVE_INFINITY)).toBe(false);
+    expect(isPlaying(3, 2, Number.NaN)).toBe(false);
+  });
+});
+
+describe('lengthOf', () => {
+  it('長さを持たない webm（Infinity）や読み込む前（NaN）は 0、分かった長さはそのまま', () => {
+    expect(lengthOf(Number.POSITIVE_INFINITY)).toBe(0);
+    expect(lengthOf(Number.NaN)).toBe(0);
+    expect(lengthOf(4.2)).toBe(4.2);
+  });
+});
+
+describe('canPlay', () => {
+  it('2本とも長さが分かるまでは再生できない', () => {
+    expect(canPlay([Number.NaN, Number.NaN], [false, false])).toBe(false);
+    expect(canPlay([4, Number.NaN], [false, false])).toBe(false);
+    expect(canPlay([4, Number.POSITIVE_INFINITY], [false, false])).toBe(false);
+    expect(canPlay([4, 6], [false, false])).toBe(true);
+  });
+
+  it('読み込めなかった方は待たないが、2本とも読み込めなければ再生できない', () => {
+    expect(canPlay([4, Number.NaN], [false, true])).toBe(true);
+    expect(canPlay([Number.NaN, Number.NaN], [true, true])).toBe(false);
+  });
+});
+
+describe('follow', () => {
+  const base = {
+    paused: false,
+    seeking: false,
+    current: 1,
+    expected: 1,
+    active: true,
+    master: false,
+  };
+
+  it('ずれた主でない方は合わせ直し、時計の方とずれの小さいものはそのまま', () => {
+    expect(follow({ ...base, current: 1 + DRIFT_SECONDS * 2 })).toBe('seek');
+    expect(follow({ ...base, current: 1 + DRIFT_SECONDS * 2, master: true })).toBeNull();
+    expect(follow({ ...base, current: 1 + DRIFT_SECONDS / 2 })).toBeNull();
+  });
+
+  it('シークの途中は、ずれて見えても合わせ直さない', () => {
+    expect(follow({ ...base, seeking: true, current: 1 + DRIFT_SECONDS * 2 })).toBeNull();
+    expect(follow({ ...base, active: false, paused: true, seeking: true, current: 3 })).toBeNull();
+  });
+
+  it('動いているはずの止まった動画は動かし、止まっているはずの動画は止めて置く', () => {
+    expect(follow({ ...base, paused: true })).toBe('start');
+    expect(follow({ ...base, active: false })).toBe('hold');
+    expect(follow({ ...base, active: false, paused: true, current: 3 })).toBe('hold');
+    expect(follow({ ...base, active: false, paused: true })).toBeNull();
   });
 });
 

@@ -2,7 +2,7 @@
 
 import { ChevronLeft, ChevronRight, Pause, Play, X } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
-import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition } from 'react';
 import { setVideoMarkAction } from '@/app/actions/videos';
 import {
   Badge,
@@ -12,7 +12,7 @@ import {
   ErrorText,
   LABEL,
   SEGMENTS,
-  Select,
+  SEGMENT_GRID,
   Stat,
   segmentClass,
 } from '@/components/layout-ui';
@@ -30,9 +30,12 @@ import {
 import {
   DEFAULT_FPS,
   align,
+  canPlay,
   clamp,
+  follow,
   fpsFromInterval,
   isPlaying,
+  lengthOf,
   stepFrame,
   toLocal,
   toShared,
@@ -64,12 +67,70 @@ const INITIAL_SPEED: Speed = HALF_SPEED;
 
 /** 重ねたときの上の動画（B）の濃さ（%）。半分から始める */
 const INITIAL_OPACITY = 50;
-/** 再生中に、主でない方の動画がこれ以上ずれたら合わせ直す（秒）。小さいと絶えずシークしてカクつく */
-const DRIFT_SECONDS = 0.1;
 /** 位置のつまみの刻み（秒） */
 const SCRUB_STEP = 0.01;
 /** 秒を出す桁（小数第2位まで） */
 const TIME_DIGITS = 2;
+/**
+ * 長さを持たない動画（MediaRecorder の webm）の長さを読むために、いったん跳ぶ先。終わりより先へシークすると、
+ * ブラウザが終わりまで読んで長さを決める（durationchange）。決まったら頭へ戻す
+ */
+const PROBE_SECONDS = Number.MAX_SAFE_INTEGER;
+/** 1秒のミリ秒の数 */
+const MS_PER_SECOND = 1000;
+
+/**
+ * 共通の時刻（秒）。再生中は毎コマ変わるので state に置かず、ここに置いて位置のつまみだけが読む
+ * （state に置くと、毎コマこの画面全体を描き直していた）
+ */
+type Clock = {
+  get: () => number;
+  set: (time: number) => void;
+  subscribe: (listener: () => void) => () => void;
+};
+
+function createClock(): Clock {
+  let time = 0;
+  const listeners = new Set<() => void>();
+  return {
+    get: () => time,
+    set: (next) => {
+      time = next;
+      for (const listener of listeners) listener();
+    },
+    subscribe: (listener) => {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+  };
+}
+
+/** 2本まとめて動かす位置のつまみ。共通の時刻が変わるたびに、これだけを描き直す */
+function PositionSlider({
+  clock,
+  length,
+  label,
+  onSeek,
+}: {
+  clock: Clock;
+  length: number;
+  label: string;
+  onSeek: (time: number) => void;
+}) {
+  const time = useSyncExternalStore(clock.subscribe, clock.get, clock.get);
+  return (
+    <input
+      type="range"
+      aria-label={label}
+      min={0}
+      max={length}
+      step={SCRUB_STEP}
+      value={Math.min(time, length)}
+      onChange={(e) => onSeek(Number(e.target.value))}
+      className="h-6 w-full accent-primary"
+    />
+  );
+}
 
 /**
  * 2本の動画を並べて見比べる（/videos/compare）。AI で骨格を取るのはやめ、海外のコーチ向けのアプリ
@@ -95,7 +156,7 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
   const [speed, setSpeed] = useState<Speed>(INITIAL_SPEED);
   const [opacity, setOpacity] = useState(INITIAL_OPACITY);
   const [playing, setPlaying] = useState(false);
-  const [shared, setShared] = useState(0);
+  const [clock] = useState(createClock);
   const [durations, setDurations] = useState<Record<Key, number>>({ a: NaN, b: NaN });
   const [locals, setLocals] = useState<Record<Key, number>>({ a: 0, b: 0 });
   const [syncs, setSyncs] = useState<Record<Key, number | null>>({ a: null, b: null });
@@ -121,16 +182,19 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
   );
 
   // 再生の繰り返し（requestAnimationFrame）から読む値。描くたびに新しくする
-  const sharedRef = useRef(0);
   const alignmentRef = useRef(alignment);
   const durationsRef = useRef(durations);
   const speedRef = useRef(speed);
+  const failedRef = useRef(failed);
+  /** 長さを読むために終わりの先へ跳んでいる間（その間の位置は見せない） */
+  const probing = useRef<Record<Key, boolean>>({ a: false, b: false });
   /** requestVideoFrameCallback で見積もったコマの速さ。見積もれないうちは null（DEFAULT_FPS で送る） */
   const fpsRef = useRef<Record<Key, number | null>>({ a: null, b: null });
   useEffect(() => {
     alignmentRef.current = alignment;
     durationsRef.current = durations;
     speedRef.current = speed;
+    failedRef.current = failed;
   });
 
   const startOf = (key: Key, al: Alignment) => (key === 'a' ? al.startA : al.startB);
@@ -141,26 +205,41 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
     return known.length > 0 ? Math.max(...known) : DEFAULT_FPS;
   };
 
-  /** 共通の時刻へ2本ともシークする */
-  const seekAll = (time: number, al: Alignment = alignmentRef.current) => {
-    sharedRef.current = time;
-    setShared(time);
+  /** 共通の時刻へ2本ともシークする。keep の動画は動かさない（その動画の今の位置から時刻を決めたとき） */
+  const seekAll = (time: number, al: Alignment = alignmentRef.current, keep?: Key) => {
+    clock.set(time);
     for (const key of KEYS) {
       const video = videoOf(key);
-      if (!video || failed[key]) continue;
+      if (!video || key === keep || failedRef.current[key]) continue;
       video.currentTime = toLocal(time, startOf(key, al), durationsRef.current[key]);
     }
   };
 
-  const pause = () => {
+  const stopVideos = () => {
     setPlaying(false);
     for (const key of KEYS) videoOf(key)?.pause();
-    seekAll(sharedRef.current);
   };
 
+  const pause = () => {
+    stopVideos();
+    seekAll(clock.get());
+  };
+
+  /**
+   * 1本の今の位置（local）を使うときに止める。その動画は動かさず、もう片方をその位置に揃える
+   * （pause() は共通の時計へ2本とも戻すので、見ていたコマから最大 DRIFT_SECONDS ずれた）
+   */
+  const pauseAt = (key: Key, local: number, al: Alignment = alignmentRef.current) => {
+    stopVideos();
+    seekAll(toShared(local, startOf(key, al)), al, key);
+  };
+
+  const ready = canPlay([durations.a, durations.b], [failed.a, failed.b]);
+
   const play = () => {
+    if (!ready) return;
     // 終わりまで見たあとは頭から
-    if (sharedRef.current >= alignmentRef.current.length) seekAll(0);
+    if (clock.get() >= alignmentRef.current.length) seekAll(0);
     setPlaying(true);
   };
 
@@ -181,11 +260,11 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
     let frame = 0;
     let last: number | null = null;
     const tick = (now: number) => {
-      const elapsed = last === null ? 0 : (now - last) / 1000;
+      const elapsed = last === null ? 0 : (now - last) / MS_PER_SECOND;
       last = now;
       const al = alignmentRef.current;
       const lengths = durationsRef.current;
-      let time = sharedRef.current + elapsed * speedRef.current;
+      let time = clock.get() + elapsed * speedRef.current;
       let master: Key | null = null;
       for (const key of KEYS) {
         const video = videoOf(key);
@@ -194,7 +273,7 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
           video &&
           !video.paused &&
           !video.seeking &&
-          isPlaying(sharedRef.current, start, lengths[key])
+          isPlaying(clock.get(), start, lengths[key])
         ) {
           time = toShared(video.currentTime, start);
           master = key;
@@ -209,23 +288,28 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
       }
       for (const key of KEYS) {
         const video = videoOf(key);
-        if (!video) continue;
+        if (!video || failedRef.current[key]) continue;
         const start = startOf(key, al);
         const expected = toLocal(time, start, lengths[key]);
-        if (isPlaying(time, start, lengths[key])) {
-          if (video.paused) {
-            video.currentTime = expected;
-            video.play().catch(() => undefined);
-          } else if (key !== master && Math.abs(video.currentTime - expected) > DRIFT_SECONDS) {
-            video.currentTime = expected;
-          }
-        } else if (!video.paused || Math.abs(video.currentTime - expected) > DRIFT_SECONDS) {
+        const action = follow({
+          paused: video.paused,
+          seeking: video.seeking,
+          current: video.currentTime,
+          expected,
+          active: isPlaying(time, start, lengths[key]),
+          master: key === master,
+        });
+        if (action === 'start') {
+          video.currentTime = expected;
+          video.play().catch(() => undefined);
+        } else if (action === 'seek') {
+          video.currentTime = expected;
+        } else if (action === 'hold') {
           video.pause();
           video.currentTime = expected;
         }
       }
-      sharedRef.current = time;
-      setShared(time);
+      clock.set(time);
       frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
@@ -233,12 +317,34 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playing]);
 
+  /**
+   * 長さを読む。長さを持たない動画（Infinity）は、終わりの先へ跳んで長さを決めさせ（durationchange か
+   * timeupdate で分かる）、分かったら頭へ戻す。長さは分かったときだけ覚える
+   */
+  const readLength = (key: Key, video: HTMLVideoElement) => {
+    if (video.duration === Infinity) {
+      if (!probing.current[key]) {
+        probing.current[key] = true;
+        video.currentTime = PROBE_SECONDS;
+      }
+      return;
+    }
+    if (lengthOf(video.duration) === 0) return;
+    if (probing.current[key]) {
+      probing.current[key] = false;
+      video.currentTime = 0;
+      setLocals((l) => ({ ...l, [key]: 0 }));
+    }
+    const length = video.duration;
+    setDurations((d) => (d[key] === length ? d : { ...d, [key]: length }));
+  };
+
   /** 長さと縦横を読む。速さもここで合わせる（読み込み直すとブラウザが 1 に戻すことがある） */
   const readMetadata = (key: Key, video: HTMLVideoElement) => {
     video.playbackRate = speedRef.current;
-    setDurations((d) => ({ ...d, [key]: video.duration }));
     setLandscape((l) => ({ ...l, [key]: video.videoWidth > video.videoHeight }));
-    setLocals((l) => ({ ...l, [key]: video.currentTime }));
+    readLength(key, video);
+    if (!probing.current[key]) setLocals((l) => ({ ...l, [key]: video.currentTime }));
   };
 
   // 動画はサーバーが描いた時点で読み込みを始めるので、React が受け口を付ける前に loadedmetadata や error が
@@ -250,7 +356,8 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
       if (video.error) setFailed((f) => ({ ...f, [key]: true }));
       else if (video.readyState >= HTMLMediaElement.HAVE_METADATA) readMetadata(key, video);
     }
-    // 付けたときに1回だけ（以降は onLoadedMetadata と onError が受ける）
+    // 付けたときに1回だけ（以降は onLoadedMetadata・onDurationChange と onError が受ける）
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // コマの速さを、続けて描いた2コマの時刻の差から見積もる（requestVideoFrameCallback のあるブラウザだけ）。
@@ -285,7 +392,7 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
   /** 2本まとめて1コマ送る */
   const stepBoth = (direction: 1 | -1) => {
     pause();
-    seekAll(stepFrame(sharedRef.current, direction, fps(), alignmentRef.current.length));
+    seekAll(stepFrame(clock.get(), direction, fps(), alignmentRef.current.length));
   };
 
   /** 1本だけを動かす（合わせる点を探すとき）。もう片方と共通の時刻はずれるが、次にまとめて動かすときに揃う */
@@ -293,22 +400,33 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
     const video = videoOf(key);
     if (!video) return;
     if (playing) pause();
-    video.currentTime = clamp(time, 0, Number.isFinite(video.duration) ? video.duration : 0);
+    video.currentTime = clamp(time, 0, lengthOf(durationsRef.current[key]));
+  };
+
+  /**
+   * 1本だけを1コマ送る。今の位置は video.currentTime から読む（シークした直後から行き先を返す）。
+   * timeupdate で更新する locals から読むと、続けて押したときに1コマしか進まなかった
+   */
+  const stepOne = (key: Key, direction: 1 | -1) => {
+    const video = videoOf(key);
+    if (!video) return;
+    seekOne(key, video.currentTime + direction / fps(key));
   };
 
   /** 今の位置を、その動画の合わせる点にする。もう片方は、自分の合わせる点からの同じ時間だけずれた位置へ */
   const setSync = (key: Key) => {
     const video = videoOf(key);
     if (!video) return;
-    if (playing) pause();
-    const next = { ...syncs, [key]: video.currentTime };
+    // 止める前に読む（止めると時計へ戻すシークで、見ていたコマからずれる）
+    const local = video.currentTime;
+    const next = { ...syncs, [key]: local };
     setSyncs(next);
     const al = align(
       { duration: durations.a, sync: next.a ?? 0 },
       { duration: durations.b, sync: next.b ?? 0 },
     );
     alignmentRef.current = al;
-    seekAll(toShared(video.currentTime, startOf(key, al)), al);
+    pauseAt(key, local, al);
   };
 
   /**
@@ -339,8 +457,10 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
   const placeMark = (key: Key) => {
     const video = videoOf(key);
     if (!video) return;
-    if (playing) pause();
-    saveMark(key, chosen[key], roundToMs(video.currentTime));
+    // 止める前に読み、この動画は動かさない（見ていたコマの時刻を置く）
+    const local = video.currentTime;
+    if (playing) pauseAt(key, local);
+    saveMark(key, chosen[key], roundToMs(local));
   };
 
   const clearSync = () => {
@@ -362,7 +482,7 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
 
   const name = (key: Key) => t(key === 'a' ? 'videoA' : 'videoB');
   const markName = (mark: MarkName) => t(`marks.${mark}`);
-  const rows = compareIntervals(marks.a, marks.b);
+  const rows = useMemo(() => compareIntervals(marks.a, marks.b), [marks]);
   /** あいだの時間の数（Stat に渡す）。差は + と − を付ける */
   const timeValue = (value: number | null, signed = false) =>
     value === null
@@ -389,8 +509,15 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
       className={className}
       style={style}
       onLoadedMetadata={(e) => readMetadata(key, e.currentTarget)}
+      onDurationChange={(e) => readLength(key, e.currentTarget)}
       onTimeUpdate={(e) => {
-        const time = e.currentTarget.currentTime;
+        const video = e.currentTarget;
+        // 長さを読むために跳んでいる間の位置は見せない
+        if (probing.current[key]) {
+          readLength(key, video);
+          return;
+        }
+        const time = video.currentTime;
         setLocals((l) => ({ ...l, [key]: time }));
       }}
       onError={() => setFailed((f) => ({ ...f, [key]: true }))}
@@ -472,18 +599,14 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
           </label>
         )}
 
-        <input
-          type="range"
-          aria-label={t('position')}
-          min={0}
-          max={duration || 0}
-          step={SCRUB_STEP}
-          value={Math.min(shared, duration || 0)}
-          onChange={(e) => {
+        <PositionSlider
+          clock={clock}
+          length={duration}
+          label={t('position')}
+          onSeek={(time) => {
             if (playing) pause();
-            seekAll(Number(e.target.value));
+            seekAll(time);
           }}
-          className="h-6 w-full accent-primary"
         />
 
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -501,6 +624,8 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
               size="icon"
               type="button"
               aria-label={playing ? t('pause') : t('play')}
+              // 2本の長さが分かるまでは押せない（時間軸の長さが 0 のまま再生すると、すぐ止まる）
+              disabled={!playing && !ready}
               onClick={playing ? pause : play}
             >
               {playing ? <Pause aria-hidden /> : <Play aria-hidden />}
@@ -549,7 +674,7 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
                     type="range"
                     aria-label={t('positionOf', { video: name(key) })}
                     min={0}
-                    max={Number.isFinite(durations[key]) ? durations[key] : 0}
+                    max={lengthOf(durations[key])}
                     step={SCRUB_STEP}
                     value={locals[key]}
                     onChange={(e) => seekOne(key, Number(e.target.value))}
@@ -561,7 +686,7 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
                       size="icon"
                       type="button"
                       aria-label={t('previousFrameOf', { video: name(key) })}
-                      onClick={() => seekOne(key, locals[key] - 1 / fps(key))}
+                      onClick={() => stepOne(key, -1)}
                     >
                       <ChevronLeft aria-hidden />
                     </Button>
@@ -570,7 +695,7 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
                       size="icon"
                       type="button"
                       aria-label={t('nextFrameOf', { video: name(key) })}
-                      onClick={() => seekOne(key, locals[key] + 1 / fps(key))}
+                      onClick={() => stepOne(key, 1)}
                     >
                       <ChevronRight aria-hidden />
                     </Button>
@@ -589,29 +714,34 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
                   {syncs[key] !== null && (
                     <Badge tone="accent">{t('syncAt', { time: seconds(syncs[key] ?? 0) })}</Badge>
                   )}
-                  <div className="flex items-center gap-2">
-                    <Select
-                      aria-label={t('markOf', { video: name(key) })}
-                      value={chosen[key]}
-                      onChange={(e) =>
-                        setChosen((c) => ({ ...c, [key]: e.target.value as MarkName }))
-                      }
-                    >
-                      {MARKS.map((mark) => (
-                        <option key={mark} value={mark}>
-                          {markName(mark)}
-                        </option>
-                      ))}
-                    </Select>
-                    <Button
-                      variant="secondary"
-                      type="button"
-                      disabled={marking}
-                      onClick={() => placeMark(key)}
-                    >
-                      {t('setMark')}
-                    </Button>
+                  <div
+                    className={SEGMENT_GRID}
+                    role="radiogroup"
+                    aria-label={t('markOf', { video: name(key) })}
+                  >
+                    {MARKS.map((mark) => (
+                      <button
+                        key={mark}
+                        type="button"
+                        role="radio"
+                        aria-checked={chosen[key] === mark}
+                        className={segmentClass(chosen[key] === mark)}
+                        onClick={() => setChosen((c) => ({ ...c, [key]: mark }))}
+                      >
+                        {t(`markShort.${mark}`)}
+                      </button>
+                    ))}
                   </div>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    type="button"
+                    className="self-start"
+                    disabled={marking}
+                    onClick={() => placeMark(key)}
+                  >
+                    {t('setMark')}
+                  </Button>
                   {MARKS.some((mark) => marks[key][mark] !== undefined) && (
                     <ul className="flex flex-col divide-y divide-border">
                       {MARKS.map((mark) => {
