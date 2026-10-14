@@ -101,7 +101,7 @@ export default function PrivacyEn() {
         <dt>Information used jointly</dt>
         <dd>All of the information in section 2</dd>
         <dt>Joint users</dt>
-        <dd>kk-web and 中元廉弥</dd>
+        <dd>kk-web and Renya Nakamoto (中元廉弥)</dd>
         <dt>Purposes</dt>
         <dd>The purposes in section 3, and managing plans</dd>
         <dt>Responsible for managing it</dt>
