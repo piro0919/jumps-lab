@@ -144,7 +144,8 @@
     "teamInviteInvalid": "This invite link is no longer valid.",
     "teamCoachJoin": "You coach this team, so you cannot join it as an athlete.",
     "guardianTeamCoach": "This person coaches this team, so they cannot join it as an athlete. This link can no longer be used.",
-    "comment": "Write a comment of up to 1,000 characters."
+    "comment": "Write a comment of up to 1,000 characters.",
+    "commentLimit": "You've reached the limit of {count, plural, one {# comment} other {# comments}} in 24 hours. Try again later."
   },
   "home": {
     "goal": "Season goal",
@@ -470,7 +471,10 @@
     "commentFromCoachTitle": "New comment from your coach",
     "commentFromAthleteTitle": "New comment from {name}",
     "commentFromAthleteTitleNoName": "New comment from an athlete",
-    "commentBody": "Team: {team}"
+    "commentFromCoachToCoachTitle": "A coach commented on {name}'s day",
+    "commentFromCoachToCoachTitleNoName": "A coach commented on an athlete's day",
+    "commentBody": "Team: {team}",
+    "commentBodyNoTeam": "From your team"
   },
   "guardianConsent": {
     "metaTitle": "Parent or guardian consent",
@@ -541,7 +545,7 @@
     "shownVideos": "Videos and their notes, until they are deleted 90 days after upload",
     "shownComments": "Comments the athlete writes to the team on each day",
     "notShown": "Your email address is not shown.",
-    "readOnly": "Coaches cannot change or delete any records. They can comment on each day, and the athlete can reply.",
+    "readOnly": "Coaches cannot change or delete any records. They and the athlete can comment on each day.",
     "leaveAnytime": "You can leave anytime from Teams in your account menu. From then on, the coaches can no longer see your records.",
     "join": "Join and share",
     "joining": "Joining…",

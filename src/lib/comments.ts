@@ -24,3 +24,34 @@ export function commentRole(
   if (comment.authorId === viewerId) return 'you';
   return comment.byCoach ? 'coach' : 'athlete';
 }
+
+/** 画面に出すコメント1つ。役は見ている人から見た書き手（自分・コーチ・選手） */
+export type CommentItem = {
+  id: string;
+  authorName: string;
+  role: CommentRole;
+  body: string;
+  /** 書いた時刻（ISO 8601） */
+  createdAt: string;
+};
+
+/** DB のコメントを、見ている人から見た画面のコメントにする（選手の日の画面とコーチの選手の画面） */
+export function toCommentItem(
+  comment: {
+    id: string;
+    authorId: string;
+    authorName: string;
+    byCoach: boolean;
+    body: string;
+    createdAt: Date;
+  },
+  viewerId: string,
+): CommentItem {
+  return {
+    id: comment.id,
+    authorName: comment.authorName,
+    role: commentRole(comment, viewerId),
+    body: comment.body,
+    createdAt: comment.createdAt.toISOString(),
+  };
+}

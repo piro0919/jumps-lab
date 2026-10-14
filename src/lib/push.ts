@@ -176,7 +176,7 @@ const COMMENT_TTL_SECONDS = COMMENT_TTL_HOURS * 60 * 60;
 
 /**
  * コメントを書いたあとに、相手の端末へ知らせる（Server Action が after() で呼ぶ。返事を待たせない）。
- * コーチが書けば選手へ、選手が書けばそのチームのコーチ（書いた人を除く）へ。文言は宛先の言語で組み、
+ * そのチームのコーチ（書いた人を除く）へ、コーチが書いたときは選手へも。文言は宛先の言語で組み、
  * 本文は載せない（src/lib/comment-notice.ts）。鍵が無ければ何もしない。無効と返された宛先は消す
  */
 export async function sendCommentPush(input: {
@@ -186,23 +186,28 @@ export async function sendCommentPush(input: {
   day: string;
 }): Promise<{ sent: number; failed: number }> {
   if (!pushReady()) return { sent: 0, failed: 0 };
-  const toCoaches = input.authorId === input.athleteId;
-  const found = await commentPushTargets({ ...input, toCoaches });
+  const found = await commentPushTargets(input);
   if (!found || found.targets.length === 0) return { sent: 0, failed: 0 };
-  const notice: CommentNoticeInput = {
-    toCoaches,
-    athleteId: input.athleteId,
-    athleteName: found.athleteName,
-    teamId: input.teamId,
-    teamName: found.teamName,
-    day: input.day,
-  };
+  const byCoach = input.authorId !== input.athleteId;
+  // 宛先（選手かコーチか）と言語の組ごとに、1つの知らせを組んで送る
+  const groups = ([false, true] as const).flatMap((toCoach) =>
+    (['en', 'ja'] as const satisfies Locale[]).map((locale) => ({ toCoach, locale })),
+  );
   const outcomes = await Promise.all(
-    (['en', 'ja'] as const satisfies Locale[]).map((locale) => {
+    groups.map(({ toCoach, locale }) => {
       const targets = found.targets
-        .filter((t) => t.locale === locale && isValidSubscription(t))
+        .filter((t) => t.toCoach === toCoach && t.locale === locale && isValidSubscription(t))
         .map(({ endpoint, keys }) => ({ endpoint, keys }));
       if (targets.length === 0) return Promise.resolve({ sent: 0, gone: [], failed: 0 });
+      const notice: CommentNoticeInput = {
+        toCoach,
+        byCoach,
+        athleteId: input.athleteId,
+        athleteName: found.athleteName,
+        teamId: input.teamId,
+        teamName: found.teamName,
+        day: input.day,
+      };
       return withTimeout(
         deliver(targets, commentNotice(notice, locale), COMMENT_TTL_SECONDS).catch(() =>
           FAILED_ALL(targets),

@@ -1,5 +1,7 @@
 import 'server-only';
+import { MEMBER_RECENT_DAYS } from '@/lib/comments';
 import { todayIn } from '@/lib/dates';
+import { COMMENTS_PER_DAY } from '@/lib/limits';
 import { db } from '@/lib/db';
 import type { JumpEvent } from '@/lib/events';
 import type { Locale } from '@/i18n/locales';
@@ -1806,34 +1808,66 @@ export async function listMemberCommentsForCoach(
   return rows;
 }
 
-/** コーチが選手の日にコメントを書く。コーチでないか、相手がいまの選手でなければ書かずに false */
-export async function addCommentAsCoach(
+/** コメントを書いた結果。denied は書けない（コーチでない・いまの選手でない・書けない日）、limit は書きすぎ */
+export type CommentWrite = 'ok' | 'denied' | 'limit';
+
+/**
+ * コメントを1つ書く文。$1 書いた人、$2 チーム、$3 選手、$4 日、$5 本文。
+ * 確かめ（access。$1〜$3 を使う）と、書ける日（選手の時間帯の今日を含む直近 MEMBER_RECENT_DAYS 日）と、
+ * 書いた人の直近24時間の数（COMMENTS_PER_DAY まで）を、書く文と同じ文で確かめる。
+ * 書ける日は選手の profile の時間帯で SQL の中で数える（src/lib/comments.ts の commentOpen と同じ線）
+ */
+async function insertComment(
+  access: string,
+  values: [authorId: string, teamId: string, athleteId: string, day: string, body: string],
+): Promise<CommentWrite> {
+  const { rows } = await db().query<{ recent: string | null; inserted: boolean }>(
+    `with gate as (
+       select (select count(*) from day_comment r
+                where r."authorId" = $1 and r."createdAt" > now() - interval '24 hours') as recent
+         from profile p
+        where p."userId" = $3
+          and $4::date between (now() at time zone p."timeZone")::date - ($6::int - 1)
+                           and (now() at time zone p."timeZone")::date
+          and ${access}
+     ), ins as (
+       insert into day_comment ("athleteId", day, "authorId", "teamId", body)
+       select $3, $4::date, $1, $2, $5 from gate where recent < $7
+       returning id
+     )
+     select (select recent from gate) as recent, exists (select 1 from ins) as inserted`,
+    [...values, MEMBER_RECENT_DAYS, COMMENTS_PER_DAY],
+  );
+  const row = rows[0];
+  if (!row || row.recent === null) return 'denied';
+  if (row.inserted) return 'ok';
+  return 'limit';
+}
+
+/** コーチが選手の日にコメントを書く。コーチでないか、相手がいまの選手でないか、書けない日なら書かずに denied */
+export function addCommentAsCoach(
   access: CoachAccess,
   day: string,
   body: string,
-): Promise<boolean> {
-  const { rowCount } = await db().query(
-    `insert into day_comment ("athleteId", day, "authorId", "teamId", body)
-     select $3, $4, $1, $2, $5 where ${COACH_SEES}`,
-    [...accessParams(access), day, body],
-  );
-  return rowCount === 1;
+): Promise<CommentWrite> {
+  return insertComment(COACH_SEES, [
+    ...(accessParams(access) as [string, string, string]),
+    day,
+    body,
+  ]);
 }
 
-/** 選手が自分の日に、いま入っているチームのやりとりへ書く。入っていなければ書かずに false */
-export async function addCommentAsAthlete(
+/** 選手が自分の日に、いま入っているチームのやりとりへ書く。入っていないか、書けない日なら書かずに denied */
+export function addCommentAsAthlete(
   userId: string,
   teamId: string,
   day: string,
   body: string,
-): Promise<boolean> {
-  const { rowCount } = await db().query(
-    `insert into day_comment ("athleteId", day, "authorId", "teamId", body)
-     select $1, $3, $1, $2, $4
-      where exists (select 1 from team_member m where m."teamId" = $2 and m."userId" = $1)`,
-    [userId, teamId, day, body],
+): Promise<CommentWrite> {
+  return insertComment(
+    `$1 = $3 and exists (select 1 from team_member m where m."teamId" = $2 and m."userId" = $3)`,
+    [userId, teamId, userId, day, body],
   );
-  return rowCount === 1;
 }
 
 /**
@@ -1852,22 +1886,21 @@ export async function deleteComment(userId: string, id: string): Promise<boolean
   return rowCount === 1;
 }
 
-/** コメントの知らせの宛先と、知らせに載せる名前（選手の表示名とチームの名前） */
+/** コメントの知らせの宛先と、知らせに載せる名前（選手の表示名とチームの名前）。toCoach は宛先がコーチの端末か */
 export type CommentPushTargets = {
   athleteName: string;
   teamName: string;
-  targets: (PushTarget & { locale: Locale })[];
+  targets: (PushTarget & { locale: Locale; toCoach: boolean })[];
 };
 
 /**
- * コメントの知らせを送る宛先。toCoaches なら、そのチームのコーチ（書いた人を除く）の端末、
- * そうでなければ選手の端末。選手がもうチームにいなければ空（書いたあとに抜けた）
+ * コメントの知らせを送る宛先。そのチームのコーチ（書いた人を除く）の端末と、コーチが書いたときは選手の端末。
+ * 選手がもうチームにいなければ null（書いたあとに抜けた）
  */
 export async function commentPushTargets(input: {
   teamId: string;
   athleteId: string;
   authorId: string;
-  toCoaches: boolean;
 }): Promise<CommentPushTargets | null> {
   const { rows } = await db().query<{
     athleteName: string;
@@ -1876,19 +1909,19 @@ export async function commentPushTargets(input: {
     p256dh: string | null;
     auth: string | null;
     locale: Locale | null;
+    toCoach: boolean | null;
   }>(
-    `select u.name as "athleteName", t.name as "teamName", s.endpoint, s.p256dh, s.auth, s.locale
+    `select u.name as "athleteName", t.name as "teamName", s.endpoint, s.p256dh, s.auth, s.locale,
+            s."userId" <> $2 as "toCoach"
        from team_member m
        join team t on t.id = m."teamId"
        join "user" u on u.id = m."userId"
        left join push_subscription s on
-         case when $4::boolean
-              then s."userId" in (select c."userId" from team_coach c
-                                   where c."teamId" = $1 and c."userId" <> $3)
-              else s."userId" = $2 end
+         s."userId" in (select c."userId" from team_coach c where c."teamId" = $1 and c."userId" <> $3)
+         or (s."userId" = $2 and $2 <> $3)
       where m."teamId" = $1 and m."userId" = $2
       order by s."createdAt"`,
-    [input.teamId, input.athleteId, input.authorId, input.toCoaches],
+    [input.teamId, input.athleteId, input.authorId],
   );
   if (rows.length === 0) return null;
   return {
@@ -1901,6 +1934,7 @@ export async function commentPushTargets(input: {
               endpoint: row.endpoint,
               keys: { p256dh: row.p256dh, auth: row.auth },
               locale: row.locale,
+              toCoach: row.toCoach === true,
             },
           ]
         : [],

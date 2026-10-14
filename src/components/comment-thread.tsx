@@ -9,19 +9,9 @@ import { ConfirmDialog } from '@/components/confirm-dialog';
 import { Badge, Card, CardTitle, EmptyState, ErrorText, TextArea } from '@/components/layout-ui';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/cn';
-import type { CommentRole } from '@/lib/comments';
-import { COMMENT_MAX_LENGTH } from '@/lib/limits';
+import type { CommentItem } from '@/lib/comments';
+import { COMMENT_MAX_LENGTH, COMMENTS_PER_DAY } from '@/lib/limits';
 import { safely } from '@/lib/safe-action';
-
-/** 画面に出すコメント1つ。役は見ている人から見た書き手（自分・コーチ・選手） */
-export type CommentItem = {
-  id: string;
-  authorName: string;
-  role: CommentRole;
-  body: string;
-  /** 書いた時刻（ISO 8601） */
-  createdAt: string;
-};
 
 /**
  * コーチと選手のやりとり（2026-10-14）。選手の1日・1チームに1つ。古い順に並べ、下に書く欄を置く。
@@ -135,7 +125,13 @@ export function CommentThread({
             </Button>
           </ActionForm>
         )}
-        <ErrorText>{state?.ok === false ? tErrors(state.error as 'generic') : null}</ErrorText>
+        <ErrorText>
+          {state?.ok === false
+            ? state.error === 'commentLimit'
+              ? tErrors('commentLimit', { count: COMMENTS_PER_DAY })
+              : tErrors(state.error as 'generic')
+            : null}
+        </ErrorText>
       </div>
       <ConfirmDialog
         open={removing !== null}

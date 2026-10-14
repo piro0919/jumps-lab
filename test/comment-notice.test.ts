@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { commentNotice, noticeName } from '@/lib/comment-notice';
-import { commentOpen, commentRole } from '@/lib/comments';
+import { commentOpen, commentRole, toCommentItem } from '@/lib/comments';
 
 /**
  * コメントの知らせの中身（src/lib/comment-notice.ts）と、書ける日・役の決め方（src/lib/comments.ts）。
@@ -18,7 +18,7 @@ const base = {
 describe('commentNotice', () => {
   it('コーチが書いたら、選手へは決まった題とチームの名前だけ。押すと自分の日のコメントへ', () => {
     const notices = (['en', 'ja'] as const).map((locale) =>
-      commentNotice({ ...base, toCoaches: false }, locale),
+      commentNotice({ ...base, toCoach: false, byCoach: true }, locale),
     );
     expect(notices).toEqual([
       {
@@ -37,7 +37,7 @@ describe('commentNotice', () => {
   });
 
   it('選手が書いたら、コーチへは選手の表示名とチームの名前。押すと選手の画面のその日へ', () => {
-    expect(commentNotice({ ...base, toCoaches: true }, 'ja')).toEqual({
+    expect(commentNotice({ ...base, toCoach: true, byCoach: false }, 'ja')).toEqual({
       title: 'Hanaさんからコメントが届きました',
       body: 'チーム：Hawks',
       url: `/teams/${base.teamId}/members/user-1#day-2026-10-14`,
@@ -45,10 +45,38 @@ describe('commentNotice', () => {
     });
   });
 
-  it('名前が空になる（制御文字だけ）なら、名前の無い題にする', () => {
-    expect(commentNotice({ ...base, athleteName: '‮\u0000', toCoaches: true }, 'en').title).toBe(
-      'New comment from an athlete',
+  it('コーチが書いたら、ほかのコーチへは選手の日にコーチが書いたという題。本文は載せない', () => {
+    const notices = (['en', 'ja'] as const).map((locale) =>
+      commentNotice({ ...base, toCoach: true, byCoach: true }, locale),
     );
+    expect(notices.map((n) => [n.title, n.body, n.url])).toEqual([
+      [
+        "A coach commented on Hana's day",
+        'Team: Hawks',
+        `/teams/${base.teamId}/members/user-1#day-2026-10-14`,
+      ],
+      [
+        'Hanaさんの日にコーチがコメントしました',
+        'チーム：Hawks',
+        `/teams/${base.teamId}/members/user-1#day-2026-10-14`,
+      ],
+    ]);
+  });
+
+  it('チームの名前が空になる（制御文字・書式文字だけ）なら、「チームから」にする', () => {
+    const teamName = '\u200b\u0007‮';
+    expect(
+      (['en', 'ja'] as const).map(
+        (locale) =>
+          commentNotice({ ...base, teamName, toCoach: false, byCoach: true }, locale).body,
+      ),
+    ).toEqual(['From your team', 'チームから']);
+  });
+
+  it('名前が空になる（制御文字だけ）なら、名前の無い題にする', () => {
+    expect(
+      commentNotice({ ...base, athleteName: '‮\u0000', toCoach: true, byCoach: false }, 'en').title,
+    ).toBe('New comment from an athlete');
   });
 });
 
@@ -80,5 +108,28 @@ describe('commentRole', () => {
       commentRole({ authorId: 'c', byCoach: true }, 'me'),
       commentRole({ authorId: 'a', byCoach: false }, 'me'),
     ]).toEqual(['you', 'coach', 'athlete']);
+  });
+});
+
+describe('toCommentItem', () => {
+  it('DB のコメントを、見ている人から見た役と ISO の時刻つきの画面のコメントにする', () => {
+    const comment = {
+      id: 'c1',
+      authorId: 'coach',
+      authorName: 'Coach',
+      byCoach: true,
+      body: 'Nice',
+      createdAt: new Date('2026-10-14T01:02:03Z'),
+    };
+    expect([toCommentItem(comment, 'athlete'), toCommentItem(comment, 'coach').role]).toEqual([
+      {
+        id: 'c1',
+        authorName: 'Coach',
+        role: 'coach',
+        body: 'Nice',
+        createdAt: '2026-10-14T01:02:03.000Z',
+      },
+      'you',
+    ]);
   });
 });

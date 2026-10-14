@@ -134,9 +134,10 @@ export default function PrivacyEn() {
         </dd>
         <dt>Comments</dt>
         <dd>
-          Coaches can comment on each of your last 14 days, and you can reply. Comments are kept per
-          team, and only you and that team&apos;s coaches can see them (coaches of your other teams
-          cannot). Only the person who wrote a comment can delete it
+          Coaches and you can comment on each of your last 14 days (you can start a comment, not
+          only reply). Comments are kept per team, and only you and that team&apos;s coaches can see
+          them (coaches of your other teams cannot). Only the person who wrote a comment can delete
+          it
         </dd>
         <dt>Consent</dt>
         <dd>

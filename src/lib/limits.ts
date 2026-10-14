@@ -41,3 +41,9 @@ export const USER_ID_MAX_LENGTH = 200;
 
 /** コーチと選手のコメントの字数（DB の上限は 2000。余裕を持たせる） */
 export const COMMENT_MAX_LENGTH = 1000;
+
+/**
+ * 1人が直近24時間に書けるコメントの数（仮決め）。コーチが毎日チーム全員に書いても足りる数にし、
+ * 押し続け・作りの誤りで知らせが鳴り続けるのを止める
+ */
+export const COMMENTS_PER_DAY = 100;

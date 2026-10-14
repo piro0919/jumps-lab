@@ -144,7 +144,8 @@
     "teamInviteInvalid": "この招待のリンクはもう使えません。",
     "teamCoachJoin": "このチームのコーチなので、選手としては参加できません。",
     "guardianTeamCoach": "この方はこのチームのコーチのため、選手としては参加できません。このリンクはもう使えません。",
-    "comment": "コメントは1,000文字までで書いてください。"
+    "comment": "コメントは1,000文字までで書いてください。",
+    "commentLimit": "24時間に書けるコメントは{count}件までです。時間をおいて書いてください。"
   },
   "home": {
     "goal": "今季の目標",
@@ -470,7 +471,10 @@
     "commentFromCoachTitle": "コーチからコメントが届きました",
     "commentFromAthleteTitle": "{name}さんからコメントが届きました",
     "commentFromAthleteTitleNoName": "選手からコメントが届きました",
-    "commentBody": "チーム：{team}"
+    "commentFromCoachToCoachTitle": "{name}さんの日にコーチがコメントしました",
+    "commentFromCoachToCoachTitleNoName": "選手の日にコーチがコメントしました",
+    "commentBody": "チーム：{team}",
+    "commentBodyNoTeam": "チームから"
   },
   "guardianConsent": {
     "metaTitle": "保護者の方の同意",
@@ -541,7 +545,7 @@
     "shownVideos": "動画とそのメモ（送ってから90日で削除されるまで）",
     "shownComments": "選手が日ごとにチームへ書いたコメント",
     "notShown": "メールアドレスは見せません。",
-    "readOnly": "コーチは記録を直したり消したりできません。日ごとにコメントを書くことができ、選手は返事ができます。",
+    "readOnly": "コーチは記録を直したり消したりできません。日ごとのコメントは、コーチも選手も書けます。",
     "leaveAnytime": "アカウントのメニューの「チーム」から、いつでも抜けられます。抜けたときから、コーチはあなたの記録を見られなくなります。",
     "join": "同意して参加",
     "joining": "参加しています…",

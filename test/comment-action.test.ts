@@ -1,11 +1,15 @@
+import { redirect } from 'next/navigation';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { CommentWrite } from '@/lib/data';
 import { todayIn } from '@/lib/dates';
 import { COMMENT_MAX_LENGTH } from '@/lib/limits';
 
 /**
  * コメントを書く Server Action（src/app/actions/comments.ts の addCommentAction）。DB と知らせは差し替える:
- * 1. 字数の上限・空の文・書けない日は書かない
+ * 1. 字数の上限・空の文は書かない。書けない（denied）は generic、書きすぎ（limit）は commentLimit
  * 2. 選手は自分の日に、コーチはいまの選手の日に書き、書けたら after() で相手への知らせを送る
+ * 3. 書く途中で投げられた Next の redirect は、誤りの値にせず投げ直す
+ * 書けるか（コーチか・いまの選手か・書ける日か・数）は書く文の中で確かめる（test/db/comments.test.ts）
  */
 
 vi.mock('next/cache', () => ({ refresh: vi.fn() }));
@@ -13,13 +17,11 @@ const server = vi.hoisted(() => ({ after: vi.fn<(task: () => Promise<void>) => v
 vi.mock('next/server', () => server);
 vi.mock('@/lib/viewer', () => ({
   requireViewer: async () => ({ userId: 'me', name: 'Me', email: 'me@example.com', image: null }),
-  requireProfile: async () => ({ timeZone: 'UTC' }),
 }));
 const data = vi.hoisted(() => ({
-  addCommentAsAthlete: vi.fn<(...args: unknown[]) => Promise<boolean>>(async () => true),
-  addCommentAsCoach: vi.fn<(...args: unknown[]) => Promise<boolean>>(async () => true),
+  addCommentAsAthlete: vi.fn<(...args: unknown[]) => Promise<CommentWrite>>(async () => 'ok'),
+  addCommentAsCoach: vi.fn<(...args: unknown[]) => Promise<CommentWrite>>(async () => 'ok'),
   deleteComment: vi.fn(async () => true),
-  getMemberForCoach: vi.fn(async (): Promise<{ timeZone: string } | null> => ({ timeZone: 'UTC' })),
 }));
 vi.mock('@/lib/data', () => data);
 const push = vi.hoisted(() => ({ sendCommentPush: vi.fn(async () => ({ sent: 1, failed: 0 })) }));
@@ -48,12 +50,10 @@ beforeEach(() => {
 });
 
 describe('addCommentAction', () => {
-  it('長すぎる・空の文は comment、書けない日（15日前・先の日）は generic で、どれも書かない', async () => {
+  it('長すぎる・空の文は comment で、書かない', async () => {
     const results = [
       await addCommentAction(null, form({ body: 'a'.repeat(COMMENT_MAX_LENGTH + 1) })),
       await addCommentAction(null, form({ body: '   ' })),
-      await addCommentAction(null, form({ day: '2000-01-01' })),
-      await addCommentAction(null, form({ day: '2999-01-01' })),
     ];
     expect({
       results,
@@ -62,10 +62,36 @@ describe('addCommentAction', () => {
       results: [
         { ok: false, error: 'comment' },
         { ok: false, error: 'comment' },
-        { ok: false, error: 'generic' },
-        { ok: false, error: 'generic' },
       ],
       writes: 0,
+    });
+  });
+
+  it('書けなければ generic、直近24時間に書きすぎていれば commentLimit。どちらも知らせを送らない', async () => {
+    data.addCommentAsAthlete.mockResolvedValueOnce('denied');
+    data.addCommentAsAthlete.mockResolvedValueOnce('limit');
+    data.addCommentAsCoach.mockResolvedValueOnce('limit');
+    expect({
+      results: [
+        await addCommentAction(null, form({ day: '2000-01-01' })),
+        await addCommentAction(null, form({})),
+        await addCommentAction(null, form({ athleteId: 'athlete' })),
+      ],
+      scheduled: server.after.mock.calls.length,
+    }).toEqual({
+      results: [
+        { ok: false, error: 'generic' },
+        { ok: false, error: 'commentLimit' },
+        { ok: false, error: 'commentLimit' },
+      ],
+      scheduled: 0,
+    });
+  });
+
+  it('書く途中で投げられた redirect は、誤りの値にせず投げ直す', async () => {
+    data.addCommentAsAthlete.mockImplementationOnce(async () => redirect('/welcome'));
+    await expect(addCommentAction(null, form({}))).rejects.toMatchObject({
+      digest: expect.stringContaining('NEXT_REDIRECT'),
     });
   });
 
@@ -83,9 +109,9 @@ describe('addCommentAction', () => {
     });
   });
 
-  it('コーチは選手の id を付けて書く。いまの選手でなければ書かず、知らせも送らない', async () => {
+  it('コーチは選手の id を付けて1つの文で書く。いまの選手でなければ書けず、知らせも送らない', async () => {
     const written = await addCommentAction(null, form({ athleteId: 'athlete' }));
-    data.getMemberForCoach.mockResolvedValueOnce(null);
+    data.addCommentAsCoach.mockResolvedValueOnce('denied');
     const refused = await addCommentAction(null, form({ athleteId: 'stranger' }));
     expect({
       written,
@@ -95,7 +121,10 @@ describe('addCommentAction', () => {
     }).toEqual({
       written: { ok: true },
       refused: { ok: false, error: 'generic' },
-      writes: [{ coachId: 'me', teamId: TEAM, memberId: 'athlete' }],
+      writes: [
+        { coachId: 'me', teamId: TEAM, memberId: 'athlete' },
+        { coachId: 'me', teamId: TEAM, memberId: 'stranger' },
+      ],
       scheduled: 1,
     });
   });

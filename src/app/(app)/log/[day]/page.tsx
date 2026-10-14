@@ -7,7 +7,7 @@ import { ConditionCard } from '@/components/condition-card';
 import { PageTitle, HALVES } from '@/components/layout-ui';
 import { buttonVariants } from '@/components/ui/button';
 import { VideosCard } from '@/components/videos-card';
-import { commentOpen, commentRole } from '@/lib/comments';
+import { commentOpen, toCommentItem } from '@/lib/comments';
 import {
   getDayLog,
   hasMenu,
@@ -44,18 +44,17 @@ export default async function LogDay({ params }: PageProps<'/log/[day]'>) {
     listMemberships(viewer.userId),
   ]);
   // やりとりはチームごと。いま入っているチーム（入った順）のあとに、抜けたチームのやりとりを見るだけで並べる
+  const open = commentOpen(day, today);
+  const commented = new Set(comments.map((c) => c.teamId));
+  const current = new Set(memberships.map((team) => team.id));
   const threads = [
     ...memberships.map((team) => ({ teamId: team.id, name: team.name, current: true })),
     ...[...new Map(comments.map((c) => [c.teamId, c.teamName])).entries()]
-      .filter(([teamId]) => !memberships.some((team) => team.id === teamId))
+      .filter(([teamId]) => !current.has(teamId))
       .map(([teamId, name]) => ({ teamId, name, current: false })),
-  ].filter(
+  ]
     // 書けない日（14日より前）は、やりとりのあるチームだけ
-    (thread) =>
-      (thread.current && commentOpen(day, today)) ||
-      comments.some((c) => c.teamId === thread.teamId),
-  );
-  const open = commentOpen(day, today);
+    .filter((thread) => (thread.current && open) || commented.has(thread.teamId));
   // 動画は開くたびに期限つきの URL（見る用と保存する用）を作る。結び付けた試技は「2. 6.12 m」のように、試技の欄と同じ番号で出す
   const videoItems = await Promise.all(
     videos.map(async (video) => {
@@ -142,13 +141,7 @@ export default async function LogDay({ params }: PageProps<'/log/[day]'>) {
                 timeZone={profile.timeZone}
                 comments={comments
                   .filter((c) => c.teamId === thread.teamId)
-                  .map((c) => ({
-                    id: c.id,
-                    authorName: c.authorName,
-                    role: commentRole(c, viewer.userId),
-                    body: c.body,
-                    createdAt: c.createdAt.toISOString(),
-                  }))}
+                  .map((c) => toCommentItem(c, viewer.userId))}
                 form={thread.current && open ? { teamId: thread.teamId, day } : null}
               />
             ))}

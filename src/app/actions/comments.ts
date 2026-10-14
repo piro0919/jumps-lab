@@ -1,20 +1,20 @@
 'use server';
 
 import { refresh } from 'next/cache';
+import { unstable_rethrow } from 'next/navigation';
 import { after } from 'next/server';
 import { z } from 'zod';
-import { commentOpen } from '@/lib/comments';
 import {
   addCommentAsAthlete,
   addCommentAsCoach,
+  type CommentWrite,
   deleteComment,
-  getMemberForCoach,
 } from '@/lib/data';
-import { isDay, todayIn } from '@/lib/dates';
+import { isDay } from '@/lib/dates';
 import type { ActionResult } from '@/lib/form';
 import { COMMENT_MAX_LENGTH, USER_ID_MAX_LENGTH } from '@/lib/limits';
 import { sendCommentPush } from '@/lib/push';
-import { requireProfile, requireViewer } from '@/lib/viewer';
+import { requireViewer } from '@/lib/viewer';
 
 /**
  * コーチと選手のコメント（2026-10-14）。書く・消すのどちらも、押した人を requireViewer で決め、
@@ -30,7 +30,10 @@ const commentSchema = z.object({
   athleteId: z.string().min(1).max(USER_ID_MAX_LENGTH).optional(),
 });
 
-/** コメントを書く。選手は自分の日に、コーチはいまの選手の日に。書ける日はコーチの画面に出る直近14日だけ */
+/**
+ * コメントを書く。選手は自分の日に、コーチはいまの選手の日に。書ける日はコーチの画面に出る直近14日だけ。
+ * 1人が書けるのは直近24時間に COMMENTS_PER_DAY まで（超えたら commentLimit）
+ */
 export async function addCommentAction(
   _previous: ActionResult,
   formData: FormData,
@@ -41,23 +44,25 @@ export async function addCommentAction(
   const { teamId, day, body } = parsed.data;
   const athleteId = parsed.data.athleteId ?? viewer.userId;
 
+  // 書けるか（コーチか・いまの選手か・書ける日か・書きすぎていないか）は、書く文の中で確かめる（1往復）
+  let written: CommentWrite;
   try {
-    if (athleteId === viewer.userId) {
-      const profile = await requireProfile(viewer.userId);
-      if (!commentOpen(day, todayIn(profile.timeZone))) return { ok: false, error: 'generic' };
-      if (!(await addCommentAsAthlete(viewer.userId, teamId, day, body)))
-        return { ok: false, error: 'generic' };
-    } else {
-      const access = { coachId: viewer.userId, teamId, memberId: athleteId };
-      const member = await getMemberForCoach(access);
-      if (!member || !commentOpen(day, todayIn(member.timeZone)))
-        return { ok: false, error: 'generic' };
-      if (!(await addCommentAsCoach(access, day, body))) return { ok: false, error: 'generic' };
-    }
+    written =
+      athleteId === viewer.userId
+        ? await addCommentAsAthlete(viewer.userId, teamId, day, body)
+        : await addCommentAsCoach(
+            { coachId: viewer.userId, teamId, memberId: athleteId },
+            day,
+            body,
+          );
   } catch (error) {
+    // Next の redirect と notFound は投げ直す（誤りの値にすると、送り先へ移らない）
+    unstable_rethrow(error);
     console.error(error);
     return { ok: false, error: 'generic' };
   }
+  if (written === 'limit') return { ok: false, error: 'commentLimit' };
+  if (written === 'denied') return { ok: false, error: 'generic' };
 
   after(async () => {
     try {

@@ -16,7 +16,7 @@ import {
 } from '@/components/layout-ui';
 import { RemoveMemberButton } from '@/components/team-buttons';
 import { VideosCard } from '@/components/videos-card';
-import { commentOpen, commentRole, MEMBER_RECENT_DAYS } from '@/lib/comments';
+import { MEMBER_RECENT_DAYS, toCommentItem } from '@/lib/comments';
 import { competitionResults } from '@/lib/competition-results';
 import {
   type CoachAccess,
@@ -152,16 +152,9 @@ export default async function TeamMember({
                     timeZone={coach.timeZone}
                     comments={comments
                       .filter((c) => c.day === day)
-                      .map((c) => ({
-                        id: c.id,
-                        authorName: c.authorName,
-                        role: commentRole(c, viewer.userId),
-                        body: c.body,
-                        createdAt: c.createdAt.toISOString(),
-                      }))}
-                    form={
-                      commentOpen(day, today) ? { teamId: team.id, day, athleteId: userId } : null
-                    }
+                      .map((c) => toCommentItem(c, viewer.userId))}
+                    // 出す日はどれも書ける日（選手の時間帯の今日を含む直近14日。読む文の範囲と同じ）
+                    form={{ teamId: team.id, day, athleteId: userId }}
                   />
                 </section>
               );
