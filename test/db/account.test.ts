@@ -16,14 +16,14 @@ vi.hoisted(() => {
   process.env.GOOGLE_CLIENT_SECRET = 'test-secret';
 });
 
-const r2 = vi.hoisted(() => ({ deleteObjects: vi.fn<(keys: string[]) => Promise<number>>() }));
+const r2 = vi.hoisted(() => ({ deleteUserVideos: vi.fn<(userId: string) => Promise<number>>() }));
 vi.mock('@/lib/r2', () => r2);
 
 const { getAuth } = await import('@/lib/auth');
 
 beforeEach(() => {
-  r2.deleteObjects.mockReset();
-  r2.deleteObjects.mockResolvedValue(0);
+  r2.deleteUserVideos.mockReset();
+  r2.deleteUserVideos.mockResolvedValue(0);
 });
 
 /** user を指す外部キーを持つ表（user 自身は除く）。表を足したら、ここに自動で入る */
@@ -125,7 +125,7 @@ describe('アカウントの削除', () => {
   it('消すと、その人の行はどの表にも残らず、ほかの人の行は残る。動画は R2 からも消す', async () => {
     const userId = await addProfile();
     const otherId = await addProfile();
-    const objectKey = await seedEverything(userId);
+    await seedEverything(userId);
     await seedEverything(otherId);
     await signedIn(otherId);
     const headers = await signedIn(userId);
@@ -140,13 +140,13 @@ describe('アカウントの削除', () => {
     const after = await rowsLeft(userId);
     expect(Object.entries(after).filter(([, count]) => count !== 0)).toEqual([]);
     expect(Object.values(await rowsLeft(otherId)).every((count) => count > 0)).toBe(true);
-    expect(r2.deleteObjects).toHaveBeenCalledExactlyOnceWith([objectKey]);
+    expect(r2.deleteUserVideos).toHaveBeenCalledExactlyOnceWith(userId);
   });
 
   it('R2 で消せなくても、アカウントは消える（残りはバケットの寿命の決まりで消える）', async () => {
     const userId = await addProfile();
     await seedEverything(userId);
-    r2.deleteObjects.mockRejectedValue(new Error('R2 is down'));
+    r2.deleteUserVideos.mockRejectedValue(new Error('R2 is down'));
     vi.spyOn(console, 'error').mockImplementation(() => {});
 
     await getAuth().api.deleteUser({ headers: await signedIn(userId), body: {} });
@@ -164,6 +164,6 @@ describe('アカウントの削除', () => {
     ).rejects.toMatchObject({ body: { code: 'SESSION_EXPIRED' } });
 
     expect(Object.values(await rowsLeft(userId)).every((count) => count > 0)).toBe(true);
-    expect(r2.deleteObjects).not.toHaveBeenCalled();
+    expect(r2.deleteUserVideos).not.toHaveBeenCalled();
   });
 });

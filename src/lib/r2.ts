@@ -4,6 +4,7 @@ import {
   DeleteObjectsCommand,
   NotFound,
   GetObjectCommand,
+  ListObjectsV2Command,
   HeadObjectCommand,
   PutObjectCommand,
   S3Client,
@@ -106,7 +107,7 @@ export async function deleteObject(key: string): Promise<void> {
  * まとめて消す（アカウントを消すとき）。上限の数ずつに分けて送る。
  * 消せなかった置き場所の数を返す（中身は返さない。ログに置き場所を並べないため）。通信の失敗は投げる
  */
-export async function deleteObjects(keys: string[]): Promise<number> {
+async function deleteObjects(keys: string[]): Promise<number> {
   if (keys.length === 0) return 0;
   const { client, bucket } = r2();
   let failed = 0;
@@ -120,5 +121,29 @@ export async function deleteObjects(keys: string[]): Promise<number> {
     );
     failed += result.Errors?.length ?? 0;
   }
+  return failed;
+}
+
+/**
+ * 1人の動画をまとめて消す（アカウントを消したとき）。行ではなく置き場所の頭（videos/<userId>/）で探すので、
+ * 行の無い動画（送りかけで行だけ先に消えたもの）も一緒に消える。消せなかった数を返す
+ */
+export async function deleteUserVideos(userId: string): Promise<number> {
+  const { client, bucket } = r2();
+  let failed = 0;
+  let token: string | undefined;
+  do {
+    const page = await client.send(
+      new ListObjectsV2Command({
+        Bucket: bucket,
+        Prefix: `videos/${userId}/`,
+        ContinuationToken: token,
+        MaxKeys: DELETE_BATCH_SIZE,
+      }),
+    );
+    const keys = (page.Contents ?? []).flatMap((object) => (object.Key ? [object.Key] : []));
+    failed += await deleteObjects(keys);
+    token = page.IsTruncated ? page.NextContinuationToken : undefined;
+  } while (token);
   return failed;
 }

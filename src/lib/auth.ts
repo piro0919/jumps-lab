@@ -1,9 +1,9 @@
 import 'server-only';
 import { betterAuth } from 'better-auth';
+import { after } from 'next/server';
 import { env } from '@/env';
-import { videoObjectKeys } from '@/lib/data';
 import { db } from '@/lib/db';
-import { deleteObjects } from '@/lib/r2';
+import { deleteUserVideos } from '@/lib/r2';
 
 /** セッションをクッキーに持たせておく時間（5分） */
 const SESSION_CACHE_MINUTES = 5;
@@ -36,39 +36,38 @@ function createAuth() {
   });
 }
 
-/**
- * アカウントを消すとき、行を消す前に読んだ動画の置き場所。Better Auth は beforeDelete と afterDelete に
- * 同じ user のオブジェクトを渡すので、それを鍵にして受け渡す（消し終われば捨てられる）
- */
-const pendingVideoKeys = new WeakMap<object, string[]>();
+/** R2 の後片付け。応答の後に回せるときは回す（多いと待たせるため）。回せない場所ではその場で待つ */
+function afterResponse(task: () => Promise<void>): Promise<void> {
+  try {
+    after(task);
+    return Promise.resolve();
+  } catch {
+    return task();
+  }
+}
 
 /**
  * 本人が設定から自分のアカウントを消す（プライバシーポリシー 7・8 の約束）。順番は Better Auth が決める:
  * 1. ログインからの時間を確かめる（既定の freshAge は1日。過ぎていれば SESSION_EXPIRED で断り、何も消さない）
- * 2. beforeDelete: 動画の置き場所を読むだけ（ここではまだ消さない）
- * 3. user の行を消す。ほかの表（プロフィール・記録・大会・動画・AI・通知の宛先・セッション・連携）は
+ * 2. user の行を消す。ほかの表（プロフィール・記録・大会・動画・AI・通知の宛先・セッション・連携）は
  *    on delete cascade で一緒に消える（test/db/account.test.ts）
- * 4. afterDelete: R2 の動画を消す
+ * 3. afterDelete: R2 の videos/<userId>/ をまとめて消す（行の無い送りかけの動画も含めて）。応答の後に回す
  * R2 を行より後にするのは、断られたときや行を消すのに失敗したときに、動画だけが先に消えた半端な状態を作らないため。
- * R2 で消せなかった分はサーバーのログに残して先へ進む。残った動画はバケットの寿命の決まり（expire-videos。
- * 送った日から91日）で消える
+ * 消した後に届いた送りかけの動画や、R2 で消せなかった分は、サーバーのログに残して先へ進む。
+ * それらはバケットの寿命の決まり（expire-videos。送った日から91日）で消える
  */
 const deleteUserOptions = {
   enabled: true,
-  beforeDelete: async (user: { id: string }) => {
-    pendingVideoKeys.set(user, await videoObjectKeys(user.id));
-  },
-  afterDelete: async (user: { id: string }) => {
-    const keys = pendingVideoKeys.get(user) ?? [];
-    pendingVideoKeys.delete(user);
-    try {
-      const failed = await deleteObjects(keys);
-      if (failed > 0)
-        console.error(`アカウントを消したが、動画 ${failed} 本を R2 から消せなかった`);
-    } catch (error) {
-      console.error('アカウントを消したが、動画を R2 から消せなかった', error);
-    }
-  },
+  afterDelete: (user: { id: string }) =>
+    afterResponse(async () => {
+      try {
+        const failed = await deleteUserVideos(user.id);
+        if (failed > 0)
+          console.error(`アカウントを消したが、動画 ${failed} 本を R2 から消せなかった`);
+      } catch (error) {
+        console.error('アカウントを消したが、動画を R2 から消せなかった', error);
+      }
+    }),
 };
 
 let auth: ReturnType<typeof createAuth> | undefined;

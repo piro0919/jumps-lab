@@ -10,7 +10,6 @@ import {
   AlertDialog,
   AlertDialogCancel,
   AlertDialogContent,
-  AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
@@ -32,7 +31,8 @@ export function DeleteAccountButton({ email }: { email: string }) {
   const [typed, setTyped] = useState('');
   const [state, setState] = useState<State>('idle');
   const busy = useRef(false);
-  const matches = typed.trim() === email;
+  // 打ち込みの大文字小文字は問わない（スマホのキーボードが先頭を大文字にすることがある）
+  const matches = typed.trim().toLowerCase() === email.toLowerCase();
 
   const onOpenChange = (next: boolean) => {
     // 消している最中は閉じない（閉じても止まらず、結果が見えなくなる）
@@ -60,7 +60,7 @@ export function DeleteAccountButton({ email }: { email: string }) {
 
   return (
     <>
-      <Button variant="destructive" size="sm" type="button" onClick={() => setOpen(true)}>
+      <Button variant="secondary" size="sm" type="button" onClick={() => setOpen(true)}>
         <Trash2 aria-hidden />
         {t('deleteAccount')}
       </Button>
@@ -69,7 +69,6 @@ export function DeleteAccountButton({ email }: { email: string }) {
           <form onSubmit={submit} className="grid gap-4">
             <AlertDialogHeader>
               <AlertDialogTitle>{t('deleteAccountTitle')}</AlertDialogTitle>
-              <AlertDialogDescription>{t('deleteAccountBody')}</AlertDialogDescription>
             </AlertDialogHeader>
             {state === 'stale' ? (
               <div className="flex flex-col gap-3">

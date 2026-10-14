@@ -4,7 +4,7 @@ import { createElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
- * 設定の「アカウントを削除」（delete-account-button.tsx）。メールをそのまま打つまで消すボタンは押せず、
+ * 設定の「アカウントを削除」（delete-account-button.tsx）。メールを打つまで消すボタンは押せず（大文字小文字は問わない）、
  * 二度押しでも1回しか頼まない。断られたら（stale）ログインし直すボタンを出す。
  * 削除の中身（src/lib/sign-out.ts の deleteAccount）と Google のボタン、文言は差し替える
  */
@@ -44,14 +44,19 @@ const type = (input: HTMLInputElement, value: string) =>
   });
 
 describe('DeleteAccountButton', () => {
-  it('メールをそのまま打つまで、消すボタンは押せない', () => {
+  it('メールを打つまで、消すボタンは押せない', () => {
     const { input, confirm } = openDialog();
     expect(confirm().disabled).toBe(true);
     type(input, 'athlete@example.co');
     expect(confirm().disabled).toBe(true);
-    type(input, 'ATHLETE@example.com');
-    expect(confirm().disabled).toBe(true);
     type(input, EMAIL);
+    expect(confirm().disabled).toBe(false);
+  });
+
+  // スマホのキーボードは先頭を大文字にすることがある
+  it('大文字小文字の違いだけなら押せる', () => {
+    const { input, confirm } = openDialog();
+    type(input, 'Athlete@Example.com');
     expect(confirm().disabled).toBe(false);
   });
 

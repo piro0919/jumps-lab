@@ -50,6 +50,10 @@ export async function signOut(): Promise<void> {
 export async function deleteAccount(): Promise<'deleted' | 'stale' | 'failed'> {
   const { error } = await authClient.deleteUser().catch(() => ({ error: { code: undefined } }));
   if (error) return error.code === 'SESSION_EXPIRED' ? 'stale' : 'failed';
-  await unsubscribeBrowser().catch(() => {});
+  // 通知の購読を外すのが止まっても、トップへ進めるよう待つ時間を区切る（ログアウトと同じ上限）
+  await Promise.race([
+    unsubscribeBrowser().catch(() => {}),
+    new Promise((resolve) => setTimeout(resolve, PUSH_CLEANUP_TIMEOUT_MS)),
+  ]);
   return 'deleted';
 }

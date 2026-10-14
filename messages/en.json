@@ -112,7 +112,6 @@
     "signOut": "Sign out",
     "deleteAccount": "Delete account",
     "deleteAccountTitle": "Delete your account?",
-    "deleteAccountBody": "Your profile, marks, competitions, videos and menus will be deleted. This cannot be undone.",
     "deleteAccountConfirm": "Type {email} to confirm.",
     "deleteAccountStale": "To delete your account, sign in again first.",
     "deleteAccountFailed": "Could not delete your account. Try again.",

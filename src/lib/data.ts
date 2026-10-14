@@ -698,18 +698,6 @@ export async function deleteVideo(userId: string, id: string): Promise<string | 
   return rows[0]?.objectKey ?? null;
 }
 
-/**
- * その人の動画の置き場所を全部（届いていない枠・期限を過ぎた行も含む）。アカウントを消すときに、
- * 行が消える前に読んでおき、行を消したあとで R2 から消す（src/lib/auth.ts の deleteUser）
- */
-export async function videoObjectKeys(userId: string): Promise<string[]> {
-  const { rows } = await db().query<{ objectKey: string }>(
-    `select "objectKey" from video where "userId" = $1`,
-    [userId],
-  );
-  return rows.map((row) => row.objectKey);
-}
-
 /** 動画の合計の大きさ（届いていない枠も含む。期限を過ぎた動画は数えない） */
 export async function videoUsage(userId: string): Promise<number> {
   const { rows } = await db().query<{ total: string }>(
