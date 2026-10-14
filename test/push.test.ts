@@ -246,6 +246,12 @@ describe('Cron の鍵', () => {
     expect((await call('Bearer secret')).status).toBe(503);
     expect(push.sendMeetReminders).not.toHaveBeenCalled();
   });
+
+  it('通知の鍵が無くても、期限の過ぎた保護者へのお願いは消す', async () => {
+    push.pushReady.mockReturnValue(false);
+    expect((await call('Bearer secret')).status).toBe(503);
+    expect(data.purgeGuardianRequests).toHaveBeenCalledOnce();
+  });
 });
 
 describe('通知の宛先の受け口', () => {

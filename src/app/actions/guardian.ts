@@ -8,33 +8,32 @@ import { AI_CONSENT_VERSION, aiConsenter, aiEnabled } from '@/lib/ai';
 import {
   addGuardianRequest,
   agreeAsGuardian,
-  declareAge,
+  declareUnder16,
   getProfile,
   latestGuardianRequest,
   releaseGuardianRequest,
-  supersedeGuardianRequests,
 } from '@/lib/data';
 import type { ActionResult } from '@/lib/form';
 import {
   GUARDIAN_LINK_DAYS,
   GUARDIAN_SENDS_PER_DAY,
   hashGuardianToken,
+  mailSafeName,
   newGuardianToken,
+  TOKEN_MAX_LENGTH,
 } from '@/lib/guardian';
 import { EMAIL_MAX_LENGTH } from '@/lib/limits';
 import { mailReady, sendMail } from '@/lib/mail';
 import { SITE_URL } from '@/lib/site';
 import { requireViewer } from '@/lib/viewer';
 
-/** リンクの鍵の長さの上限。これより長いものは探さずに断る（鍵は 43 文字） */
-const TOKEN_MAX_LENGTH = 100;
-
 const emailSchema = z.email().max(EMAIL_MAX_LENGTH);
 
 /**
  * 16歳未満の人が、保護者へ AI コーチの同意のお願いをメールで送る（2026-10-14 に本人と決めた）。
  * email が無ければ、前に送った宛先へ送り直す。生年月日の無い人は「16歳未満です」と答えて送る（adult=no）。
- * 送る前に行を入れて24時間の回数を数え、送れなければ行を消す。送れたら前のリンクを切る
+ * 送る前に行を入れて24時間の回数を数え（前のリンクはこのとき切る）、送れなければ行を消す。
+ * 「16歳未満です」の答えは送れたあとで残し、一度残すと本人の答えでは16歳以上に戻せない（src/lib/data.ts の consentToAi）
  */
 export async function sendGuardianRequestAction(formData: FormData): Promise<ActionResult> {
   const viewer = await requireViewer();
@@ -66,7 +65,6 @@ export async function sendGuardianRequestAction(formData: FormData): Promise<Act
   }
 
   try {
-    if (profile.birthdate === null && declaredMinor) await declareAge(viewer.userId, false);
     const token = newGuardianToken();
     const id = await addGuardianRequest(viewer.userId, {
       guardianEmail,
@@ -82,7 +80,9 @@ export async function sendGuardianRequestAction(formData: FormData): Promise<Act
       await releaseGuardianRequest(viewer.userId, id);
       return { ok: false, error: 'guardianMailUnavailable' };
     }
-    await supersedeGuardianRequests(viewer.userId, id);
+    if (profile.birthdate === null && profile.ageDeclared16Plus !== false) {
+      await declareUnder16(viewer.userId);
+    }
   } catch (error) {
     console.error(error);
     return { ok: false, error: 'generic' };
@@ -91,15 +91,18 @@ export async function sendGuardianRequestAction(formData: FormData): Promise<Act
   return { ok: true };
 }
 
-/** 保護者へのメールの件名と本文。お願いした人の画面の言語で書く */
+/**
+ * 保護者へのメールの件名と本文。お願いした人の画面の言語で書く。
+ * 表示名は本人が自由に決められ、見知らぬ人にも送れるので、件名には入れず、本文には URL と制御文字を除いて入れる
+ */
 async function guardianMail(name: string, token: string) {
   const locale = (await getLocale()) === 'ja' ? 'ja' : 'en';
   const t = await getTranslations({ locale, namespace: 'guardianMail' });
   // 手元ではリンクを手元のサーバーに向ける。本番は BETTER_AUTH_URL がサイトの URL
   const url = `${env.BETTER_AUTH_URL ?? SITE_URL}/guardian-consent/${token}`;
   return {
-    subject: t('subject', { name }),
-    text: t('body', { name, url, days: GUARDIAN_LINK_DAYS }),
+    subject: t('subject'),
+    text: t('body', { name: mailSafeName(name) ?? t('unnamed'), url, days: GUARDIAN_LINK_DAYS }),
   };
 }
 

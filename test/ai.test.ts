@@ -3,7 +3,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 const env = vi.hoisted(() => ({ OPENAI_API_KEY: undefined as string | undefined }));
 vi.mock('@/env', () => ({ env }));
 
-const { AI_CONSENT_VERSION, aiEnabled, aiUsable, classifyAiFailure } = await import('@/lib/ai');
+const { AI_CONSENT_VERSION, aiEnabled, aiUsable, asksAge, classifyAiFailure, consentNotice } =
+  await import('@/lib/ai');
 
 describe('aiEnabled', () => {
   afterEach(() => {
@@ -96,6 +97,39 @@ describe('aiUsable', () => {
     const athlete = { ...base, birthdate: '2010-10-14', aiConsentVersion: consented };
     expect(aiUsable(athlete, evening)).toBe(true);
     expect(aiUsable({ ...athlete, timeZone: 'UTC' }, evening)).toBe(false);
+  });
+});
+
+describe('consentNotice と asksAge（同意の画面）', () => {
+  const now = new Date('2026-10-14T03:00:00Z');
+  const base = {
+    plan: 'premium' as const,
+    aiConsentVersion: null as number | null,
+    aiGuardianConsentVersion: null as number | null,
+    birthdate: null as string | null,
+    ageDeclared16Plus: null as boolean | null,
+    timeZone: 'Asia/Tokyo',
+  };
+
+  it('年齢を聞く前にいまの版へ同意した、生年月日の無い人には理由を出す（黙って使えなくしない）', () => {
+    expect(consentNotice({ ...base, aiConsentVersion: AI_CONSENT_VERSION }, now)).toBe('askAgeNow');
+  });
+
+  it('前の版に同意した人には changed、初めての人には何も出さない', () => {
+    expect(consentNotice({ ...base, aiConsentVersion: AI_CONSENT_VERSION - 1 }, now)).toBe(
+      'changed',
+    );
+    expect(consentNotice({ ...base, aiGuardianConsentVersion: AI_CONSENT_VERSION - 1 }, now)).toBe(
+      'changed',
+    );
+    expect(consentNotice(base, now)).toBeNull();
+  });
+
+  it('16歳未満と答えた（分かった）人には「16歳以上ですか」を聞き直さない', () => {
+    expect(asksAge({ birthdate: null, ageDeclared16Plus: null })).toBe(true);
+    expect(asksAge({ birthdate: null, ageDeclared16Plus: true })).toBe(true);
+    expect(asksAge({ birthdate: null, ageDeclared16Plus: false })).toBe(false);
+    expect(asksAge({ birthdate: '2012-01-01', ageDeclared16Plus: null })).toBe(false);
   });
 });
 

@@ -63,6 +63,34 @@ export function aiUsable(profile: ConsentProfile, now: Date = new Date()): boole
   );
 }
 
+/**
+ * 同意の画面の上に出す、聞き直す理由。
+ * - changed: 前の版に同意した人（本人か保護者）。送るものが変わった
+ * - askAgeNow: いまの版に本人が同意したが、生年月日が無く16歳以上かを答えていない人。年齢を聞くようになる前に
+ *   同意した人で、黙って使えなくしないように理由を出す（2026-10-14 のコードレビュー）
+ */
+export function consentNotice(
+  profile: ConsentProfile,
+  now: Date = new Date(),
+): 'changed' | 'askAgeNow' | null {
+  const versions = [profile.aiConsentVersion, profile.aiGuardianConsentVersion];
+  if (versions.some((version) => version !== null && version !== AI_CONSENT_VERSION)) {
+    return 'changed';
+  }
+  if (profile.aiConsentVersion === AI_CONSENT_VERSION && aiConsenter(profile, now) === 'ask') {
+    return 'askAgeNow';
+  }
+  return null;
+}
+
+/**
+ * 同意の画面で「16歳以上ですか」を聞くか。生年月日が無く、16歳未満と答えて（分かって）いない人だけ。
+ * 16歳未満と答えた人には聞き直さず、保護者へのお願いだけを出す（答えを戻して本人だけで同意させない）
+ */
+export function asksAge(profile: Pick<Profile, 'birthdate' | 'ageDeclared16Plus'>): boolean {
+  return profile.birthdate === null && profile.ageDeclared16Plus !== false;
+}
+
 type ResponsesOutput = {
   output?: { type: string; content?: { type: string; text?: string }[] }[];
   error?: { message?: string; type?: string; code?: string | null } | null;

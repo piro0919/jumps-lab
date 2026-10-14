@@ -22,6 +22,15 @@ export const GUARDIAN_LINK_DAYS = 7;
 /** 保護者へのお願いを送れる回数（24時間あたり）。メールの送り先を他人に向けて連打できないように。仮決め */
 export const GUARDIAN_SENDS_PER_DAY = 3;
 
+/**
+ * 生年月日を保存するときに、一緒に残す「16歳以上か」（profile."ageDeclared16Plus"）。生年月日が無ければ null（今の答えのまま）。
+ * 生年月日で16歳未満と分かった人は false を残し、あとで生年月日を消しても本人だけでは同意できない。
+ * false を true に戻せるのは、16歳以上と分かる生年月日の保存だけ（2026-10-14 のコードレビュー）
+ */
+export function declaredFromBirthdate(birthdate: string | null, today: string): boolean | null {
+  return birthdate === null ? null : ageOn(birthdate, today) >= GUARDIAN_AGE;
+}
+
 /** 同意を取る相手。ask は生年月日が無く、16歳以上かをまだ答えていない */
 export type Consenter = 'self' | 'guardian' | 'ask';
 
@@ -60,6 +69,9 @@ export function consentSatisfied(
 /** リンクの鍵のバイト数（256 ビット） */
 const TOKEN_BYTES = 32;
 
+/** リンクの鍵の長さの上限。これより長いものは探さずに断る（鍵は 43 文字。画面と Server Action が使う） */
+export const TOKEN_MAX_LENGTH = 100;
+
 /** 保護者へのリンクの鍵。URL にそのまま入る形（base64url）で、推し量れない長さ */
 export function newGuardianToken(): string {
   return randomBytes(TOKEN_BYTES).toString('base64url');
@@ -84,4 +96,25 @@ export function maskEmail(email: string): string {
   const at = email.lastIndexOf('@');
   if (at <= 0) return '***';
   return `${email.slice(0, 1)}***${email.slice(at)}`;
+}
+
+/** メールに入れる表示名の長さの上限（文字） */
+const MAIL_NAME_MAX_LENGTH = 50;
+
+/** URL やドメインに見える部分（http://…、www.…、example.com/…） */
+const URL_LIKE =
+  /(?:[a-z][a-z0-9+.-]*:\/\/\S*|www\.\S*|[a-z0-9-]+(?:\.[a-z0-9-]+)*\.[a-z]{2,}(?:\/\S*)?)/giu;
+
+/** 制御文字と、文字の向きを変える書式文字（見た目と中身をずらせる） */
+const CONTROL = /[\p{Cc}\p{Cf}]/gu;
+
+/**
+ * 保護者へのメールの本文に入れる表示名。表示名は本人が自由に決められ、メールは見知らぬ人にも送れるので、
+ * リンクとして踏ませられる URL やドメインと制御文字を除き、長さを切る（2026-10-14 のコードレビュー）。
+ * 残らなければ null（呼ぶ側が「お子さま」のような言葉に替える）。件名には名前を入れない
+ */
+export function mailSafeName(name: string): string | null {
+  const cleaned = name.replace(CONTROL, ' ').replace(URL_LIKE, ' ').replace(/\s+/gu, ' ').trim();
+  const cut = [...cleaned].slice(0, MAIL_NAME_MAX_LENGTH).join('').trim();
+  return cut.length > 0 ? cut : null;
 }

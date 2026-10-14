@@ -398,6 +398,7 @@
   "aiConsent": {
     "title": "Before you use the AI coach",
     "changed": "What the AI coach sends has changed, so please read it again. New: your personal best and season best for each event.",
+    "askAgeNow": "We now ask your age before you use the AI coach. Please answer the question below.",
     "intro": "To make and revise your menu, the AI coach sends the following to OpenAI, a company in the United States.",
     "sentDate": "Today's date",
     "sentProfile": "Age, gender, height, weight and events",
@@ -474,7 +475,8 @@
     "invalidNext": "If you still want to agree, ask them to send a new request from the app."
   },
   "guardianMail": {
-    "subject": "{name} is asking for your consent to use the AI coach in Jumps Lab",
-    "body": "{name} would like to use the AI coach in Jumps Lab, an app for logging jumps. Because {name} is under 16, we need a parent or guardian to agree.\n\nTo make practice menus, the AI coach sends {name}'s age, gender, height, weight, condition, sleep, pain notes and practice and competition records to OpenAI, a company in the United States. {name}'s name and email address are not sent.\n\nRead the details and agree here. The link works for {days, plural, one {# day} other {# days}}.\n{url}\n\nIf you don't know {name} or don't want to agree, you can ignore this email.\n\nJumps Lab (kk-web)"
+    "subject": "A request for your consent to use the AI coach in Jumps Lab",
+    "body": "{name} would like to use the AI coach in Jumps Lab, an app for logging jumps. Because {name} is under 16, we need a parent or guardian to agree.\n\nTo make practice menus, the AI coach sends {name}'s age, gender, height, weight, condition, sleep, pain notes and practice and competition records to OpenAI, a company in the United States. {name}'s name and email address are not sent.\n\nRead the details and agree here. The link works for {days, plural, one {# day} other {# days}}.\n{url}\n\nIf you don't know {name} or don't want to agree, you can ignore this email.\n\nJumps Lab (kk-web)",
+    "unnamed": "A user"
   }
 }

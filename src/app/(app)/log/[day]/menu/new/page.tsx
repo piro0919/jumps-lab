@@ -4,7 +4,7 @@ import { AiConsentChoice } from '@/components/ai-consent';
 import { AiConsentDetails } from '@/components/ai-consent-details';
 import { Card, PageTitle, FORM_PAGE, SectionTitle } from '@/components/layout-ui';
 import { MenuForm } from '@/components/menu-form';
-import { AI_CONSENT_VERSION, aiConsenter, aiEnabled, aiUsable } from '@/lib/ai';
+import { aiConsenter, aiEnabled, aiUsable, asksAge, consentNotice } from '@/lib/ai';
 import { getMenu, latestGuardianRequest, listCompetitionsBetween } from '@/lib/data';
 import { todayIn } from '@/lib/dates';
 import { GUARDIAN_LINK_DAYS, maskEmail } from '@/lib/guardian';
@@ -34,6 +34,7 @@ export default async function NewMenu({ params }: PageProps<'/log/[day]/menu/new
   const t = await getTranslations('menu');
   const tNav = await getTranslations('nav');
   const tConsent = await getTranslations('aiConsent');
+  const notice = consentNotice(profile);
 
   return (
     <main className={FORM_PAGE}>
@@ -46,14 +47,12 @@ export default async function NewMenu({ params }: PageProps<'/log/[day]/menu/new
         ) : (
           <div className="flex flex-col gap-4 text-sm">
             <SectionTitle>{tConsent('title')}</SectionTitle>
-            {/* 前の版に同意した人（本人か保護者）には、聞き直す理由を出す */}
-            {[profile.aiConsentVersion, profile.aiGuardianConsentVersion].some(
-              (version) => version !== null && version !== AI_CONSENT_VERSION,
-            ) && <p>{tConsent('changed')}</p>}
+            {/* 前の版に同意した人と、年齢を聞く前に同意した人には、聞き直す理由を出す */}
+            {notice && <p>{tConsent(notice)}</p>}
             <AiConsentDetails intro={<p>{tConsent('intro')}</p>} notSent={tConsent('notSent')} />
             <AiConsentChoice
               consenter={aiConsenter(profile)}
-              askAge={profile.birthdate === null}
+              askAge={asksAge(profile)}
               request={request && { email: maskEmail(request.guardianEmail), live: request.live }}
               linkDays={GUARDIAN_LINK_DAYS}
             />

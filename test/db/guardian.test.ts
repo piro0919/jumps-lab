@@ -23,7 +23,6 @@ const {
   purgeGuardianRequests,
   releaseGuardianRequest,
   setPlan,
-  supersedeGuardianRequests,
 } = await import('@/lib/data');
 const { AI_CONSENT_VERSION, aiUsable } = await import('@/lib/ai');
 const { hashGuardianToken, newGuardianToken } = await import('@/lib/guardian');
@@ -86,14 +85,43 @@ describe('保護者へのお願い', () => {
     expect((await getProfile(userId))?.aiGuardianConsentVersion).toBeNull();
   });
 
-  it('送り直すと、前のリンクは切れて新しいリンクだけが使える', async () => {
+  it('送り直すと、入れた時点で前のリンクは切れ、新しいリンクだけが使える', async () => {
     const userId = await minor();
     const first = await request(userId);
     const second = await request(userId);
-    await supersedeGuardianRequests(userId, second.id!);
     expect(await agreeAsGuardian(first.tokenHash, AI_CONSENT_VERSION)).toBe(false);
     expect(await latestGuardianRequest(userId)).toMatchObject({ id: second.id, live: true });
     expect(await agreeAsGuardian(second.tokenHash, AI_CONSENT_VERSION)).toBe(true);
+  });
+
+  it('同時に送っても、生きたリンクは1つだけ', async () => {
+    const userId = await minor();
+    await Promise.all(Array.from({ length: 3 }, () => request(userId, 3)));
+    const live = await query<{ id: string }>(
+      `select id from guardian_consent_request
+        where "userId" = $1 and "usedAt" is null and "expiresAt" > now()`,
+      [userId],
+    );
+    expect(live).toHaveLength(1);
+  });
+
+  it('送れずに消した新しい行の前のお願いは、切れたまま出さない（期限切れと見せない）', async () => {
+    const userId = await minor();
+    const first = await request(userId);
+    const second = await request(userId);
+    await releaseGuardianRequest(userId, second.id!);
+    expect(await latestGuardianRequest(userId)).toBeNull();
+    expect(await agreeAsGuardian(first.tokenHash, AI_CONSENT_VERSION)).toBe(false);
+  });
+
+  it('期限で自然に切れたお願いは「期限切れ」として出す', async () => {
+    const userId = await minor();
+    const { id } = await request(userId);
+    await query(
+      `update guardian_consent_request set "expiresAt" = now() - interval '1 second' where id = $1`,
+      [id],
+    );
+    expect(await latestGuardianRequest(userId)).toMatchObject({ id, live: false });
   });
 
   it('24時間に送れる回数を超えたら入れない。消した（送れなかった）分は数えない', async () => {
@@ -164,6 +192,8 @@ describe('保護者の同意と aiUsable', () => {
     // 使った行は最後の1つだけ。使われていない行のリンクは切れている
     expect(rows.filter((r) => r.used).map((r) => r.id)).toEqual([again.id]);
     expect(await agreeAsGuardian(pending.tokenHash, AI_CONSENT_VERSION)).toBe(false);
+    // 切ったお願いは、本人の画面に「期限切れ」として出さない
+    expect(await latestGuardianRequest(userId)).toBeNull();
   });
 });
 

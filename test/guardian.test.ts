@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import {
   consenterFor,
   consentSatisfied,
+  declaredFromBirthdate,
   GUARDIAN_AGE,
   guardianLinkState,
   hashGuardianToken,
+  mailSafeName,
   maskEmail,
   newGuardianToken,
 } from '@/lib/guardian';
@@ -112,5 +114,32 @@ describe('maskEmail', () => {
   it('形のおかしいものは全部伏せる', () => {
     expect(maskEmail('no-at-mark')).toBe('***');
     expect(maskEmail('@example.com')).toBe('***');
+  });
+});
+
+describe('declaredFromBirthdate', () => {
+  const today = '2026-10-14';
+
+  it('生年月日があれば16歳以上かを返し、無ければ null（前の答えのまま）', () => {
+    expect(declaredFromBirthdate('2010-10-14', today)).toBe(true);
+    expect(declaredFromBirthdate('2010-10-15', today)).toBe(false);
+    expect(declaredFromBirthdate(null, today)).toBeNull();
+  });
+});
+
+describe('mailSafeName', () => {
+  it('URL・ドメイン・制御文字を除き、空白を詰める', () => {
+    expect(mailSafeName('Taro')).toBe('Taro');
+    expect(mailSafeName('山田 太郎')).toBe('山田 太郎');
+    expect(mailSafeName('Click https://evil.example/login now')).toBe('Click now');
+    expect(mailSafeName('see www.evil.example')).toBe('see');
+    expect(mailSafeName('go to evil.example/pay')).toBe('go to');
+    expect(mailSafeName('A\u202eB\nC')).toBe('A B C');
+  });
+
+  it('長い名前は切り、何も残らなければ null', () => {
+    expect([...mailSafeName('あ'.repeat(80))!]).toHaveLength(50);
+    expect(mailSafeName('https://evil.example')).toBeNull();
+    expect(mailSafeName('  ')).toBeNull();
   });
 });

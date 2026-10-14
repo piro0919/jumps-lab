@@ -55,8 +55,11 @@ export default function PrivacyEn() {
           it, and when and how often you used AI
         </li>
         <li>
-          If you are under 16 and use the AI coach: your answer to whether you are 16 or older (only
-          when you have not entered your date of birth), your parent&apos;s or guardian&apos;s email
+          Whether you are 16 or older (worked out from your date of birth if you entered one, and
+          kept if you remove it later; otherwise your own answer on the AI coach consent screen)
+        </li>
+        <li>
+          If you are under 16 and use the AI coach: your parent&apos;s or guardian&apos;s email
           address, and when they agreed
         </li>
         <li>

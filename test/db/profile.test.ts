@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import {
   consentToAi,
+  declareUnder16,
   getProfile,
   getTargets,
   listUsersForAdmin,
@@ -52,7 +53,8 @@ describe('saveProfile', () => {
       plan: 'free',
       aiConsentVersion: null,
       aiGuardianConsentVersion: null,
-      ageDeclared16Plus: null,
+      // 生年月日（2008年生まれ）から16歳以上と分かる
+      ageDeclared16Plus: true,
     });
     const targets = await getTargets(userId, ['triple_jump', 'long_jump']);
     expect(targets.get('triple_jump')?.seasonGoalM).toBe(12.5);
@@ -63,7 +65,7 @@ describe('saveProfile', () => {
     const userId = await addUser();
     await saveProfile(userId, input);
     await setPlan(userId, 'premium');
-    await consentToAi(userId, 1);
+    await consentToAi(userId, 1, false);
 
     await saveProfile(userId, { ...input, name: 'Again', goalM: null });
     await saveProfileDetails(userId, { ...input, name: 'Details' });
@@ -144,19 +146,77 @@ describe('repairTimeZone', () => {
 describe('consentToAi', () => {
   it('同意した版を入れ、同じ版では何もせず、新しい版では版と時刻を改める', async () => {
     const userId = await addProfile();
-    await consentToAi(userId, 1);
+    await consentToAi(userId, 1, false);
     expect((await getProfile(userId))?.aiConsentVersion).toBe(1);
 
     // 同意した時刻を昔にしておき、変わったかどうかで確かめる
     await query(`update profile set "aiConsentAt" = '2026-01-01T00:00:00Z' where "userId" = $1`, [
       userId,
     ]);
-    await consentToAi(userId, 1);
+    await consentToAi(userId, 1, false);
     expect((await consentAt(userId))?.toISOString()).toBe('2026-01-01T00:00:00.000Z');
 
-    await consentToAi(userId, 2);
+    await consentToAi(userId, 2, false);
     expect((await getProfile(userId))?.aiConsentVersion).toBe(2);
     expect((await consentAt(userId))?.toISOString()).not.toBe('2026-01-01T00:00:00.000Z');
+  });
+  it('生年月日の無い人の「16歳以上」は答えも残すが、16歳未満と答えた人の答えは上書きしない', async () => {
+    const adult = await addProfile();
+    expect(await consentToAi(adult, 1, true)).toBe(true);
+    expect(await getProfile(adult)).toMatchObject({ aiConsentVersion: 1, ageDeclared16Plus: true });
+
+    const minor = await addProfile();
+    await declareUnder16(minor);
+    expect(await consentToAi(minor, 1, true)).toBe(false);
+    expect(await getProfile(minor)).toMatchObject({
+      aiConsentVersion: null,
+      ageDeclared16Plus: false,
+    });
+  });
+});
+
+describe('16歳未満と分かったことを残す（生年月日を消しても本人だけで同意させない）', () => {
+  /** 今日（Asia/Tokyo）から years 年前の生年月日 */
+  const bornYearsAgo = (years: number) => {
+    const today = new Date();
+    return `${today.getUTCFullYear() - years}-01-01`;
+  };
+  const under16 = bornYearsAgo(12);
+  const over16 = bornYearsAgo(20);
+
+  it('登録で16歳未満の生年月日を入れると false を残し、設定で生年月日を消しても残る', async () => {
+    const userId = await addUser();
+    await saveProfile(userId, { ...input, birthdate: under16 });
+    expect((await getProfile(userId))?.ageDeclared16Plus).toBe(false);
+
+    await saveProfileDetails(userId, { ...input, birthdate: null });
+    const cleared = (await getProfile(userId))!;
+    expect(cleared).toMatchObject({ birthdate: null, ageDeclared16Plus: false });
+    // 「16歳以上です」と答えて本人だけで同意しようとしても入らない
+    expect(await consentToAi(userId, 1, true)).toBe(false);
+    expect(await getProfile(userId)).toMatchObject({
+      aiConsentVersion: null,
+      ageDeclared16Plus: false,
+    });
+
+    // 登録をやり直して（生年月日なしで）保存しても戻らない
+    await saveProfile(userId, { ...input, birthdate: null });
+    expect((await getProfile(userId))?.ageDeclared16Plus).toBe(false);
+  });
+
+  it('設定で16歳未満の生年月日を入れると false を残し、16歳以上の生年月日でだけ戻る', async () => {
+    const userId = await addUser();
+    await saveProfile(userId, { ...input, birthdate: null });
+    expect((await getProfile(userId))?.ageDeclared16Plus).toBeNull();
+
+    await saveProfileDetails(userId, { ...input, birthdate: under16 });
+    await saveProfileDetails(userId, { ...input, birthdate: null });
+    expect((await getProfile(userId))?.ageDeclared16Plus).toBe(false);
+
+    await saveProfileDetails(userId, { ...input, birthdate: over16 });
+    expect((await getProfile(userId))?.ageDeclared16Plus).toBe(true);
+    await saveProfileDetails(userId, { ...input, birthdate: null });
+    expect(await consentToAi(userId, 1, true)).toBe(true);
   });
 });
 

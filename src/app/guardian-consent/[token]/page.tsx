@@ -4,16 +4,18 @@ import { AiConsentDetails } from '@/components/ai-consent-details';
 import { GuardianAgreeForm } from '@/components/guardian-agree-form';
 import { AppIcon, Card, FORM_PAGE, PageTitle, Wordmark } from '@/components/layout-ui';
 import { findGuardianRequest } from '@/lib/data';
-import { guardianLinkState, hashGuardianToken } from '@/lib/guardian';
+import { guardianLinkState, hashGuardianToken, TOKEN_MAX_LENGTH } from '@/lib/guardian';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('guardianConsent');
   // メールのリンクで開く画面。検索に載せない（robots.ts でも踏ませない）
-  return { title: t('metaTitle'), robots: { index: false, follow: false } };
+  // 道に鍵が入るので、この画面から別のページへ移っても Referer で鍵を渡さない
+  return {
+    title: t('metaTitle'),
+    robots: { index: false, follow: false },
+    referrer: 'no-referrer',
+  };
 }
-
-/** 鍵の長さの上限。これより長いものは探さない（鍵は 43 文字） */
-const TOKEN_MAX_LENGTH = 100;
 
 /**
  * 保護者の同意の画面（16歳未満の人の AI コーチ。2026-10-14）。ログインせずに開く（src/proxy.ts が通す）。

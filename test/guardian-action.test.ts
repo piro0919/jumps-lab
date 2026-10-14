@@ -35,13 +35,14 @@ const data = vi.hoisted(() => ({
       request: { guardianEmail: string; tokenHash: string; days: number; perDay: number },
     ) => Promise<string | null>
   >(async () => 'req-1'),
-  supersedeGuardianRequests: vi.fn(async () => {}),
   releaseGuardianRequest: vi.fn(async () => {}),
   latestGuardianRequest: vi.fn(
     async (): Promise<{ id: string; guardianEmail: string; live: boolean } | null> => null,
   ),
-  declareAge: vi.fn(async () => {}),
-  consentToAi: vi.fn(async () => {}),
+  declareUnder16: vi.fn(async () => {}),
+  consentToAi: vi.fn<(userId: string, version: number, declare: boolean) => Promise<boolean>>(
+    async () => true,
+  ),
   agreeAsGuardian: vi.fn(async () => true),
 }));
 vi.mock('@/lib/data', () => data);
@@ -93,7 +94,7 @@ beforeEach(() => {
 });
 
 describe('sendGuardianRequestAction', () => {
-  it('16歳未満の人は、保護者へリンク付きのメールを送り、前のリンクを切る', async () => {
+  it('16歳未満の人は、保護者へリンク付きのメールを送る', async () => {
     const result = await sendGuardianRequestAction(form({ email: ' parent@example.com ' }));
     expect(result).toEqual({ ok: true });
     expect(data.addGuardianRequest).toHaveBeenCalledWith(
@@ -108,7 +109,27 @@ describe('sendGuardianRequestAction', () => {
     expect(token).toBeDefined();
     expect(sent.text).toContain('http://localhost:3312/guardian-consent/');
     expect(sent.text).not.toContain(tokenHash);
-    expect(data.supersedeGuardianRequests).toHaveBeenCalledWith('u1', 'req-1');
+  });
+
+  it('件名に表示名を入れず、本文の表示名からは URL と制御文字を除く', async () => {
+    profile.current = athlete({ name: 'Win a prize at https://evil.example/x\u202e now' });
+    expect(await sendGuardianRequestAction(form({ email: 'parent@example.com' }))).toEqual({
+      ok: true,
+    });
+    const sent = mail.sendMail.mock.calls[0]![0];
+    expect(sent.subject).not.toContain('Win');
+    expect(sent.subject).not.toContain('evil');
+    expect(sent.text).toContain('Win a prize at now');
+    expect(sent.text).not.toContain('evil.example');
+    expect(sent.text).not.toContain('\u202e');
+  });
+
+  it('表示名が URL だけなら、本文では言い換える', async () => {
+    profile.current = athlete({ name: 'evil.example' });
+    await sendGuardianRequestAction(form({ email: 'parent@example.com' }));
+    const sent = mail.sendMail.mock.calls[0]![0];
+    expect(sent.text).not.toContain('evil.example');
+    expect(sent.text).toContain('unnamed');
   });
 
   it('16歳以上の人は送れない', async () => {
@@ -120,7 +141,7 @@ describe('sendGuardianRequestAction', () => {
     expect(mail.sendMail).not.toHaveBeenCalled();
   });
 
-  it('生年月日の無い人は「16歳未満」と答えて送り、答えを残す', async () => {
+  it('生年月日の無い人は「16歳未満」と答えて送り、送れたあとで答えを残す', async () => {
     profile.current = athlete({ birthdate: null });
     expect(await sendGuardianRequestAction(form({ email: 'parent@example.com' }))).toEqual({
       ok: false,
@@ -129,7 +150,24 @@ describe('sendGuardianRequestAction', () => {
     expect(
       await sendGuardianRequestAction(form({ email: 'parent@example.com', adult: 'no' })),
     ).toEqual({ ok: true });
-    expect(data.declareAge).toHaveBeenCalledWith('u1', false);
+    expect(data.declareUnder16).toHaveBeenCalledWith('u1');
+    expect(data.declareUnder16.mock.invocationCallOrder[0]).toBeGreaterThan(
+      mail.sendMail.mock.invocationCallOrder[0]!,
+    );
+  });
+
+  it('送れなかったときや回数を超えたときは、「16歳未満」の答えを残さない', async () => {
+    profile.current = athlete({ birthdate: null });
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    mail.sendMail.mockRejectedValueOnce(new Error('Resend down'));
+    expect(
+      await sendGuardianRequestAction(form({ email: 'parent@example.com', adult: 'no' })),
+    ).toEqual({ ok: false, error: 'guardianMailUnavailable' });
+    data.addGuardianRequest.mockResolvedValueOnce(null);
+    expect(
+      await sendGuardianRequestAction(form({ email: 'parent@example.com', adult: 'no' })),
+    ).toEqual({ ok: false, error: 'guardianLimit' });
+    expect(data.declareUnder16).not.toHaveBeenCalled();
   });
 
   it('自分の Google のアドレスには送らない', async () => {
@@ -165,7 +203,7 @@ describe('sendGuardianRequestAction', () => {
     expect(data.addGuardianRequest).not.toHaveBeenCalled();
   });
 
-  it('送れなかったら行を消し、前のリンクは切らない', async () => {
+  it('送れなかったら行を消す', async () => {
     mail.sendMail.mockRejectedValueOnce(new Error('Resend down'));
     vi.spyOn(console, 'error').mockImplementation(() => {});
     expect(await sendGuardianRequestAction(form({ email: 'parent@example.com' }))).toEqual({
@@ -173,7 +211,6 @@ describe('sendGuardianRequestAction', () => {
       error: 'guardianMailUnavailable',
     });
     expect(data.releaseGuardianRequest).toHaveBeenCalledWith('u1', 'req-1');
-    expect(data.supersedeGuardianRequests).not.toHaveBeenCalled();
   });
 
   it('宛先が無ければ、前に送った宛先へ送り直す', async () => {
@@ -196,7 +233,7 @@ describe('consentAiAction（本人の同意）', () => {
   it('16歳以上の人は同意できる', async () => {
     profile.current = athlete({ birthdate: '2008-01-01' });
     expect(await consentAiAction(form({}))).toEqual({ ok: true });
-    expect(data.consentToAi).toHaveBeenCalledWith('u1', AI_CONSENT_VERSION, undefined);
+    expect(data.consentToAi).toHaveBeenCalledWith('u1', AI_CONSENT_VERSION, false);
   });
 
   it('生年月日の無い人は「16歳以上」と答えたときだけ同意でき、答えも残す', async () => {
@@ -204,6 +241,18 @@ describe('consentAiAction（本人の同意）', () => {
     expect(await consentAiAction(form({}))).toEqual({ ok: false, error: 'generic' });
     expect(await consentAiAction(form({ adult: 'yes' }))).toEqual({ ok: true });
     expect(data.consentToAi).toHaveBeenCalledWith('u1', AI_CONSENT_VERSION, true);
+  });
+
+  it('16歳未満と答えた（分かった）生年月日の無い人は、「16歳以上」と送っても本人では同意できない', async () => {
+    profile.current = athlete({ birthdate: null, ageDeclared16Plus: false });
+    expect(await consentAiAction(form({ adult: 'yes' }))).toEqual({ ok: false, error: 'generic' });
+    expect(data.consentToAi).not.toHaveBeenCalled();
+  });
+
+  it('DB が答えの上書きを断ったら、同意できなかったと返す', async () => {
+    profile.current = athlete({ birthdate: null });
+    data.consentToAi.mockResolvedValueOnce(false);
+    expect(await consentAiAction(form({ adult: 'yes' }))).toEqual({ ok: false, error: 'generic' });
   });
 });
 

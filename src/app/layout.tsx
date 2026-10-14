@@ -1,7 +1,7 @@
-import { Analytics } from '@vercel/analytics/next';
 import type { Metadata, Viewport } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getTranslations } from 'next-intl/server';
+import { PageAnalytics } from '@/components/page-analytics';
 import { Progress } from '@/components/progress';
 import { ThemeProvider } from '@/components/theme-provider';
 import { WindowSize } from '@/components/window-size';
@@ -36,8 +36,9 @@ export default async function RootLayout({ children }: LayoutProps<'/'>) {
             <WindowSize />
           </NextIntlClientProvider>
         </ThemeProvider>
-        {/* 閲覧数の集計。Cookie を使わない（プライバシーポリシーの5）。Vercel の画面で有効にするまでは何も送らない */}
-        <Analytics />
+        {/* 閲覧数の集計。Cookie を使わない（プライバシーポリシーの5）。Vercel の画面で有効にするまでは何も送らない。
+            保護者へのリンクの鍵は送る前に伏せる */}
+        <PageAnalytics />
       </body>
     </html>
   );

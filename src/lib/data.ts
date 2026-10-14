@@ -1,10 +1,12 @@
 import 'server-only';
+import { todayIn } from '@/lib/dates';
 import { db } from '@/lib/db';
 import type { JumpEvent } from '@/lib/events';
 import type { Locale } from '@/i18n/locales';
 import type { ReminderRow } from '@/lib/meet-reminder';
 import type { Menu, MenuLevel } from '@/lib/menu';
 import type { PushTarget } from '@/lib/push-endpoint';
+import { declaredFromBirthdate } from '@/lib/guardian';
 import type { Grade, Plan } from '@/lib/profile-options';
 import type { Units } from '@/lib/units';
 import { toMarks, type MarkName, type Marks } from '@/lib/video-marks';
@@ -69,6 +71,7 @@ export type ProfileInput = Omit<
 
 /**
  * プロフィールを保存する。名前は Better Auth の user 表に持つ。
+ * 生年月日があれば「16歳以上か」も一緒に残す（src/lib/guardian.ts の declaredFromBirthdate）。
  * 目標は、はじめに選んだ先頭の種目の今季目標として入れる（プロトタイプの「目標記録」）
  */
 export async function saveProfile(userId: string, input: ProfileInput): Promise<void> {
@@ -81,15 +84,17 @@ export async function saveProfile(userId: string, input: ProfileInput): Promise<
     ]);
     await client.query(
       `insert into profile ("userId", grade, "gradeOffset", birthdate, gender, "heightCm", "weightKg", events,
-                            units, "seasonStartMonth", "timeZone", "weekStart")
-       values ($1, $2, $11, $3, $4, $5, $6, $7::text[], $8, $9, $10, $12)
+                            units, "seasonStartMonth", "timeZone", "weekStart", "ageDeclared16Plus")
+       values ($1, $2, $11, $3, $4, $5, $6, $7::text[], $8, $9, $10, $12, $13)
        on conflict ("userId") do update set
          grade = excluded.grade, "gradeOffset" = excluded."gradeOffset",
          birthdate = excluded.birthdate, gender = excluded.gender,
          "heightCm" = excluded."heightCm", "weightKg" = excluded."weightKg",
          events = excluded.events,
          units = excluded.units, "seasonStartMonth" = excluded."seasonStartMonth",
-         "timeZone" = excluded."timeZone", "weekStart" = excluded."weekStart", "updatedAt" = now()`,
+         "timeZone" = excluded."timeZone", "weekStart" = excluded."weekStart",
+         "ageDeclared16Plus" = coalesce(excluded."ageDeclared16Plus", profile."ageDeclared16Plus"),
+         "updatedAt" = now()`,
       [
         userId,
         input.grade,
@@ -103,6 +108,7 @@ export async function saveProfile(userId: string, input: ProfileInput): Promise<
         input.timeZone,
         input.gradeOffset,
         input.weekStart,
+        declaredFromBirthdate(input.birthdate, todayIn(input.timeZone)),
       ],
     );
     if (input.goalM !== null) {
@@ -128,7 +134,10 @@ export type ProfileDetails = Pick<
   'name' | 'grade' | 'gradeOffset' | 'birthdate' | 'gender' | 'heightCm' | 'weightKg' | 'timeZone'
 >;
 
-/** 設定の画面の「プロフィール」の区画だけを保存する。記録のつけ方（種目・単位・シーズン）には触れない */
+/**
+ * 設定の画面の「プロフィール」の区画だけを保存する。記録のつけ方（種目・単位・シーズン）には触れない。
+ * 生年月日があれば「16歳以上か」も一緒に残す。生年月日を消しても前の答えは残る（16歳未満と分かった人が消して同意しないように）
+ */
 export async function saveProfileDetails(userId: string, input: ProfileDetails): Promise<void> {
   const client = await db().connect();
   try {
@@ -139,7 +148,8 @@ export async function saveProfileDetails(userId: string, input: ProfileDetails):
     ]);
     await client.query(
       `update profile set grade = $2, "gradeOffset" = $3, birthdate = $4, gender = $5,
-              "heightCm" = $6, "weightKg" = $7, "timeZone" = $8, "updatedAt" = now()
+              "heightCm" = $6, "weightKg" = $7, "timeZone" = $8,
+              "ageDeclared16Plus" = coalesce($9, "ageDeclared16Plus"), "updatedAt" = now()
         where "userId" = $1`,
       [
         userId,
@@ -150,6 +160,7 @@ export async function saveProfileDetails(userId: string, input: ProfileDetails):
         input.heightCm,
         input.weightKg,
         input.timeZone,
+        declaredFromBirthdate(input.birthdate, todayIn(input.timeZone)),
       ],
     );
     await client.query('commit');
@@ -179,28 +190,36 @@ export async function repairTimeZone(
 }
 
 /**
- * AI コーチの説明（version の版）に同意したことを入れる。同じ版にもう同意していれば何もしない。
- * 版が上がって同意し直したときは、時刻も新しい版に同意した時刻に変わる
+ * AI コーチの説明（version の版）に本人が同意したことを入れる。同じ版にもう同意していれば時刻は変えない。
+ * 版が上がって同意し直したときは、時刻も新しい版に同意した時刻に変わる。
+ * declare16Plus は生年月日の無い人が「16歳以上です」と答えて押したこと。答えも残すが、
+ * もう16歳未満と分かっている人（"ageDeclared16Plus" が false）は入れずに false を返す（答えを上書きして本人だけで同意させない）
  */
 export async function consentToAi(
   userId: string,
   version: number,
-  declared16Plus?: true,
-): Promise<void> {
-  await db().query(
-    `update profile set "aiConsentAt" = now(), "aiConsentVersion" = $2, "updatedAt" = now()
-      where "userId" = $1 and "aiConsentVersion" is distinct from $2`,
-    [userId, version],
+  declare16Plus: boolean,
+): Promise<boolean> {
+  const { rowCount } = await db().query(
+    `update profile
+        set "aiConsentAt" = case when "aiConsentVersion" is distinct from $2 then now() else "aiConsentAt" end,
+            "aiConsentVersion" = $2,
+            "ageDeclared16Plus" = case when $3 then true else "ageDeclared16Plus" end,
+            "updatedAt" = now()
+      where "userId" = $1 and not ($3 and "ageDeclared16Plus" is false)`,
+    [userId, version, declare16Plus],
   );
-  // 生年月日の無い人が「16歳以上」と答えて同意したときは、答えも残す（次から聞かない）
-  if (declared16Plus) await declareAge(userId, true);
+  return rowCount === 1;
 }
 
-/** 生年月日の無い人の「16歳以上か」の答えを残す */
-export async function declareAge(userId: string, declared16Plus: boolean): Promise<void> {
+/**
+ * 生年月日の無い人が「16歳未満です」と答えたことを残す（保護者へのお願いを送れたとき）。
+ * 一度残すと、本人の答えでは16歳以上に戻せない。戻せるのは16歳以上と分かる生年月日の保存だけ
+ */
+export async function declareUnder16(userId: string): Promise<void> {
   await db().query(
-    `update profile set "ageDeclared16Plus" = $2, "updatedAt" = now() where "userId" = $1`,
-    [userId, declared16Plus],
+    `update profile set "ageDeclared16Plus" = false, "updatedAt" = now() where "userId" = $1`,
+    [userId],
   );
 }
 
@@ -209,7 +228,9 @@ export type GuardianRequest = { id: string; guardianEmail: string; live: boolean
 
 /**
  * 保護者へのお願いを1件入れる（メールを送る前）。24時間に送った数が perDay に達していれば入れずに null。
- * 人ごとのロックを取ってから数える（同時に押した2回が、どちらも古い数を見て上限を抜けないように）
+ * 人ごとのロックを取ってから数え、入れる前にこの人のまだ使われていないお願いをみな切る（"cancelledAt"）。
+ * 同時に押した2回が、どちらも古い数を見て上限を抜けたり、生きたリンクを2つ残したりしないように。
+ * メールを送れずに新しい行を消しても、切った前のお願いは戻さない（もう一度送ってもらう）
  */
 export async function addGuardianRequest(
   userId: string,
@@ -219,13 +240,26 @@ export async function addGuardianRequest(
   try {
     await client.query('begin');
     await client.query(`select pg_advisory_xact_lock(hashtext('guardian:' || $1))`, [userId]);
+    const { rows: counted } = await client.query<{ sent: number }>(
+      `select count(*)::integer as sent from guardian_consent_request
+        where "userId" = $1 and "createdAt" > now() - interval '1 day'`,
+      [userId],
+    );
+    if ((counted[0]?.sent ?? 0) >= request.perDay) {
+      await client.query('rollback');
+      return null;
+    }
+    await client.query(
+      `update guardian_consent_request
+          set "cancelledAt" = now(), "expiresAt" = least("expiresAt", now())
+        where "userId" = $1 and "usedAt" is null and "cancelledAt" is null`,
+      [userId],
+    );
     const { rows } = await client.query<{ id: string }>(
       `insert into guardian_consent_request ("userId", "guardianEmail", "tokenHash", "expiresAt")
-       select $1, $2, $3, now() + make_interval(days => $4::integer)
-        where (select count(*) from guardian_consent_request
-                where "userId" = $1 and "createdAt" > now() - interval '1 day') < $5::integer
+       values ($1, $2, $3, now() + make_interval(days => $4::integer))
        returning id`,
-      [userId, request.guardianEmail, request.tokenHash, request.days, request.perDay],
+      [userId, request.guardianEmail, request.tokenHash, request.days],
     );
     await client.query('commit');
     return rows[0]?.id ?? null;
@@ -237,16 +271,6 @@ export async function addGuardianRequest(
   }
 }
 
-/** 送れたお願いより前のリンクを切る（送り直したら、古いメールのリンクでは同意できない） */
-export async function supersedeGuardianRequests(userId: string, keepId: string): Promise<void> {
-  await db().query(
-    `update guardian_consent_request set "expiresAt" = now()
-      where "userId" = $1 and id <> $2 and "usedAt" is null and "expiresAt" > now()
-        and "createdAt" <= (select "createdAt" from guardian_consent_request where id = $2)`,
-    [userId, keepId],
-  );
-}
-
 /** メールを送れなかったお願いを消す（送れていないリンクで回数を使わせない） */
 export async function releaseGuardianRequest(userId: string, id: string): Promise<void> {
   await db().query(`delete from guardian_consent_request where "userId" = $1 and id = $2`, [
@@ -255,11 +279,14 @@ export async function releaseGuardianRequest(userId: string, id: string): Promis
   ]);
 }
 
-/** いちばん新しい、使われていないお願い。live は期限の内か */
+/**
+ * 待っているお願い（使われておらず、送り直しや保護者の同意で切られていないもの）。live は期限の内か。
+ * 切られた行は出さない（「期限が切れました」と出したり、古い宛先へ送り直したりしないように）
+ */
 export async function latestGuardianRequest(userId: string): Promise<GuardianRequest | null> {
   const { rows } = await db().query<GuardianRequest>(
     `select id, "guardianEmail", "expiresAt" > now() as live from guardian_consent_request
-      where "userId" = $1 and "usedAt" is null
+      where "userId" = $1 and "usedAt" is null and "cancelledAt" is null
       order by "createdAt" desc limit 1`,
     [userId],
   );
@@ -305,8 +332,9 @@ export async function agreeAsGuardian(tokenHash: string, version: number): Promi
       [used.userId, version],
     );
     await client.query(
-      `update guardian_consent_request set "expiresAt" = now()
-        where "userId" = $1 and id <> $2 and "usedAt" is null and "expiresAt" > now()`,
+      `update guardian_consent_request
+          set "cancelledAt" = now(), "expiresAt" = least("expiresAt", now())
+        where "userId" = $1 and id <> $2 and "usedAt" is null and "cancelledAt" is null`,
       [used.userId, used.id],
     );
     await client.query(

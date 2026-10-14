@@ -30,4 +30,19 @@ describe('scrubEvent', () => {
     expect(event.contexts?.nextjs?.request_path).toBe('/log/2026-10-11');
     expect(event.breadcrumbs).toBeUndefined();
   });
+
+  it('道に入った保護者へのリンクの鍵を伏せる', () => {
+    const token = 'abcDEF123_-xyzABCDEF0123456789abcdefghijklm';
+    const event = scrubEvent({
+      type: undefined,
+      transaction: `GET /guardian-consent/${token}`,
+      request: { url: `https://jumpslab.kkweb.io/guardian-consent/${token}?x=1` },
+      contexts: { nextjs: { request_path: `/guardian-consent/${token}` } },
+    } as ErrorEvent);
+
+    expect(JSON.stringify(event)).not.toContain(token);
+    expect(event.request?.url).toBe('https://jumpslab.kkweb.io/guardian-consent/[token]');
+    expect(event.transaction).toBe('GET /guardian-consent/[token]');
+    expect(event.contexts?.nextjs?.request_path).toBe('/guardian-consent/[token]');
+  });
 });
