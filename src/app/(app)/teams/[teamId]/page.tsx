@@ -53,6 +53,8 @@ export default async function TeamDashboard({ params }: PageProps<'/teams/[teamI
       day: 'numeric',
       timeZone: 'UTC',
     });
+  const sameOrDay = (value: string | undefined, lastDay: string | null) =>
+    value === undefined ? '' : value === lastDay ? 'same' : day(value);
 
   return (
     <main className="flex flex-col gap-3">
@@ -106,11 +108,10 @@ export default async function TeamDashboard({ params }: PageProps<'/teams/[teamI
                         {t('rosterLine', {
                           last: member.lastDay === null ? 'none' : day(member.lastDay),
                           condition: member.latestCondition?.value.toString() ?? 'none',
-                          conditionDate:
-                            member.latestCondition === null ? '' : day(member.latestCondition.day),
+                          // 最後の記録と同じ日なら日付を出さない（同じ日付が3回並んで数字が埋もれた。2026-10-15）
+                          conditionDate: sameOrDay(member.latestCondition?.day, member.lastDay),
                           fatigue: member.latestFatigue?.value.toString() ?? 'none',
-                          fatigueDate:
-                            member.latestFatigue === null ? '' : day(member.latestFatigue.day),
+                          fatigueDate: sameOrDay(member.latestFatigue?.day, member.lastDay),
                           videos: member.videos,
                           days: VIDEO_WINDOW_DAYS,
                         })}

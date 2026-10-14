@@ -56,6 +56,7 @@ export default async function LogDay({ params }: PageProps<'/log/[day]'>) {
     // 書けない日（14日より前）は、やりとりのあるチームだけ
     .filter((thread) => (thread.current && open) || commented.has(thread.teamId));
   // 動画は開くたびに期限つきの URL（見る用と保存する用）を作る。結び付けた試技は「2. 6.12 m」のように、試技の欄と同じ番号で出す
+  const tVideos = await getTranslations('videos');
   const videoItems = await Promise.all(
     videos.map(async (video) => {
       // 見る用と保存する用の URL は、並べて作る
@@ -77,8 +78,14 @@ export default async function LogDay({ params }: PageProps<'/log/[day]'>) {
         url,
         downloadUrl: saveUrl,
         expiresAt: video.expiresAt,
+        // 「1. 5.45 m」では番号と記録の区切りが読み取りにくかったので、文にする（2026-10-15）
         attemptLabel:
-          index < 0 ? null : `${index + 1}. ${formatMark(sameEvent[index]!.markM, profile.units)}`,
+          index < 0
+            ? null
+            : tVideos('attemptLabel', {
+                number: index + 1,
+                mark: formatMark(sameEvent[index]!.markM, profile.units),
+              }),
       };
     }),
   );

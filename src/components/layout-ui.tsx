@@ -23,19 +23,24 @@ import type { ComponentProps, ReactNode } from 'react';
  */
 
 /**
- * PC（幅 1024px 以上）の2列の組み方。スマホでは縦に積む。
+ * タブレットと PC（幅 768px 以上）の2列の組み方。スマホでは縦に積む。
+ * はじめは 1024px からで、タブレットではスマホと同じ 480px の1列が真ん中に細く出ていた（2026-10-15 に 768px からに）。
  * MAIN_SIDE は「主役の列と右の列を 3:2」でホームと分析、HALVES は「同じ幅の2列」で日の画面と大会。
  * 画面ごとに列の幅を決めていて、似た形のホームと分析で色付きのカードの幅がずれた（本人、2026-10-11）。
  * 右の列は 20rem で固定していて、広い画面で種目のカードだけが伸び、右のカードの文が折り返した（本人、2026-10-11）
  */
-export const MAIN_SIDE = 'flex flex-col gap-3 lg:grid lg:grid-cols-main-side lg:items-start';
-export const HALVES = 'flex flex-col gap-3 lg:grid lg:grid-cols-2 lg:items-start';
+// タブレット（768〜1023px）は同じ幅の2列。3:2 だと右の列が 290px になり、カードの題が2行に折れた
+export const MAIN_SIDE =
+  'flex flex-col gap-3 md:grid md:grid-cols-2 md:items-start lg:grid-cols-main-side';
+export const HALVES = 'flex flex-col gap-3 md:grid md:grid-cols-2 md:items-start';
+/** LP の文とスマホの枠を並べる節。枠は幅が要るので、2列にするのは 1024px から（768px ではタブレットの右端に詰まった） */
+export const LP_HALVES = 'flex flex-col gap-3 lg:grid lg:grid-cols-2 lg:items-start';
 
 /**
- * 入力の画面（試技の追加・コンディション・大会の追加と編集・設定）の main。PC では幅 42rem で真ん中に置く。
+ * 入力の画面（試技の追加・コンディション・大会の追加と編集・設定）の main。幅 768px 以上では幅 42rem で真ん中に置く。
  * 一覧や表示の画面は画面いっぱい。入力の画面ごとに幅を決めていて、設定だけ広かった（本人、2026-10-11）
  */
-export const FORM_PAGE = 'flex flex-col gap-3 pb-6 lg:mx-auto lg:w-full lg:max-w-2xl';
+export const FORM_PAGE = 'flex flex-col gap-3 pb-6 md:mx-auto md:w-full md:max-w-2xl';
 
 /** 欄のラベル。入力欄の上、数字の下、スライダーの名前 */
 export const LABEL = 'text-[13px] font-semibold text-muted-foreground';
@@ -274,7 +279,8 @@ const BADGE_TONE = {
   neutral: 'bg-muted text-muted-foreground',
   accent: 'bg-secondary text-primary',
   danger: 'bg-destructive/10 text-destructive',
-  inverse: 'bg-white/15 text-white',
+  // 種目の色の上。白を重ねると地が明るくなって 3.7〜4.05 しかなかったので、黒を重ねて 6 を超える（2026-10-15）
+  inverse: 'bg-black/15 text-white',
   solid: 'text-white',
 } as const;
 

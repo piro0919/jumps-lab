@@ -16,13 +16,16 @@ import { safely } from '@/lib/safe-action';
 /**
  * コーチと選手のやりとり（2026-10-14）。選手の1日・1チームに1つ。古い順に並べ、下に書く欄を置く。
  * 自分のコメントは右に青で、相手のものは左に灰色で（AI コーチの相談と同じ形）。直すことはできず、
- * 自分のものだけ確かめてから消せる。form が無ければ見るだけ（抜けたチームのやりとり、書ける日を過ぎた日）
+ * 自分のものだけ確かめてから消せる。form が無ければ見るだけ（抜けたチームのやりとり、書ける日を過ぎた日）。
+ * collapsed のときは、まだコメントの無い日は「コメントを書く」ボタンだけにし、押すと書く欄を出す
+ * （コーチの選手の画面で、空の書く欄が14日分並んで長くなった。2026-10-15）
  */
 export function CommentThread({
   title,
   comments,
   timeZone,
   form,
+  collapsed = false,
 }: {
   title: string;
   comments: CommentItem[];
@@ -30,12 +33,16 @@ export function CommentThread({
   timeZone: string;
   /** 書く先。athleteId はコーチの画面から書くときだけ */
   form: { teamId: string; day: string; athleteId?: string } | null;
+  /** コメントの無い日は書く欄を畳んでおく */
+  collapsed?: boolean;
 }) {
   const t = useTranslations('comments');
   const tErrors = useTranslations('errors');
   const format = useFormatter();
   const formRef = useRef<HTMLFormElement>(null);
   const [removing, setRemoving] = useState<string | null>(null);
+  const [opened, setOpened] = useState(false);
+  const folded = collapsed && comments.length === 0 && !opened;
   const [, startTransition] = useTransition();
   const [state, action, pending] = useActionState(async (_previous: unknown, data: FormData) => {
     const result = await safely(() => addCommentAction(null, data));
@@ -48,7 +55,21 @@ export function CommentThread({
     <Card>
       <CardTitle>{title}</CardTitle>
       <div className="flex flex-col gap-4">
-        {comments.length === 0 ? (
+        {folded && form ? (
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            className="self-start"
+            onClick={() => {
+              setOpened(true);
+              // 開いた欄にそのまま書けるようにする（描き直しの後で欄に移る）
+              requestAnimationFrame(() => formRef.current?.querySelector('textarea')?.focus());
+            }}
+          >
+            {t('write')}
+          </Button>
+        ) : comments.length === 0 ? (
           <EmptyState message={t('empty')} />
         ) : (
           <ul className="flex flex-col gap-3">
@@ -107,7 +128,7 @@ export function CommentThread({
             })}
           </ul>
         )}
-        {form && (
+        {form && !folded && (
           <ActionForm ref={formRef} action={action} className="flex items-end gap-2">
             <input type="hidden" name="teamId" value={form.teamId} />
             <input type="hidden" name="day" value={form.day} />

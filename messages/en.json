@@ -73,6 +73,7 @@
     "eventLabel": "{event} · {count, plural, one {# jump} other {# jumps}}",
     "conditionLabel": "Body",
     "previousMonth": "Previous month",
+    "competitionDay": "Competition",
     "nextMonth": "Next month"
   },
   "competitions": {
@@ -341,6 +342,7 @@
   },
   "videos": {
     "title": "Videos",
+    "attemptLabel": "Attempt {number}: {mark}",
     "add": "Add",
     "addVideo": "Add video",
     "none": "No videos",
@@ -470,6 +472,7 @@
   },
   "menu": {
     "title": "Today's menu",
+    "dayTitle": "Menu for {day}",
     "newTitle": "Make today's menu",
     "short": "Menu",
     "create": "Make today's menu",
@@ -675,7 +678,7 @@
     "guardianDone": "Thank you. {name} has joined {team}.",
     "guardianNotShown": "{name}'s email address is not shown.",
     "guardianLeave": "{name} can leave the team anytime from Teams in the account menu. From then on, the coaches can no longer see their records.",
-    "rosterLine": "{last, select, none {Nothing logged yet} other {Last logged {last}}}{condition, select, none {} other { · condition {condition} on {conditionDate}}}{fatigue, select, none {} other { · fatigue {fatigue} on {fatigueDate}}} · {videos, plural, =0 {no videos} one {# video} other {# videos}} in {days} days",
+    "rosterLine": "{last, select, none {Nothing logged yet} other {Last logged {last}}}{condition, select, none {} other { · condition {condition}{conditionDate, select, same {} other { on {conditionDate}}}}}{fatigue, select, none {} other { · fatigue {fatigue}{fatigueDate, select, same {} other { on {fatigueDate}}}}} · {videos, plural, =0 {no videos} one {# video} other {# videos}} in {days} days",
     "guardianAlready": "{name} is already in {team}. There is nothing more to do."
   },
   "comments": {

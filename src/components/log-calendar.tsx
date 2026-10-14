@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Trophy } from 'lucide-react';
 import Link from 'next/link';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import { Card } from '@/components/layout-ui';
@@ -25,6 +25,7 @@ function shiftMonth(month: string, n: number): string {
 
 /**
  * 記録をカレンダーの形で見る。記録か体調のある日に点を付け、押すとその日を開く（先の日は開かない）。
+ * 大会の日（これからの大会も）にはトロフィーの印を付ける（2026-10-15）。
  * 週の頭と終わりの空きには、前の月と次の月の日を薄く出す（本人、2026-10-11）。押せば同じように開く。
  * 週は本人の設定の曜日から（日曜か月曜。はじめの値は登録したときのブラウザの地域、src/lib/week.ts）。
  * パソコンでは画面の幅いっぱいに広げ、マスを高くして日付を左上に置く（壁掛けのカレンダーの形）。
@@ -34,6 +35,7 @@ export async function LogCalendar({
   month,
   today,
   recorded,
+  competitions,
   weekStart,
 }: {
   /** YYYY-MM */
@@ -41,6 +43,8 @@ export async function LogCalendar({
   today: string;
   /** 記録か体調のある日 */
   recorded: Set<string>;
+  /** 大会のある日 */
+  competitions: Set<string>;
   /** 週の始まり。0 が日曜、1 が月曜 */
   weekStart: 0 | 1;
 }) {
@@ -108,8 +112,11 @@ export async function LogCalendar({
           const label = (
             <>
               {Number(cell.slice(ISO_DATE_START))}
-              <span className="flex h-2">
+              <span className="flex h-3 items-center gap-1">
                 {recorded.has(cell) && <span className="size-2 rounded-full bg-primary" />}
+                {competitions.has(cell) && (
+                  <Trophy aria-label={t('competitionDay')} className="size-3 text-primary" />
+                )}
               </span>
             </>
           );
@@ -118,8 +125,9 @@ export async function LogCalendar({
             cell === today && 'font-bold text-primary',
             !inMonth && 'text-muted-foreground',
           );
+          // 先の日は押せない。薄くしすぎると日付が読めないので（2.04 だった）、前後の月の日と同じ灰色に
           return cell > today ? (
-            <span key={cell} className={cn(className, 'text-muted-foreground/50')}>
+            <span key={cell} className={cn(className, 'text-muted-foreground')}>
               {label}
             </span>
           ) : (

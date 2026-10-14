@@ -70,7 +70,7 @@
   --text-button: 15px;
   /* 下のタブの字（iPhone の標準のタブの 10pt）と、グラフの目盛りの字 */
   --text-tab-label: 10px;
-  --text-chart-axis: 10px;
+  --text-chart-axis: 12px;
   /* 規約の文書の題・更新日・本文 */
   --text-legal-title: 28px;
   --text-legal-date: 13px;
@@ -140,7 +140,8 @@
   /* 指を乗せたときの地 */
   --accent: #ebebf0;
   --accent-foreground: #1c1c1e;
-  --destructive: #d0312d;
+  /* 薄い赤の地（destructive/10）の上の「必須」「要注意」の字が 4.33 だったので、4.5 を超える濃さに（2026-10-15） */
+  --destructive: #c62b27;
   /*
    * 記録を足すボタンだけの色（蛍光の黄緑に黒い字、コントラスト 17）。若い選手の気分が上がる1色として、
    * 手本の Strava のオレンジの代わりに置く（オレンジは走幅跳の色とぶつかる）。ほかには使わない

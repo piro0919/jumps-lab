@@ -768,7 +768,7 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
   const stacked = mode === 'side' && (landscape.a || landscape.b);
   const frameClass = cn(
     'block w-full rounded-2xl bg-muted object-contain',
-    stacked ? 'max-h-compare-video-stacked lg:max-h-compare-video' : 'max-h-compare-video',
+    stacked ? 'max-h-compare-video-stacked md:max-h-compare-video' : 'max-h-compare-video',
   );
   const duration = alignment.length;
   const angleSide = (key: Key) => ({
@@ -814,7 +814,7 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
           className={cn(
             mode === 'overlay'
               ? 'relative'
-              : cn('grid gap-3', stacked ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-2'),
+              : cn('grid gap-3', stacked ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-2'),
           )}
         >
           {KEYS.map((key) => {
@@ -957,7 +957,7 @@ export function VideoCompare({ a, b }: { a: CompareVideo; b: CompareVideo }) {
       </Card>
 
       <Card className="flex flex-col gap-4">
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-2">
           {KEYS.map((key) => (
             <div key={key} className="flex min-w-0 flex-col gap-2">
               <span className="flex min-w-0 items-center gap-2">

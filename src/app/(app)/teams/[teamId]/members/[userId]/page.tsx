@@ -9,7 +9,6 @@ import {
   Card,
   CardTitle,
   EmptyState,
-  HALVES,
   MAIN_SIDE,
   PageTitle,
   SectionTitle,
@@ -68,6 +67,7 @@ export default async function TeamMember({
     listMemberCompetitionAttemptsForCoach(access),
     listMemberCommentsForCoach(access, from, today),
   ]);
+  const tVideos = await getTranslations('videos');
   const videoItems = await Promise.all(
     videos.map(async (video) => {
       const sameEvent = attempts.filter((a) => a.day === video.day && a.event === video.event);
@@ -82,7 +82,12 @@ export default async function TeamMember({
           url: await viewUrl(video.objectKey),
           expiresAt: video.expiresAt,
           attemptLabel:
-            index < 0 ? null : `${index + 1}. ${formatMark(sameEvent[index]!.markM, coach.units)}`,
+            index < 0
+              ? null
+              : tVideos('attemptLabel', {
+                  number: index + 1,
+                  mark: formatMark(sameEvent[index]!.markM, coach.units),
+                }),
         },
       };
     }),
@@ -134,7 +139,8 @@ export default async function TeamMember({
                       })}
                     </SectionTitle>
                   </div>
-                  <div className={HALVES}>
+                  {/* 主役の列の中なので2列にしない（PC で試技のカードが 290px に縮み、メモが切れた。2026-10-15） */}
+                  <div className="flex flex-col gap-3">
                     <AttemptsCard
                       day={day}
                       events={member.events}
@@ -155,6 +161,7 @@ export default async function TeamMember({
                       .map((c) => toCommentItem(c, viewer.userId))}
                     // 出す日はどれも書ける日（選手の時間帯の今日を含む直近14日。読む文の範囲と同じ）
                     form={{ teamId: team.id, day, athleteId: userId }}
+                    collapsed
                   />
                 </section>
               );

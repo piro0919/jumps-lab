@@ -18,7 +18,7 @@ import {
   Stat,
   Watermark,
   Wordmark,
-  HALVES,
+  LP_HALVES,
   LEAD,
   segmentClass,
 } from '@/components/layout-ui';
@@ -99,7 +99,7 @@ function Feature({
   children: ReactNode;
 }) {
   return (
-    <section className={`${HALVES} gap-10 py-12 lg:gap-16`}>
+    <section className={`${LP_HALVES} gap-10 py-12 lg:gap-16`}>
       <div className={`flex flex-col gap-4 px-4 lg:self-center ${flip ? 'lg:order-last' : ''}`}>
         <Headline size="section" script={script}>
           {title}
@@ -209,7 +209,7 @@ export async function Landing() {
 
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col">
         {/* ヒーロー */}
-        <section className={`${HALVES} gap-10 pt-10 pb-12 lg:gap-16 lg:pt-16`}>
+        <section className={`${LP_HALVES} gap-10 pt-10 pb-12 lg:gap-16 lg:pt-16`}>
           <div className="flex flex-col gap-6 px-4 lg:self-center">
             <Headline as="h1" size="hero" script={script}>
               {t('title')}
@@ -412,11 +412,18 @@ export async function Landing() {
         </section>
       </main>
 
+      {/* 押す所は高さ 24px 以上（字の高さだけだと 15px だった。2026-10-15） */}
       <footer className="flex flex-wrap items-center gap-x-5 gap-y-2 px-4 py-6 text-xs text-muted-foreground">
-        <Link href={locale === 'ja' ? '/privacy' : '/en/privacy'} className="underline">
+        <Link
+          href={locale === 'ja' ? '/privacy' : '/en/privacy'}
+          className="inline-flex min-h-6 items-center underline"
+        >
           {t('privacy')}
         </Link>
-        <Link href={locale === 'ja' ? '/terms' : '/en/terms'} className="underline">
+        <Link
+          href={locale === 'ja' ? '/terms' : '/en/terms'}
+          className="inline-flex min-h-6 items-center underline"
+        >
           {t('terms')}
         </Link>
         <span className="ml-auto">© kk-web</span>

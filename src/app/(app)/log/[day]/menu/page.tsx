@@ -45,7 +45,8 @@ export default async function MenuPage({ params }: PageProps<'/log/[day]/menu'>)
           label: tNav('backTo', { page: dayLabel }),
         }}
       >
-        {t('title')}
+        {/* 過去の日は日付で（どの日も「今日のメニュー」になっていた。2026-10-15） */}
+        {day === today ? t('title') : t('dayTitle', { day: dayLabel })}
       </PageTitle>
       <MenuView menu={saved.menu} level={saved.level} />
       {/* 相談して直せるのは今日のメニューだけ。過去の日はやりとりを見るだけ */}

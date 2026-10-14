@@ -109,11 +109,13 @@ describe('見た目の決まり', () => {
   });
 
   it('PC の2列は MAIN_SIDE か HALVES で組む（画面ごとに列の幅を書かない）', () => {
-    expect(offenders((l) => /\blg:grid-cols-\[/.test(l), [SYSTEM])).toEqual([]);
+    expect(offenders((l) => /\b(md|lg):grid-cols-\[/.test(l), [SYSTEM])).toEqual([]);
   });
 
   it('入力の画面の幅は FORM_PAGE で決める（画面ごとに max-w を書かない）', () => {
-    expect(offenders((l) => /\blg:max-w-/.test(l), [SYSTEM, 'app/(app)/layout.tsx'])).toEqual([]);
+    expect(offenders((l) => /\b(md|lg):max-w-/.test(l), [SYSTEM, 'app/(app)/layout.tsx'])).toEqual(
+      [],
+    );
   });
 
   it('塊の見出し（16px の極太）は SectionTitle からだけ使う（大会名や題をその場で組まない）', () => {

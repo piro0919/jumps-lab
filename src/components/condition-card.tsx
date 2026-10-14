@@ -1,7 +1,7 @@
 import { Pencil } from 'lucide-react';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
-import { Card, CardTitle, LABEL, Stat, EmptyState } from '@/components/layout-ui';
+import { Badge, Card, CardTitle, LABEL, Stat, EmptyState } from '@/components/layout-ui';
 import { buttonVariants } from '@/components/ui/button';
 import type { DayLog } from '@/lib/data';
 
@@ -33,8 +33,8 @@ export async function ConditionCard({
     { label: t('sleep'), value: log?.sleepHours, suffix: tUnits('hours') },
   ].filter((row) => row.value !== null && row.value !== undefined);
   const texts = [
-    { label: t('injury'), value: log?.injury },
-    { label: t('note'), value: log?.note },
+    { label: t('injury'), value: log?.injury, alert: true },
+    { label: t('note'), value: log?.note, alert: false },
   ].filter((row) => row.value);
   const empty = numbers.length === 0 && texts.length === 0;
 
@@ -78,7 +78,13 @@ export async function ConditionCard({
           )}
           {texts.map((row) => (
             <div key={row.label} className="flex flex-col gap-1">
-              <span className={LABEL}>{row.label}</span>
+              {/* 痛みのメモは赤い札で目立たせる（コーチの一覧の「痛みのメモ」の印と同じ色。ふつうのメモと
+                  同じ見た目で、開いた先で見つけにくかった。2026-10-15） */}
+              {row.alert ? (
+                <Badge tone="danger">{row.label}</Badge>
+              ) : (
+                <span className={LABEL}>{row.label}</span>
+              )}
               <p className="text-sm whitespace-pre-wrap">{row.value}</p>
             </div>
           ))}

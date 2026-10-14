@@ -454,7 +454,7 @@ export function AnglesCard({
   return (
     <Card className="flex flex-col gap-4">
       <CardTitle>{t('angles')}</CardTitle>
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2">
         {(['a', 'b'] as const).map((key) => {
           const side = sides[key];
           return (

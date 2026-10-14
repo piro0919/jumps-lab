@@ -26,8 +26,8 @@ import { requireProfile, requireViewer } from '@/lib/viewer';
 const NEXT_MEET_ON_TOP_DAYS = 14;
 
 /**
- * ホーム。幅 1024px 以上は2列：左に種目ごとの色付きのカード、右に次の大会・今日のコンディション・天気。
- * スマホは種目のカードから縦に積む。自分のカード（顔・名前・本数）は外した。顔と名前はユーザーメニューにあり、
+ * ホーム。幅 768px 以上は2列：左に種目ごとの色付きのカード、右に次の大会・今日のアドバイス・コンディション・天気。
+ * スマホは今日のアドバイス、種目のカードの順に縦に積む。自分のカード（顔・名前・本数）は外した。顔と名前はユーザーメニューにあり、
  * 本数は分析で見られるため（本人、2026-10-11）。チームをコーチしている人にだけ、左の列の一番上にチームのカード
  * （選手とコーチの切り替えは置かない。本人、2026-10-14）
  */
@@ -85,15 +85,21 @@ export default async function Home() {
     </Link>
   );
 
+  const adviceCard = (
+    <AdviceCard readiness={advice} menu={menuMade === null ? null : menuMade ? 'made' : 'none'} />
+  );
+
   return (
     <main className="flex flex-col gap-3">
       <PageTitle>{tNav('home')}</PageTitle>
-      {soon && <div className="contents lg:hidden">{nextCard}</div>}
+      {soon && <div className="contents md:hidden">{nextCard}</div>}
 
       <div className={MAIN_SIDE}>
         <div className="flex flex-col gap-3">
           {/* チームをコーチしている人にだけ、種目のカードの上にチームのカード（2026-10-14） */}
           <TeamsCard teams={coachedTeams} />
+          {/* スマホでは今日のアドバイスを種目のカードより上に。種目が4つだと2画面ぶん下にあった（2026-10-15） */}
+          <div className="contents md:hidden">{adviceCard}</div>
           {profile.events.map((event) => {
             const target = targets.get(event)!;
             return (
@@ -116,11 +122,8 @@ export default async function Home() {
           })}
         </div>
         <div className="flex flex-col gap-3">
-          {soon ? <div className="hidden lg:contents">{nextCard}</div> : nextCard}
-          <AdviceCard
-            readiness={advice}
-            menu={menuMade === null ? null : menuMade ? 'made' : 'none'}
-          />
+          {soon ? <div className="hidden md:contents">{nextCard}</div> : nextCard}
+          <div className="hidden md:contents">{adviceCard}</div>
           {/* 今日のコンディション。押すと直す画面へ移り、保存したらホームへ戻る */}
           <ConditionCard
             log={todayLog}

@@ -114,18 +114,18 @@ export function AttemptsCard({
                           {isWindAided(attempt.windMs) && (
                             <Badge tone="neutral">{t('windAided')}</Badge>
                           )}
-                          {/* 結び付けた動画へ。同じ画面の動画の欄まで飛ぶ */}
+                          {/* 結び付けた動画へ。同じ画面の動画の欄まで飛ぶ。押せる所は 24px 四方（アイコンだけだと 16px だった） */}
                           {videos[attempt.id] && (
                             <a
                               href={`#video-${videos[attempt.id]}`}
                               aria-label={tVideos('play')}
-                              className="self-center text-muted-foreground hover:text-foreground"
+                              className="inline-flex size-6 items-center justify-center self-center text-muted-foreground hover:text-foreground"
                             >
                               <Video aria-hidden className="size-4" />
                             </a>
                           )}
                         </span>
-                        <span className="truncate text-xs text-muted-foreground">
+                        <span className="text-xs break-words text-muted-foreground">
                           {[
                             t(attempt.kind),
                             attempt.windMs === null

@@ -25,7 +25,7 @@ export default async function AppLayout({ children }: LayoutProps<'/'>) {
         profile={{ events: profile.events, ...activity }}
         admin={isAdmin(viewer.email)}
       />
-      <div className="mx-auto min-h-page-body max-w-lg pb-tab-bar lg:max-w-6xl lg:px-4 lg:pb-10">
+      <div className="mx-auto min-h-page-body max-w-lg pb-tab-bar md:max-w-3xl lg:max-w-6xl lg:px-4 lg:pb-10">
         {children}
       </div>
       <TabBar />

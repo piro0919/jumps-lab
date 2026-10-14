@@ -35,11 +35,15 @@ export function Legal({
 
   return (
     <main lang={locale} className="mx-auto max-w-2xl px-4 py-10">
+      {/* 押す所は高さ 24px 以上（字の高さだけだと 20px だった。2026-10-15） */}
       <div className="flex items-center justify-between gap-3 text-sm">
-        <Link href="/" className="font-bold">
+        <Link href="/" className="inline-flex min-h-6 items-center font-bold">
           Jumps Lab
         </Link>
-        <Link href={locale === 'ja' ? `/en/${doc}` : `/${doc}`} className="underline">
+        <Link
+          href={locale === 'ja' ? `/en/${doc}` : `/${doc}`}
+          className="inline-flex min-h-6 items-center underline"
+        >
           {copy.other}
         </Link>
       </div>

@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { createElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { COMMENT_MAX_LENGTH } from '@/lib/limits';
@@ -83,5 +83,36 @@ describe('CommentThread', () => {
       deletes: screen.queryAllByRole('button', { name: 'delete' }).length,
       badges: ['coach', 'you'].map((label) => screen.queryByText(label) !== null),
     }).toEqual({ deletes: 1, badges: [true, true] });
+  });
+
+  it('collapsed のとき、コメントの無い日は書く欄を畳み、ボタンを押すと出す。コメントのある日は畳まない', () => {
+    const form = { teamId: 't1', day: '2026-10-14', athleteId: 'a1' };
+    const empty = render(
+      createElement(CommentThread, {
+        title: 'Comments',
+        comments: [],
+        timeZone: 'UTC',
+        form,
+        collapsed: true,
+      }),
+    );
+    const before = empty.queryByRole('textbox');
+    fireEvent.click(empty.getByRole('button', { name: 'write' }));
+    const after = empty.queryByRole('textbox', { name: 'write' });
+    empty.unmount();
+    render(
+      createElement(CommentThread, {
+        title: 'Comments',
+        comments,
+        timeZone: 'UTC',
+        form,
+        collapsed: true,
+      }),
+    );
+    expect({
+      before,
+      opened: after !== null,
+      withComments: screen.queryByRole('textbox', { name: 'write' }) !== null,
+    }).toEqual({ before: null, opened: true, withComments: true });
   });
 });

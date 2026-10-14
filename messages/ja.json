@@ -73,6 +73,7 @@
     "eventLabel": "{event}・{count}本",
     "conditionLabel": "体調",
     "previousMonth": "前の月",
+    "competitionDay": "大会",
     "nextMonth": "次の月"
   },
   "competitions": {
@@ -341,6 +342,7 @@
   },
   "videos": {
     "title": "動画",
+    "attemptLabel": "{number}本目 {mark}",
     "add": "追加",
     "addVideo": "動画を追加",
     "none": "動画はありません",
@@ -470,6 +472,7 @@
   },
   "menu": {
     "title": "今日のメニュー",
+    "dayTitle": "{day}のメニュー",
     "newTitle": "今日のメニューを作る",
     "short": "メニュー",
     "create": "今日のメニューを作る",
@@ -675,7 +678,7 @@
     "guardianDone": "ありがとうございました。{name} さんは{team}に参加しました。",
     "guardianNotShown": "{name} さんのメールアドレスは見せません。",
     "guardianLeave": "{name} さんは、アカウントのメニューの「チーム」からいつでも抜けられます。抜けたときから、コーチは記録を見られなくなります。",
-    "rosterLine": "{last, select, none {まだ記録がありません} other {最後の記録 {last}}}{condition, select, none {} other {・体調 {condition}（{conditionDate}）}}{fatigue, select, none {} other {・疲労 {fatigue}（{fatigueDate}）}}・{days}日間の動画 {videos}本",
+    "rosterLine": "{last, select, none {まだ記録がありません} other {最後の記録 {last}}}{condition, select, none {} other {・体調 {condition}{conditionDate, select, same {} other {（{conditionDate}）}}}}{fatigue, select, none {} other {・疲労 {fatigue}{fatigueDate, select, same {} other {（{fatigueDate}）}}}}・{days}日間の動画 {videos}本",
     "guardianAlready": "{name} さんはもう{team}に参加しています。これ以上の手続きはありません。"
   },
   "comments": {

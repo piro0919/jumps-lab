@@ -76,16 +76,41 @@ export function CompetitionItem({
         </span>
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        {/* 名前と札（主目標・残りの日数）。札は名前のすぐ後ろに並べ、行の高さを右のアイコンボタンにそろえる */}
-        <span className="flex min-h-9 flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="text-lg font-extrabold">{competition.name}</span>
-          {competition.isTarget && <Badge tone="accent">{t('targetBadge')}</Badge>}
-          {upcoming && (
-            <Badge tone="accent">
-              {tHome('daysLeft', { days: daysBetween(today, competition.day) })}
-            </Badge>
+        {/* 名前と札（主目標・残りの日数）。札は名前のすぐ後ろに並べ、行の高さを右のアイコンボタンにそろえる。
+            直す・消すのボタンはこの行の右に置き、下の会場や招集の行は幅いっぱいに使う（ボタンが行の高さ全部の
+            幅を取り、375px で会場の名前が「博多の森陸上競技／場」と細かく折れた。2026-10-15） */}
+        <div className="flex items-start gap-1">
+          <span className="flex min-h-9 min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
+            <span className="text-lg font-extrabold">{competition.name}</span>
+            {competition.isTarget && <Badge tone="accent">{t('targetBadge')}</Badge>}
+            {upcoming && (
+              <Badge tone="accent">
+                {tHome('daysLeft', { days: daysBetween(today, competition.day) })}
+              </Badge>
+            )}
+          </span>
+          {!readOnly && (
+            <span className="flex shrink-0">
+              <Link
+                href={`/competitions/${competition.id}/edit`}
+                prefetch={sample ? false : undefined}
+                aria-label={t('editCompetition')}
+                className={buttonVariants({ variant: 'ghost', size: 'icon' })}
+              >
+                <Pencil aria-hidden />
+              </Link>
+              <Button
+                variant="ghost"
+                size="icon"
+                type="button"
+                aria-label={t('delete')}
+                onClick={onDelete}
+              >
+                <Trash2 aria-hidden />
+              </Button>
+            </span>
           )}
-        </span>
+        </div>
         {competition.venue && (
           <span className="flex items-start gap-1 text-sm break-keep wrap-anywhere text-muted-foreground">
             {/* 長い会場名が折り返しても、印は1行目の横に */}
@@ -145,27 +170,6 @@ export function CompetitionItem({
           </div>
         )}
       </div>
-      {!readOnly && (
-        <>
-          <Link
-            href={`/competitions/${competition.id}/edit`}
-            prefetch={sample ? false : undefined}
-            aria-label={t('editCompetition')}
-            className={buttonVariants({ variant: 'ghost', size: 'icon' })}
-          >
-            <Pencil aria-hidden />
-          </Link>
-          <Button
-            variant="ghost"
-            size="icon"
-            type="button"
-            aria-label={t('delete')}
-            onClick={onDelete}
-          >
-            <Trash2 aria-hidden />
-          </Button>
-        </>
-      )}
     </div>
   );
 }

@@ -8,7 +8,12 @@ import { formatMark, type Units } from '@/lib/units';
 /** 幅が測れるまでの描き幅。測れたら実際の幅（px）で描き直す */
 const INITIAL_WIDTH = 320;
 const HEIGHT = 160;
-const PAD = { top: 12, right: 12, bottom: 20, left: 12 };
+// 左は縦の目盛り（いちばん上と下の記録）の字の分を空ける
+const PAD = { top: 12, right: 12, bottom: 20, left: 56 };
+/** 目盛りの字と線の間 */
+const TICK_GAP = 6;
+/** 目盛りの字を線の高さの真ん中に置くための下げ幅（12px の字の半分ほど） */
+const TICK_BASELINE = 4;
 /** 全部同じ値のときの縦の幅（m）と、上下に空ける余白（幅に対する割合） */
 const FLAT_SPAN_M = 0.1;
 const SPAN_MARGIN = 0.15;
@@ -23,6 +28,7 @@ const LABEL_LIFT = 4;
 /**
  * 直近の記録の推移。1系列なので凡例は置かず、題で名前を言う。
  * 線は 2px、点は 8px。点に触るとその記録を出す（当たり判定は点より広く取る）。
+ * 左に、いちばん上と下の記録を目盛りとして出す（目盛りが無く、選んだ点の値しか読めなかった。2026-10-15）。
  * 描き幅は実際の幅（px）に合わせる。決まった幅の絵を引き伸ばすと、パソコンの幅で日付の字・線・点まで
  * 2倍ほどに大きくなっていた（2026-10-14 に分析の画面で見つけた）
  */
@@ -90,6 +96,14 @@ export function TrendChart({
                 className="stroke-border"
                 strokeWidth={1}
               />
+              <text
+                x={PAD.left - TICK_GAP}
+                y={y(m) + TICK_BASELINE}
+                textAnchor="end"
+                className="fill-muted-foreground text-chart-axis tabular-nums"
+              >
+                {formatMark(m, units)}
+              </text>
             </g>
           ))}
           <path
