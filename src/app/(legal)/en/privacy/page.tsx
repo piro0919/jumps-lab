@@ -183,13 +183,14 @@ export default function PrivacyEn() {
         delete where to deliver notifications when you turn them off, when you sign out on that
         device, when the push service reports it no longer works, or when you delete your account.
         We keep the rest of the information until you delete your account. When you do, we delete
-        all of the information above.
+        all of the information above. Your videos are deleted at that time too, and any that could
+        not be deleted then are removed within 91 days of their upload.
       </p>
 
       <h2>8. Access, correction and deletion</h2>
       <p>
-        You can correct your marks and profile on your own screens. For account deletion or any
-        other request, contact us at the address above.
+        You can correct your marks and profile on your own screens, and delete your account yourself
+        under Account in Settings. For any other request, contact us at the address above.
       </p>
 
       <h2>9. Minors</h2>

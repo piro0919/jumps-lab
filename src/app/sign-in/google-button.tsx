@@ -35,15 +35,15 @@ function GoogleLogo() {
 /**
  * Google のログインボタン。Google の決まりに沿う: 色を変えない「G」、明るい地（#FFFFFF）と
  * 枠（#747775）、字の色（#1F1F1F）、Roboto。形は決まりの中の丸い形（pill）を選んだ。
- * ログインを終えるとトップ（/）に戻る
+ * ログインを終えるとトップ（/）に戻る。アカウントを消す前のログインし直しでは設定に戻す（callbackURL）
  */
-export function GoogleButton() {
+export function GoogleButton({ callbackURL = '/' }: { callbackURL?: string }) {
   const t = useTranslations('signIn');
   const [pending, setPending] = useState(false);
 
   const signIn = () => {
     setPending(true);
-    void authClient.signIn.social({ provider: 'google', callbackURL: '/' });
+    void authClient.signIn.social({ provider: 'google', callbackURL });
   };
 
   return (

@@ -1,6 +1,7 @@
 import { getFormatter, getLocale, getTranslations } from 'next-intl/server';
 import { ProfileSettingsForm, RecordSettingsForm } from '@/components/profile-form';
 import { Card, CardTitle, LABEL, PageTitle, FORM_PAGE } from '@/components/layout-ui';
+import { DeleteAccountButton } from '@/components/delete-account-button';
 import { SignOutButton } from '@/components/sign-out-button';
 import { ThemeSetting } from '@/components/theme-setting';
 import { LanguageSetting } from '@/components/language-setting';
@@ -17,7 +18,7 @@ import { requireProfile, requireViewer } from '@/lib/viewer';
 /**
  * 設定。プロフィールと記録はカードごとに保存し、表示（配色）はその場で切り替わる。
  * 通知（鍵が揃っているときだけ。src/lib/push.ts の pushPublicKey）、
- * 最後にアカウント（ログインしている Google アカウントとログアウト、動画に使った量）。
+ * 最後にアカウント（ログインしている Google アカウントとログアウト、動画に使った量、アカウントの削除）。
  * プロフィールの欄だけを並べていて「設定がプロフィールっぽい」と言われ、区画に分けた（本人、2026-10-11）
  */
 export default async function Settings() {
@@ -94,6 +95,9 @@ export default async function Settings() {
               style={{ width: `${Math.min(100, (used / USER_VIDEO_BYTES) * 100)}%` }}
             />
           </div>
+        </div>
+        <div className="mt-4">
+          <DeleteAccountButton email={viewer.email} />
         </div>
       </Card>
     </main>

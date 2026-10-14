@@ -1,6 +1,7 @@
 import 'server-only';
 import {
   DeleteObjectCommand,
+  DeleteObjectsCommand,
   NotFound,
   GetObjectCommand,
   HeadObjectCommand,
@@ -9,6 +10,9 @@ import {
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { env } from '@/env';
+
+/** 1回でまとめて消せる数（S3 と R2 の DeleteObjects の上限） */
+const DELETE_BATCH_SIZE = 1000;
 
 /** 送るための署名 URL の期限（30分） */
 const UPLOAD_URL_MINUTES = 30;
@@ -96,4 +100,25 @@ export async function objectSize(key: string): Promise<number | null> {
 export async function deleteObject(key: string): Promise<void> {
   const { client, bucket } = r2();
   await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
+}
+
+/**
+ * まとめて消す（アカウントを消すとき）。上限の数ずつに分けて送る。
+ * 消せなかった置き場所の数を返す（中身は返さない。ログに置き場所を並べないため）。通信の失敗は投げる
+ */
+export async function deleteObjects(keys: string[]): Promise<number> {
+  if (keys.length === 0) return 0;
+  const { client, bucket } = r2();
+  let failed = 0;
+  for (let start = 0; start < keys.length; start += DELETE_BATCH_SIZE) {
+    const batch = keys.slice(start, start + DELETE_BATCH_SIZE);
+    const result = await client.send(
+      new DeleteObjectsCommand({
+        Bucket: bucket,
+        Delete: { Objects: batch.map((Key) => ({ Key })), Quiet: true },
+      }),
+    );
+    failed += result.Errors?.length ?? 0;
+  }
+  return failed;
 }

@@ -22,6 +22,7 @@ https://jumpslab.kkweb.io
 - A push notification the evening before each competition, in each athlete's own time zone, turned on per device in Settings (only when the VAPID keys are set; on iPhone and iPad after adding the app to the Home Screen)
 - The local weather on the home screen (Open-Meteo)
 - Meters or feet and inches, English or Japanese, light or dark, weeks starting on Sunday or Monday
+- Delete your own account from Settings, which removes your records, videos and everything else at once
 
 ## Tech Stack
 

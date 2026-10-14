@@ -110,6 +110,12 @@
     "save": "保存",
     "notSet": "未設定",
     "signOut": "ログアウト",
+    "deleteAccount": "アカウントを削除",
+    "deleteAccountTitle": "アカウントを削除しますか？",
+    "deleteAccountBody": "プロフィール、記録、大会、動画、メニューをすべて削除します。元には戻せません。",
+    "deleteAccountConfirm": "確認のため {email} と入力してください。",
+    "deleteAccountStale": "アカウントを削除するには、先にもう一度ログインしてください。",
+    "deleteAccountFailed": "アカウントを削除できませんでした。もう一度お試しください。",
     "saved": "保存しました"
   },
   "errors": {
