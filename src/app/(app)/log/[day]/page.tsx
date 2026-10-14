@@ -127,46 +127,46 @@ export default async function LogDay({ params }: PageProps<'/log/[day]'>) {
       </PageTitle>
       {/* 2列では左に試技と動画、右にコンディションとコメントを縦に詰める。行でそろえると、長い試技の横で
           コンディションの下が空き、コメントが試技の終わりまで下がった（2026-10-15）。
-          スマホは列の入れ物を消し（contents）、試技・コンディション・動画・コメントの順に並べ直す */}
+          試技は右の2つの行と残りの1行にまたがり、動画はその下の行に置く。並べ替え（order）を使わないので、
+          スマホでも読み上げとキーボードの順が見た目の順（試技・コンディション・動画・コメント）と同じ */}
       <div className={HALVES}>
-        <div className="contents md:flex md:flex-col md:gap-3">
-          <div className="max-md:order-1">
-            <AttemptsCard
-              day={day}
-              units={profile.units}
-              attempts={attempts}
-              events={profile.events}
-              videos={videoByAttempt}
-            />
-          </div>
-          <div className="max-md:order-3">
-            <VideosCard
-              addHref={`${base}/videos/new`}
-              videos={videoItems}
-              timeZone={profile.timeZone}
-            />
-          </div>
+        <div className="md:col-start-1 md:row-span-3 md:row-start-1">
+          <AttemptsCard
+            day={day}
+            units={profile.units}
+            attempts={attempts}
+            events={profile.events}
+            videos={videoByAttempt}
+          />
         </div>
-        <div className="contents md:flex md:flex-col md:gap-3">
-          <div className="max-md:order-2">
-            <ConditionCard log={log} editHref={`/log/${day}/condition`} />
-          </div>
-          {threads.length > 0 && (
-            <div id="comments" className="flex scroll-mt-20 flex-col gap-3 max-md:order-4">
-              {threads.map((thread) => (
-                <CommentThread
-                  key={thread.teamId}
-                  title={tComments('titleTeam', { team: thread.name })}
-                  timeZone={profile.timeZone}
-                  comments={comments
-                    .filter((c) => c.teamId === thread.teamId)
-                    .map((c) => toCommentItem(c, viewer.userId))}
-                  form={thread.current && open ? { teamId: thread.teamId, day } : null}
-                />
-              ))}
-            </div>
-          )}
+        <div className="md:col-start-2 md:row-start-1">
+          <ConditionCard log={log} editHref={`/log/${day}/condition`} />
         </div>
+        <div className="md:col-start-1 md:row-start-4">
+          <VideosCard
+            addHref={`${base}/videos/new`}
+            videos={videoItems}
+            timeZone={profile.timeZone}
+          />
+        </div>
+        {threads.length > 0 && (
+          <div
+            id="comments"
+            className="flex scroll-mt-20 flex-col gap-3 md:col-start-2 md:row-start-2"
+          >
+            {threads.map((thread) => (
+              <CommentThread
+                key={thread.teamId}
+                title={tComments('titleTeam', { team: thread.name })}
+                timeZone={profile.timeZone}
+                comments={comments
+                  .filter((c) => c.teamId === thread.teamId)
+                  .map((c) => toCommentItem(c, viewer.userId))}
+                form={thread.current && open ? { teamId: thread.teamId, day } : null}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </main>
   );
