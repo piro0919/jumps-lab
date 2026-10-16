@@ -14,7 +14,7 @@ import type { HeightSeries } from '@/lib/height-series';
 import type { Locale } from '@/i18n/locales';
 import type { ReminderRow } from '@/lib/meet-reminder';
 import type { Menu, MenuLevel } from '@/lib/menu';
-import type { PushTarget } from '@/lib/push-endpoint';
+import type { PushSubscriptionJSON as PushTarget } from '@piro0919/next-push/server';
 import { consenterFor, declaredFromBirthdate } from '@/lib/guardian';
 import { FLAG_WINDOW_DAYS, rosterFlags } from '@/lib/teams';
 import type { Grade, Plan, TeamPlan } from '@/lib/profile-options';

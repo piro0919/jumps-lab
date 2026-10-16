@@ -1,8 +1,7 @@
-import { createPushHandler } from '@piro0919/next-push/server';
+import { createPushHandler, isPushServiceEndpoint } from '@piro0919/next-push/server';
 import { getAuth } from '@/lib/auth';
 import { localeOfRequest } from '@/i18n/locales';
 import { deletePushSubscription, savePushSubscription } from '@/lib/data';
-import { isPushServiceEndpoint, isValidSubscription } from '@/lib/push-endpoint';
 import { pushReady } from '@/lib/push';
 
 /**
@@ -11,14 +10,10 @@ import { pushReady } from '@/lib/push';
  * （next-push の getUserId）。ログインしていなければ 401。宛先はブラウザ各社の通知サービスだけを受け付ける
  */
 
-/** 本文の上限（next-push と同じ 8KB） */
-const MAX_BODY = 8192;
-
 const NO_STORE = { 'Cache-Control': 'private, no-store' };
 
 const BAD_REQUEST = 400;
 const UNAUTHORIZED = 401;
-const TOO_LARGE = 413;
 /** 通知の鍵が揃っていない */
 const UNAVAILABLE = 503;
 
@@ -57,22 +52,17 @@ async function noStore(response: Promise<Response>): Promise<Response> {
   return new Response(body, { status, headers: NO_STORE });
 }
 
+/** 本文の大きさ・形・宛先の検査は next-push の POST がする（3.0.0 から、通知サービス以外の宛先は 400） */
 export async function POST(request: Request): Promise<Response> {
   if (!pushReady()) return reply(UNAVAILABLE);
-  if (Number(request.headers.get('content-length') ?? 0) > MAX_BODY) return reply(TOO_LARGE);
   if ((await userIdOf(request)) === null) return reply(UNAUTHORIZED);
-  const text = await request.clone().text();
-  if (text.length > MAX_BODY) return reply(TOO_LARGE);
-  let body: unknown;
-  try {
-    body = JSON.parse(text);
-  } catch {
-    return reply(BAD_REQUEST);
-  }
-  if (!isValidSubscription(body)) return reply(BAD_REQUEST);
   return noStore(handler.POST(request));
 }
 
+/**
+ * next-push の DELETE は https:// しか見ないが、ここの行は登録のときに通知サービスだけを通しているので、
+ * 外すときも同じ宛先に絞る
+ */
 export async function DELETE(request: Request): Promise<Response> {
   if ((await userIdOf(request)) === null) return reply(UNAUTHORIZED);
   const endpoint = new URL(request.url).searchParams.get('endpoint');

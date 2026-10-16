@@ -14,3 +14,4 @@ minimumReleaseAge: 4320
 # 自分で出したパッケージは、出してすぐでも入れる（乗っ取りの心配が無い。vocafy と同じ）
 minimumReleaseAgeExclude:
   - eslint-plugin-hollow-tests
+  - '@piro0919/next-push'

@@ -8,7 +8,7 @@ import {
   pickReminders,
   type ReminderRow,
 } from '@/lib/meet-reminder';
-import { isPushServiceEndpoint, isValidSubscription } from '@/lib/push-endpoint';
+import { isPushServiceEndpoint, isValidSubscription } from '@piro0919/next-push/server';
 
 const env = vi.hoisted(() => ({ CRON_SECRET: 'secret' as string | undefined }));
 vi.mock('@/env', () => ({ env }));

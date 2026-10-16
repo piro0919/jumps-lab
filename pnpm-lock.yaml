@@ -24,8 +24,8 @@ importers:
         specifier: 3.0.0-next.10
         version: 3.0.0-next.10
       '@piro0919/next-push':
-        specifier: 2.0.0
-        version: 2.0.0(next@16.3.8(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(@types/node@24.19.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)
+        specifier: 3.0.0
+        version: 3.0.0(next@16.3.8(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(@types/node@24.19.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)
       '@sentry/nextjs':
         specifier: ^11.5.0
         version: 11.5.0(@babel/core@7.29.7)(next@16.3.8(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(@types/node@24.19.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)
@@ -1636,8 +1636,8 @@ packages:
       tailwindcss:
         optional: true
 
-  '@piro0919/next-push@2.0.0':
-    resolution: {integrity: sha512-os0JZl2EA/PSy20AijvcCPjki+3F2TLMN0LsdM59lf5DKxFb2gNMnGW7j8ptUGxSYbnwwkm/jwHB0jebD/yUmQ==}
+  '@piro0919/next-push@3.0.0':
+    resolution: {integrity: sha512-YYXQswpBL2Zx7puBEReMe76Oqnk4nKvLTZKYwukyhY6UD1qu+Um9SFXSOn9xYEYNhyWuvlADPL1hS9DaAXG6KQ==}
     hasBin: true
     peerDependencies:
       next: '>=15.5.26'
@@ -7012,7 +7012,7 @@ snapshots:
       - supports-color
       - typescript
 
-  '@piro0919/next-push@2.0.0(next@16.3.8(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(@types/node@24.19.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)':
+  '@piro0919/next-push@3.0.0(next@16.3.8(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(@types/node@24.19.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)':
     dependencies:
       commander: 15.0.0
       prompts: 2.4.2

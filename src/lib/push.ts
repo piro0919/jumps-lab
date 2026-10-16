@@ -1,5 +1,5 @@
 import 'server-only';
-import { sendPushBatch } from '@piro0919/next-push/server';
+import { isValidSubscription, sendPushBatch } from '@piro0919/next-push/server';
 import { createTranslator } from 'next-intl';
 import { env } from '@/env';
 import type { Locale } from '@/i18n/locales';
@@ -12,7 +12,6 @@ import {
   releasePushKeys,
 } from '@/lib/data';
 import { candidateDays, pickReminders } from '@/lib/meet-reminder';
-import { isValidSubscription } from '@/lib/push-endpoint';
 import en from '../../messages/en.json';
 import ja from '../../messages/ja.json';
 

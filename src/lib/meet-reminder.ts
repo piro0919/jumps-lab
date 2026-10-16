@@ -1,6 +1,6 @@
 import { addDays, isTimeZone, todayIn } from '@/lib/dates';
 import type { Locale } from '@/i18n/locales';
-import type { PushTarget } from '@/lib/push-endpoint';
+import type { PushSubscriptionJSON as PushTarget } from '@piro0919/next-push/server';
 
 /**
  * 大会の前日の知らせ（通知）を、誰のどの大会に送るかを決める。DB も時計も読まない（test/push.test.ts）。
