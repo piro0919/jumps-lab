@@ -4,24 +4,29 @@ import { getFormatter, getTranslations } from 'next-intl/server';
 import {
   Badge,
   Card,
+  DisplayNumber,
   PageTitle,
   SEGMENTS,
-  Stat,
   segmentClass,
   EmptyState,
 } from '@/components/layout-ui';
 import { LogCalendar } from '@/components/log-calendar';
-import { listAllAttempts, listCompetitions, listDayLogs } from '@/lib/data';
-import { EVENT_TEXT } from '@/lib/events';
+import { listAllAttempts, listCompetitions, listDayLogs, listRecentAttempts } from '@/lib/data';
+import { EVENT_TEXT, isJumpEvent, isWindAided, type JumpEvent } from '@/lib/events';
 import { ISO_MONTH_END, isMonth, todayIn } from '@/lib/dates';
 import { buildLogDays } from '@/lib/log-days';
-import { formatMarkParts } from '@/lib/units';
+import { formatMark, type Units } from '@/lib/units';
 import { requireProfile, requireViewer } from '@/lib/viewer';
 
+/** 「直近10跳躍」に並べる本数 */
+const RECENT_ATTEMPTS = 10;
+
 /**
- * 記録の一覧。記録か体調のある日を新しい日から並べ、押すとその日を開く（Strong の履歴と同じ形）。
- * ?view=calendar で同じ日々をカレンダーの形で見る（?month=YYYY-MM で月を選ぶ）。
- * 大会の日は、一覧では大会名の札、カレンダーではトロフィーの印で練習の日と分ける（どちらも見分けがつかなかった。2026-10-15）
+ * 記録。既定は1種目の直近10跳躍を新しい順に並べ、押すとその日を開く。種目は ?event= で選び、
+ * 無ければ本人の選んだ種目の先頭（種目を混ぜると比べられないので、種目ごと。2026-10-18）。
+ * ?view=calendar で記録か体調のある日をカレンダーの形で見る（?month=YYYY-MM で月を選ぶ）。
+ * 試技の無い日（体調や動画だけ）へはカレンダーから行く。
+ * 大会の日は、一覧では大会名の札、カレンダーではトロフィーの印で練習の日と分ける（2026-10-15）
  */
 export default async function Log({ searchParams }: PageProps<'/log'>) {
   const viewer = await requireViewer();
@@ -29,112 +34,197 @@ export default async function Log({ searchParams }: PageProps<'/log'>) {
   const today = todayIn(profile.timeZone);
   const params = await searchParams;
   const calendar = params.view === 'calendar';
+  const event =
+    isJumpEvent(params.event) && profile.events.includes(params.event)
+      ? params.event
+      : profile.events[0]!;
   const month =
     typeof params.month === 'string' && isMonth(params.month)
       ? params.month
       : today.slice(0, ISO_MONTH_END);
 
-  const [attempts, logs, competitions] = await Promise.all([
-    listAllAttempts(viewer.userId),
-    listDayLogs(viewer.userId),
-    listCompetitions(viewer.userId),
-  ]);
-  // 日ごとの大会名（同じ日に2つあれば先のもの）
-  const competitionOn = new Map<string, string>();
-  for (const competition of competitions) {
-    if (!competitionOn.has(competition.day)) competitionOn.set(competition.day, competition.name);
-  }
-  const days = buildLogDays(attempts, logs);
   const t = await getTranslations('log');
   const tNav = await getTranslations('nav');
-  const tEvents = await getTranslations('events');
-  const format = await getFormatter();
 
   return (
     <main className="flex flex-col gap-3">
       <PageTitle>{tNav('log')}</PageTitle>
 
-      <nav className={`mx-4 ${SEGMENTS}`}>
-        <Link
-          href="/log"
-          aria-current={calendar ? undefined : 'page'}
-          className={segmentClass(!calendar)}
-        >
-          {t('list')}
-        </Link>
-        <Link
-          href="/log?view=calendar"
-          aria-current={calendar ? 'page' : undefined}
-          className={segmentClass(calendar)}
-        >
-          {t('calendar')}
-        </Link>
-      </nav>
+      <div className="mx-4 flex flex-wrap gap-2">
+        <nav className={SEGMENTS}>
+          <Link
+            href="/log"
+            aria-current={calendar ? undefined : 'page'}
+            className={segmentClass(!calendar)}
+          >
+            {t('recent', { count: RECENT_ATTEMPTS })}
+          </Link>
+          <Link
+            href="/log?view=calendar"
+            aria-current={calendar ? 'page' : undefined}
+            className={segmentClass(calendar)}
+          >
+            {t('calendar')}
+          </Link>
+        </nav>
+        {!calendar && <EventSwitch events={profile.events} current={event} />}
+      </div>
 
       {calendar ? (
-        <LogCalendar
+        <CalendarView
+          userId={viewer.userId}
           month={month}
           today={today}
-          recorded={new Set(days.map((d) => d.day))}
-          competitions={new Set(competitionOn.keys())}
           weekStart={profile.weekStart}
         />
-      ) : days.length === 0 ? (
-        <Card>
-          <EmptyState
-            message={t('empty')}
-            action={{ href: '/log/today/new', label: t('recordToday') }}
-          />
-        </Card>
       ) : (
-        <ul className="flex flex-col gap-3 md:grid md:grid-cols-2">
-          {days.map((entry) => (
-            <li key={entry.day}>
-              <Link href={`/log/${entry.day}`} className="block">
-                <Card className="flex flex-col gap-3 hover:bg-accent/40">
-                  <span className="flex items-center justify-between gap-2 text-sm font-semibold text-muted-foreground">
-                    <span className="flex min-w-0 items-center gap-2">
-                      <span className="shrink-0">
-                        {entry.day === today
-                          ? t('today')
-                          : format.dateTime(new Date(`${entry.day}T00:00:00Z`), {
-                              year: 'numeric',
-                              month: 'short',
-                              day: 'numeric',
-                              weekday: 'short',
-                              timeZone: 'UTC',
-                            })}
-                      </span>
-                      {competitionOn.has(entry.day) && (
-                        // 長い大会名は省略する。札は縮まない inline-flex なので、縮む block に替える
-                        // （そのままだと幅 375px で札が伸び、ページが横にはみ出した。2026-10-15）
-                        <Badge tone="accent" className="block min-w-0 shrink truncate">
-                          {competitionOn.get(entry.day)}
-                        </Badge>
-                      )}
-                    </span>
-                    <ChevronRight aria-hidden className="size-4 shrink-0" />
-                  </span>
-                  <div className="flex flex-wrap gap-x-6 gap-y-3">
-                    {entry.events.map((e) => (
-                      <Stat
-                        key={e.event}
-                        size="md"
-                        color={EVENT_TEXT[e.event]}
-                        value={formatMarkParts(e.bestM, profile.units)}
-                        label={t('eventLabel', { event: tEvents(e.event), count: e.count })}
-                      />
-                    ))}
-                    {entry.condition !== null && (
-                      <Stat size="md" value={`${entry.condition}/10`} label={t('conditionLabel')} />
-                    )}
-                  </div>
-                </Card>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <RecentView userId={viewer.userId} event={event} today={today} units={profile.units} />
       )}
     </main>
+  );
+}
+
+/** 種目の切り替え。種目が1つだけの人には出さない */
+async function EventSwitch({ events, current }: { events: JumpEvent[]; current: JumpEvent }) {
+  const tEvents = await getTranslations('events');
+  if (events.length < 2) return null;
+  return (
+    <nav className={SEGMENTS}>
+      {events.map((e) => (
+        <Link
+          key={e}
+          href={`/log?event=${e}`}
+          aria-current={e === current ? 'page' : undefined}
+          className={segmentClass(e === current)}
+        >
+          {tEvents(e)}
+        </Link>
+      ))}
+    </nav>
+  );
+}
+
+async function CalendarView({
+  userId,
+  month,
+  today,
+  weekStart,
+}: {
+  userId: string;
+  month: string;
+  today: string;
+  weekStart: 0 | 1;
+}) {
+  const [attempts, logs, competitions] = await Promise.all([
+    listAllAttempts(userId),
+    listDayLogs(userId),
+    listCompetitions(userId),
+  ]);
+  return (
+    <LogCalendar
+      month={month}
+      today={today}
+      recorded={new Set(buildLogDays(attempts, logs).map((d) => d.day))}
+      competitions={new Set(competitions.map((c) => c.day))}
+      weekStart={weekStart}
+    />
+  );
+}
+
+async function RecentView({
+  userId,
+  event,
+  today,
+  units,
+}: {
+  userId: string;
+  event: JumpEvent;
+  today: string;
+  units: Units;
+}) {
+  const [attempts, competitions] = await Promise.all([
+    listRecentAttempts(userId, event, RECENT_ATTEMPTS),
+    listCompetitions(userId),
+  ]);
+  const t = await getTranslations('log');
+  const tToday = await getTranslations('today');
+  const format = await getFormatter();
+
+  if (attempts.length === 0) {
+    return (
+      <Card>
+        <EmptyState
+          message={t('empty')}
+          action={{ href: '/log/today/new', label: t('recordToday') }}
+        />
+      </Card>
+    );
+  }
+
+  // 日ごとの大会名（同じ日に2つあれば先のもの）。大会として記録した試技にだけ札を付ける
+  const competitionOn = new Map<string, string>();
+  for (const competition of competitions) {
+    if (!competitionOn.has(competition.day)) competitionOn.set(competition.day, competition.name);
+  }
+
+  return (
+    <Card>
+      <ol className="flex flex-col divide-y divide-border">
+        {attempts.map((attempt) => {
+          const meet = attempt.kind === 'competition' ? competitionOn.get(attempt.day) : undefined;
+          return (
+            <li key={attempt.id}>
+              <Link
+                href={`/log/${attempt.day}`}
+                className="flex items-center gap-3 py-2.5 hover:bg-accent/40"
+              >
+                <div className="flex min-w-0 flex-1 flex-col gap-1">
+                  <span className="flex min-w-0 items-center gap-2 text-xs font-semibold text-muted-foreground">
+                    <span className="shrink-0">
+                      {attempt.day === today
+                        ? t('today')
+                        : format.dateTime(new Date(`${attempt.day}T00:00:00Z`), {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                            weekday: 'short',
+                            timeZone: 'UTC',
+                          })}
+                    </span>
+                    {meet && (
+                      // 長い大会名は省略する（札は縮まない inline-flex なので、縮む block に替える。2026-10-15）
+                      <Badge tone="accent" className="block min-w-0 shrink truncate">
+                        {meet}
+                      </Badge>
+                    )}
+                  </span>
+                  <span className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                    <DisplayNumber size="md" className={`whitespace-nowrap ${EVENT_TEXT[event]}`}>
+                      {formatMark(attempt.markM, units)}
+                    </DisplayNumber>
+                    {/* 追い風 2.0 m/s 超え。PB・SB には数えていない */}
+                    {isWindAided(attempt.windMs) && (
+                      <Badge tone="neutral">{tToday('windAided')}</Badge>
+                    )}
+                  </span>
+                  <span className="text-xs break-words text-muted-foreground">
+                    {[
+                      tToday(attempt.kind),
+                      attempt.windMs === null
+                        ? null
+                        : `${attempt.windMs > 0 ? '+' : ''}${attempt.windMs.toFixed(1)} m/s`,
+                      attempt.note,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </span>
+                </div>
+                <ChevronRight aria-hidden className="size-4 shrink-0 text-muted-foreground" />
+              </Link>
+            </li>
+          );
+        })}
+      </ol>
+    </Card>
   );
 }

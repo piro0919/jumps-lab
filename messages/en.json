@@ -67,7 +67,7 @@
   "log": {
     "today": "Today",
     "recordToday": "Log today",
-    "list": "List",
+    "recent": "Last {count} jumps",
     "calendar": "Calendar",
     "empty": "No marks",
     "eventLabel": "{event} · {count, plural, one {# jump} other {# jumps}}",

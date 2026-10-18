@@ -612,6 +612,20 @@ export async function listAttempts(userId: string, event: JumpEvent): Promise<At
   return rows.map(toAttemptMark);
 }
 
+/** 1種目の新しい記録から limit 本。新しい順（記録の画面の「直近10跳躍」） */
+export async function listRecentAttempts(
+  userId: string,
+  event: JumpEvent,
+  limit: number,
+): Promise<AttemptMark[]> {
+  const { rows } = await db().query<AttemptMarkRow>(
+    `select ${attemptMarkColumns} from attempt where "userId" = $1 and event = $2
+      order by day desc, "createdAt" desc limit $3`,
+    [userId, event, limit],
+  );
+  return rows.map(toAttemptMark);
+}
+
 /**
  * 期間の中の記録（全種目）。細かい記録と高さごとの結果は読まない。それを出さない呼び手
  * （試技・動画を足す画面のはじめの種目、動画の結び付け先、AI のメニューの材料）はこちら

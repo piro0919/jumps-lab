@@ -17,6 +17,7 @@ import {
   listCompetitionsBetween,
   listConditionsBetween,
   listDayLogs,
+  listRecentAttempts,
   nextCompetition,
   saveCompetition,
   saveDayLog,
@@ -115,6 +116,23 @@ describe('試技', () => {
     expect(await listAttemptsBetween(userId, '2026-10-13', '2026-10-14')).toHaveLength(1);
     expect(await listAllAttempts(userId)).toHaveLength(3);
     expect(await getActivityCounts(userId)).toEqual({ jumps: 3, daysLogged: 2 });
+  });
+
+  it('直近の試技は1種目だけを新しい日から、同じ日は後に入れた順で、本数を切って返す', async () => {
+    const [userId, other] = await Promise.all([addProfile(), addProfile()]);
+    await addAttempt(userId, { ...jump, day: '2026-10-10', markM: 5.9 });
+    await addAttempt(userId, { ...jump, day: '2026-10-12', markM: 6.0 });
+    await addAttempt(userId, { ...jump, day: '2026-10-12', markM: 6.2 });
+    await addAttempt(userId, { ...jump, day: '2026-10-11', markM: 6.1 });
+    await addAttempt(userId, { ...jump, day: '2026-10-13', event: 'high_jump', markM: 1.8 });
+    await addAttempt(other, { ...jump, day: '2026-10-14', markM: 7 });
+
+    const recent = await listRecentAttempts(userId, 'long_jump', 3);
+    expect(recent.map((a) => [a.day, a.markM])).toEqual([
+      ['2026-10-12', 6.2],
+      ['2026-10-12', 6.0],
+      ['2026-10-11', 6.1],
+    ]);
   });
 });
 

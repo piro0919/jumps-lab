@@ -67,7 +67,7 @@
   "log": {
     "today": "今日",
     "recordToday": "今日を記録",
-    "list": "一覧",
+    "recent": "直近{count}跳躍",
     "calendar": "カレンダー",
     "empty": "記録はありません",
     "eventLabel": "{event}・{count}本",
