@@ -217,6 +217,8 @@ function RecordFields({
       ))}
       <div className="col-span-2 flex flex-col gap-1.5">
         <FieldLabel label={t('events')} required={t('required')} />
+        {/* 複数を選べることを書く（中元さんの弟さんの要望、2026-10-18。1つしか選べないと思われた） */}
+        <p className="text-xs text-muted-foreground">{t('eventsHint')}</p>
         <div className="flex flex-wrap gap-2">
           {EVENTS.map((event) => {
             const on = events.includes(event);

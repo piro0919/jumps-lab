@@ -120,6 +120,7 @@
     "height": "身長",
     "weight": "体重",
     "events": "種目",
+    "eventsHint": "複数選択可",
     "goal": "今季の目標",
     "units": "単位",
     "seasonStart": "シーズンの始まり",

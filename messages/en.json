@@ -120,6 +120,7 @@
     "height": "Height",
     "weight": "Weight",
     "events": "Events",
+    "eventsHint": "Pick one or more",
     "goal": "Season goal",
     "units": "Units",
     "seasonStart": "Season starts in",

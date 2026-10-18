@@ -67,7 +67,8 @@ describe('AttemptForm の細かい記録', () => {
 
     expect({ ...shown, long_jump: longJump, pole_vault: detailFields() }).toEqual({
       high_jump: ['approachSteps', 'approachLengthM'],
-      long_jump: ['approachSteps', 'approachLengthM', 'boardOffsetCm'],
+      // 踏切板の手前は、入れてある試技を直すときだけ（2026-10-18）
+      long_jump: ['approachSteps', 'approachLengthM'],
       pole_vault: [
         'approachSteps',
         'approachLengthM',

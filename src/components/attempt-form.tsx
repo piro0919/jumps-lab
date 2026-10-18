@@ -356,7 +356,9 @@ function DetailsFields({
             range={range('approachLengthM')}
           />
         </Field>
-        {shows('boardOffsetCm') && (
+        {/* 踏切板の手前は入力から外した（中元さんの弟さんの要望、2026-10-18。要らない欄）。前に入れた試技を
+            直すときだけ出す（出さないと、保存で消える） */}
+        {shows('boardOffsetCm') && initial.boardOffsetCm !== null && (
           <Field label={t('boardOffset')}>
             <ShortLengthInput
               name="boardOffsetCm"
