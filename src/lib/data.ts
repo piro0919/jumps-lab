@@ -17,11 +17,13 @@ import type { ReminderRow } from '@/lib/meet-reminder';
 import type { Menu, MenuLevel } from '@/lib/menu';
 import type { PushSubscriptionJSON as PushTarget } from '@piro0919/next-push/server';
 import { consenterFor, declaredFromBirthdate } from '@/lib/guardian';
+import { JOINT_USE_VERSION } from '@/lib/joint-use';
 import { FLAG_WINDOW_DAYS, rosterFlags } from '@/lib/teams';
 import type { Grade, Plan, TeamPlan } from '@/lib/profile-options';
 import type { Units } from '@/lib/units';
 import { fromMs, toMarks, toMs, type MarkName, type Marks } from '@/lib/video-marks';
 import type { Angle, AngleKind, AngleName, Point } from '@/lib/video-angles';
+import type { Weather } from '@/lib/weather';
 
 /**
  * DB の読み書き。どの関数も userId を引数に取り、その人の行だけを触る。
@@ -57,6 +59,8 @@ export type Profile = {
   aiGuardianConsentVersion: number | null;
   /** 生年月日の無い人が答えた「16歳以上か」。null はまだ答えていない */
   ageDeclared16Plus: boolean | null;
+  /** 同意した共同利用の項目の版（src/lib/joint-use.ts）。null は版 1。プロフィールの保存では変えない */
+  jointUseVersion: number | null;
 };
 
 type ProfileRow = Omit<Profile, 'heightCm' | 'weightKg'> & {
@@ -68,7 +72,7 @@ export async function getProfile(userId: string): Promise<Profile | null> {
   const { rows } = await db().query<ProfileRow>(
     `select u.name, p.grade, p."gradeOffset", to_char(p.birthdate, 'YYYY-MM-DD') as birthdate, p.gender, p."heightCm", p."weightKg", p.events,
             p.units, p."seasonStartMonth", p."weekStart", p."timeZone", p.plan, p."aiConsentVersion",
-            p."aiGuardianConsentVersion", p."ageDeclared16Plus",
+            p."aiGuardianConsentVersion", p."ageDeclared16Plus", p."jointUseVersion",
             exists (select 1 from team_member m join team t on t.id = m."teamId"
                      where m."userId" = p."userId" and t.plan = 'team') as "inTeamPlan"
        from profile p join "user" u on u.id = p."userId"
@@ -82,7 +86,12 @@ export async function getProfile(userId: string): Promise<Profile | null> {
 
 export type ProfileInput = Omit<
   Profile,
-  'plan' | 'inTeamPlan' | 'aiConsentVersion' | 'aiGuardianConsentVersion' | 'ageDeclared16Plus'
+  | 'plan'
+  | 'inTeamPlan'
+  | 'aiConsentVersion'
+  | 'aiGuardianConsentVersion'
+  | 'ageDeclared16Plus'
+  | 'jointUseVersion'
 > & { goalM: number | null };
 
 /**
@@ -100,8 +109,9 @@ export async function saveProfile(userId: string, input: ProfileInput): Promise<
     ]);
     await client.query(
       `insert into profile ("userId", grade, "gradeOffset", birthdate, gender, "heightCm", "weightKg", events,
-                            units, "seasonStartMonth", "timeZone", "weekStart", "ageDeclared16Plus")
-       values ($1, $2, $11, $3, $4, $5, $6, $7::text[], $8, $9, $10, $12, $13)
+                            units, "seasonStartMonth", "timeZone", "weekStart", "ageDeclared16Plus",
+                            "jointUseVersion", "jointUseAgreedAt")
+       values ($1, $2, $11, $3, $4, $5, $6, $7::text[], $8, $9, $10, $12, $13, $14, now())
        on conflict ("userId") do update set
          grade = excluded.grade, "gradeOffset" = excluded."gradeOffset",
          birthdate = excluded.birthdate, gender = excluded.gender,
@@ -125,6 +135,8 @@ export async function saveProfile(userId: string, input: ProfileInput): Promise<
         input.gradeOffset,
         input.weekStart,
         declaredFromBirthdate(input.birthdate, todayIn(input.timeZone)),
+        // 作るときだけ入る（on conflict では変えない）。ログインの画面で今のポリシーに同意している
+        JOINT_USE_VERSION,
       ],
     );
     if (input.goalM !== null) {
@@ -209,6 +221,18 @@ export async function consentToAi(
     [userId, version, declare16Plus],
   );
   return rowCount === 1;
+}
+
+/**
+ * 共同利用の項目（version の版。src/lib/joint-use.ts）に本人が同意したことを入れる。
+ * 同じ版かそれより新しい版にもう同意していれば何も変えない（時刻は最初に同意した時刻のまま）
+ */
+export async function consentToJointUse(userId: string, version: number): Promise<void> {
+  await db().query(
+    `update profile set "jointUseVersion" = $2, "jointUseAgreedAt" = now(), "updatedAt" = now()
+      where "userId" = $1 and coalesce("jointUseVersion", 1) < $2`,
+    [userId, version],
+  );
 }
 
 /**
@@ -729,28 +753,85 @@ export type DayLog = {
   injuryStatus: InjuryStatus | null;
 };
 
-/** コンディションの画面が書く欄（ケガの経過は除く） */
-export type DayLogInput = Omit<DayLog, 'injuryStatus'>;
+/**
+ * 本人が見る日のコンディション。天気（2026-10-18）は本人の画面でだけ読む。コーチ・今日のアドバイス・AI の読み出し
+ * （listMemberDayLogsForCoach、listConditionsBetween）は天気を読まない：チームの同意の一覧にも AI の同意の一覧にも無い
+ */
+export type DayLogWithWeather = DayLog & { weather: Weather | null };
 
-export async function getDayLog(userId: string, day: string): Promise<DayLog | null> {
-  const { rows } = await db().query<Omit<DayLog, 'sleepHours'> & { sleepHours: string | null }>(
-    `select condition, fatigue, "sleepHours", injury, note, "injuryStatus" from day_log
-      where "userId" = $1 and day = $2`,
+/** コンディションの画面が書く欄（ケガの経過は除く） */
+export type DayLogInput = Omit<DayLog, 'injuryStatus'> & { weather: Weather | null };
+
+/** day_log の天気の列（null は残していない。0030 の check で5つそろう） */
+type WeatherColumns = {
+  weatherCode: number | null;
+  weatherTempC: string | null;
+  weatherWindMs: string | null;
+  weatherWindDeg: number | null;
+  weatherIsDay: boolean | null;
+};
+
+function toWeather(row: WeatherColumns): Weather | null {
+  if (row.weatherCode === null || row.weatherWindDeg === null || row.weatherIsDay === null) {
+    return null;
+  }
+  return {
+    code: row.weatherCode,
+    temperatureC: Number(row.weatherTempC),
+    windMs: Number(row.weatherWindMs),
+    windDeg: row.weatherWindDeg,
+    isDay: row.weatherIsDay,
+  };
+}
+
+/** 書き込む天気の列の値（順に code, tempC, windMs, windDeg, isDay） */
+function weatherParams(weather: Weather | null) {
+  return weather
+    ? [weather.code, weather.temperatureC, weather.windMs, weather.windDeg, weather.isDay]
+    : [null, null, null, null, null];
+}
+
+export async function getDayLog(userId: string, day: string): Promise<DayLogWithWeather | null> {
+  const { rows } = await db().query<
+    Omit<DayLog, 'sleepHours'> & { sleepHours: string | null } & WeatherColumns
+  >(
+    `select condition, fatigue, "sleepHours", injury, note, "injuryStatus",
+            "weatherCode", "weatherTempC", "weatherWindMs", "weatherWindDeg", "weatherIsDay"
+       from day_log where "userId" = $1 and day = $2`,
     [userId, day],
   );
   const row = rows[0];
-  return row ? { ...row, sleepHours: num(row.sleepHours) } : null;
+  if (!row) return null;
+  const { weatherCode, weatherTempC, weatherWindMs, weatherWindDeg, weatherIsDay, ...log } = row;
+  return {
+    ...log,
+    sleepHours: num(row.sleepHours),
+    weather: toWeather({ weatherCode, weatherTempC, weatherWindMs, weatherWindDeg, weatherIsDay }),
+  };
 }
 
 export async function saveDayLog(userId: string, day: string, log: DayLogInput): Promise<void> {
   await db().query(
-    `insert into day_log ("userId", day, condition, fatigue, "sleepHours", injury, note)
-     values ($1, $2, $3, $4, $5, $6, $7)
+    `insert into day_log ("userId", day, condition, fatigue, "sleepHours", injury, note,
+                          "weatherCode", "weatherTempC", "weatherWindMs", "weatherWindDeg", "weatherIsDay")
+     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
      on conflict ("userId", day) do update set
        condition = excluded.condition, fatigue = excluded.fatigue,
        "sleepHours" = excluded."sleepHours", injury = excluded.injury, note = excluded.note,
+       "weatherCode" = excluded."weatherCode", "weatherTempC" = excluded."weatherTempC",
+       "weatherWindMs" = excluded."weatherWindMs", "weatherWindDeg" = excluded."weatherWindDeg",
+       "weatherIsDay" = excluded."weatherIsDay",
        "updatedAt" = now()`,
-    [userId, day, log.condition, log.fatigue, log.sleepHours, log.injury, log.note],
+    [
+      userId,
+      day,
+      log.condition,
+      log.fatigue,
+      log.sleepHours,
+      log.injury,
+      log.note,
+      ...weatherParams(log.weather),
+    ],
   );
 }
 
@@ -764,10 +845,19 @@ export async function addDayConditionIfMissing(
   log: Omit<DayLogInput, 'note'>,
 ): Promise<boolean> {
   const { rowCount } = await db().query(
-    `insert into day_log ("userId", day, condition, fatigue, "sleepHours", injury)
-     values ($1, $2, $3, $4, $5, $6)
+    `insert into day_log ("userId", day, condition, fatigue, "sleepHours", injury,
+                          "weatherCode", "weatherTempC", "weatherWindMs", "weatherWindDeg", "weatherIsDay")
+     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
      on conflict ("userId", day) do nothing`,
-    [userId, day, log.condition, log.fatigue, log.sleepHours, log.injury],
+    [
+      userId,
+      day,
+      log.condition,
+      log.fatigue,
+      log.sleepHours,
+      log.injury,
+      ...weatherParams(log.weather),
+    ],
   );
   return rowCount === 1;
 }

@@ -24,6 +24,7 @@ import {
   NOTE_MAX_LENGTH,
   WIND_LIMIT_MS,
 } from '@/lib/limits';
+import { keepWeatherIfAllowed } from '@/lib/joint-use';
 import { requireViewer } from '@/lib/viewer';
 
 // 実在する日付だけ。先の日は画面で開けないので、本人の時間帯の今日と比べて弾く（openDay）
@@ -51,7 +52,11 @@ export async function saveDayLogAction(
   const profile = await getProfile(viewer.userId);
   if (!profile || !openDay(date, profile.timeZone)) return { ok: false, error: 'generic' };
   try {
-    await saveDayLog(viewer.userId, date, log);
+    await saveDayLog(
+      viewer.userId,
+      date,
+      keepWeatherIfAllowed(log, profile, todayIn(profile.timeZone)),
+    );
   } catch (error) {
     console.error(error);
     return { ok: false, error: 'generic' };
@@ -144,7 +149,10 @@ export async function saveAttemptAction(
     else {
       // コンディションを先に入れる。すでにある日は上書きしない（別の画面で入れたものを消さない）。
       // 試技の保存が失敗して押し直しても、二重にならない
-      if (condition) await addDayConditionIfMissing(viewer.userId, input.day, condition);
+      if (condition) {
+        const kept = keepWeatherIfAllowed(condition, profile, todayIn(profile.timeZone));
+        await addDayConditionIfMissing(viewer.userId, input.day, kept);
+      }
       await addAttempt(viewer.userId, values);
     }
   } catch (error) {

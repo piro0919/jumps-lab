@@ -98,3 +98,13 @@ export const ANGLE_FRAME_MAX_PX = 8192;
 export const MEET_FILE_MAX_BYTES = 3_145_728; // 3MB
 /** 大会の取り込みで送る前に写真を縮める、長い辺の画素数（日程表の小さな字が読める大きさ。仮決め） */
 export const MEET_IMAGE_MAX_EDGE_PX = 2048;
+
+/*
+ * その日の天気（src/lib/weather.ts、db/migrations/0030_day_weather.sql。DB の check と同じ）。
+ * 天気の番号は WMO の 0〜99、気温は地上の観測の記録に余裕を持たせた値、風速は m/s、風向は度（北が 0）
+ */
+export const WEATHER_CODE_MAX = 99;
+export const WEATHER_TEMP_MIN_C = -90;
+export const WEATHER_TEMP_MAX_C = 60;
+export const WEATHER_WIND_MAX_MS = 120;
+export const WEATHER_WIND_DEG_MAX = 359;

@@ -4,6 +4,7 @@ import { AttemptForm } from '@/components/attempt-form';
 import { Card, PageTitle, FORM_PAGE } from '@/components/layout-ui';
 import { getDayLog, listAttemptMarksBetween } from '@/lib/data';
 import { resolveLogDay, todayIn } from '@/lib/dates';
+import { weatherAccess } from '@/lib/joint-use';
 import { requireProfile, requireViewer } from '@/lib/viewer';
 
 /**
@@ -54,6 +55,7 @@ export default async function NewAttempt({ params }: PageProps<'/log/[day]/new'>
           units={profile.units}
           backHref={backHref}
           askCondition={log === null}
+          weatherAccess={weatherAccess(profile, day, today)}
         />
       </Card>
     </main>

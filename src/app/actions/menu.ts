@@ -24,6 +24,7 @@ import {
 } from '@/lib/data';
 import { addDays, daysBetween, todayIn } from '@/lib/dates';
 import { conditionFrom } from '@/lib/condition-input';
+import { keepWeatherIfAllowed } from '@/lib/joint-use';
 import { INJURY_STATUSES } from '@/lib/injury';
 import { type ActionResult, optionalText } from '@/lib/form';
 import { NOTE_MAX_LENGTH } from '@/lib/limits';
@@ -217,7 +218,10 @@ export async function createMenuAction(
 
   try {
     // メニューの材料（強さの判定）に入るよう、先に入れる。すでにある日は上書きしない
-    if (condition) await addDayConditionIfMissing(viewer.userId, today, condition);
+    if (condition) {
+      const kept = keepWeatherIfAllowed(condition, profile, today);
+      await addDayConditionIfMissing(viewer.userId, today, kept);
+    }
     if (injuryStatus.data) await setInjuryStatus(viewer.userId, today, injuryStatus.data);
     if (await getMenu(viewer.userId, today)) return { ok: true };
     // 呼ぶ前に数えて記録する（失敗しても上限に数える。同時に送られても上限を超えない）。

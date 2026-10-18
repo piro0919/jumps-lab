@@ -8,6 +8,8 @@ import { createMenuAction } from '@/app/actions/menu';
 import { safely } from '@/lib/safe-action';
 import { ActionForm } from '@/components/action-form';
 import { ConditionSection } from '@/components/day-log-form';
+import type { WeatherAccess } from '@/lib/joint-use';
+import type { Units } from '@/lib/units';
 import { FormActions } from '@/components/form-actions';
 import {
   ErrorText,
@@ -35,12 +37,17 @@ export function MenuForm({
   meetDay,
   askCondition,
   injury,
+  weatherAccess,
+  units,
 }: {
   meetDay: boolean;
   /** 今日のコンディションがまだ無い。閉じた「コンディションを入力」を一番上に出す（2026-10-18） */
   askCondition: boolean;
   /** 直近14日の痛み・違和感のメモ（src/lib/injury.ts の injuryToAsk）。あれば今の具合を4択で聞く */
   injury: { day: string; injury: string } | null;
+  /** コンディションの天気の欄の扱い（src/lib/joint-use.ts の weatherAccess） */
+  weatherAccess: WeatherAccess;
+  units: Units;
 }) {
   const router = useRouter();
   const t = useTranslations('menu');
@@ -53,7 +60,7 @@ export function MenuForm({
 
   return (
     <ActionForm action={action} className="flex flex-col gap-4">
-      {askCondition && <ConditionSection />}
+      {askCondition && <ConditionSection weatherAccess={weatherAccess} units={units} />}
       {injury && <InjuryStatusField injury={injury} />}
       {/* 大会の当日は練習ではなく、招集時刻から逆算したアップの段取りを作る */}
       <Field label={t(meetDay ? 'warmupMinutes' : 'minutes')}>

@@ -4,6 +4,7 @@ import { DayLogForm } from '@/components/day-log-form';
 import { Card, PageTitle, FORM_PAGE } from '@/components/layout-ui';
 import { getDayLog } from '@/lib/data';
 import { resolveLogDay, todayIn } from '@/lib/dates';
+import { weatherAccess } from '@/lib/joint-use';
 import { requireProfile, requireViewer } from '@/lib/viewer';
 
 /** その日のコンディションと練習メモを直す画面。日の画面の「編集」から来る。先の日と実在しない日は今日へ送る */
@@ -44,7 +45,13 @@ export default async function EditCondition({
         {t(log ? 'editCondition' : 'newCondition')}
       </PageTitle>
       <Card>
-        <DayLogForm day={day} log={log} backHref={backHref} />
+        <DayLogForm
+          day={day}
+          log={log}
+          backHref={backHref}
+          weatherAccess={weatherAccess(profile, day, today)}
+          units={profile.units}
+        />
       </Card>
     </main>
   );

@@ -76,6 +76,7 @@ const adult: Profile = {
   aiConsentVersion: AI_CONSENT_VERSION,
   aiGuardianConsentVersion: null,
   ageDeclared16Plus: true,
+  jointUseVersion: null,
 };
 
 const form = (fields: Record<string, string>) => {
@@ -142,7 +143,11 @@ describe('createMenuAction', () => {
       before: written! < read!,
     }).toEqual({
       calls: [
-        ['u1', expect.any(String), { condition: 5, fatigue: 9, sleepHours: 6, injury: null }],
+        [
+          'u1',
+          expect.any(String),
+          { condition: 5, fatigue: 9, sleepHours: 6, injury: null, weather: null },
+        ],
       ],
       before: true,
     });

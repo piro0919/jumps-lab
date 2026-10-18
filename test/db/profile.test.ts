@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import {
   consentToAi,
+  consentToJointUse,
   declareUnder16,
   getProfile,
   getTargets,
@@ -13,6 +14,7 @@ import {
   saveTargetField,
   setPlan,
 } from '@/lib/data';
+import { JOINT_USE_VERSION } from '@/lib/joint-use';
 import { addProfile, addUser, query } from './seed';
 
 /** プロフィール・同意・プラン・目標の表 */
@@ -55,6 +57,8 @@ describe('saveProfile', () => {
       aiGuardianConsentVersion: null,
       // 生年月日（2008年生まれ）から16歳以上と分かる
       ageDeclared16Plus: true,
+      // ログインの画面で今のポリシー（天気を足した共同利用の一覧）に同意している
+      jointUseVersion: JOINT_USE_VERSION,
     });
     const targets = await getTargets(userId, ['triple_jump', 'long_jump']);
     expect(targets.get('triple_jump')?.seasonGoalM).toBe(12.5);
@@ -285,6 +289,30 @@ describe('saveTargetField', () => {
       manualSbM: null,
       manualSbSeason: 2027,
       manualPbM: 6.5,
+    });
+  });
+});
+
+describe('共同利用の項目の同意', () => {
+  it('前からいる人は版 1（null）のまま。同意で今の版と時刻が入り、保存し直しても同意し直しても変わらない', async () => {
+    const userId = await addProfile();
+    const before = (await getProfile(userId))?.jointUseVersion;
+    await consentToJointUse(userId, JOINT_USE_VERSION);
+    const [first] = await query<{ at: Date }>(
+      `select "jointUseAgreedAt" as at from profile where "userId" = $1`,
+      [userId],
+    );
+    await consentToJointUse(userId, JOINT_USE_VERSION);
+    await saveProfile(userId, input);
+    const [second] = await query<{ at: Date; version: number }>(
+      `select "jointUseAgreedAt" as at, "jointUseVersion" as version from profile where "userId" = $1`,
+      [userId],
+    );
+
+    expect({ before, version: second!.version, sameTime: +second!.at === +first!.at }).toEqual({
+      before: null,
+      version: JOINT_USE_VERSION,
+      sameTime: true,
     });
   });
 });

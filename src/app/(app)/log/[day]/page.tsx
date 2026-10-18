@@ -140,7 +140,7 @@ export default async function LogDay({ params }: PageProps<'/log/[day]'>) {
           />
         </div>
         <div className="md:col-start-2 md:row-start-1">
-          <ConditionCard log={log} editHref={`/log/${day}/condition`} />
+          <ConditionCard log={log} editHref={`/log/${day}/condition`} units={profile.units} />
         </div>
         <div className="md:col-start-1 md:row-start-4">
           <VideosCard

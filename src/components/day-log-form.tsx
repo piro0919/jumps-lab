@@ -11,7 +11,10 @@ import { cn } from '@/lib/cn';
 import { safely } from '@/lib/safe-action';
 import { ErrorText, Field, LABEL, TextArea } from '@/components/layout-ui';
 import { FormActions } from '@/components/form-actions';
-import type { DayLog } from '@/lib/data';
+import { WeatherField } from '@/components/weather-field';
+import type { DayLogWithWeather } from '@/lib/data';
+import type { WeatherAccess } from '@/lib/joint-use';
+import type { Units } from '@/lib/units';
 import { LONG_NOTE_MAX_LENGTH, NOTE_MAX_LENGTH, SCALE_MAX } from '@/lib/limits';
 
 /** まだ入れていない日に、つまみを置いておく位置（体調・疲れ・睡眠時間） */
@@ -69,11 +72,16 @@ export function DayLogForm({
   day,
   log,
   backHref,
+  weatherAccess,
+  units,
 }: {
   day: string;
-  log: DayLog | null;
+  log: DayLogWithWeather | null;
   /** 戻る先（その日の画面） */
   backHref: string;
+  /** 天気の欄の扱い（src/lib/joint-use.ts の weatherAccess） */
+  weatherAccess: WeatherAccess;
+  units: Units;
 }) {
   const t = useTranslations('today');
   const tErrors = useTranslations('errors');
@@ -88,6 +96,7 @@ export function DayLogForm({
     <ActionForm action={action} className="flex flex-col gap-4">
       <input type="hidden" name="day" value={day} />
       <ConditionFields log={log} />
+      <WeatherField initial={log?.weather ?? null} access={weatherAccess} units={units} />
       <Field label={t('note')}>
         <TextArea name="note" defaultValue={log?.note ?? ''} maxLength={LONG_NOTE_MAX_LENGTH} />
       </Field>
@@ -100,8 +109,8 @@ export function DayLogForm({
   );
 }
 
-/** 体調・疲労度・睡眠・ケガの欄。この画面と、試技を足す画面・メニューを作る画面の「コンディション」で使う */
-function ConditionFields({ log }: { log: DayLog | null }) {
+/** 体調・疲労度・睡眠・ケガの欄（天気は WeatherField）。この画面と、試技を足す画面・メニューを作る画面の「コンディション」で使う */
+function ConditionFields({ log }: { log: DayLogWithWeather | null }) {
   const t = useTranslations('today');
   const tUnits = useTranslations('units');
   return (
@@ -145,7 +154,13 @@ function ConditionFields({ log }: { log: DayLog | null }) {
  * （中元さんの弟さんの要望、2026-10-18）。開いたときだけ欄を送る：つまみは最初から値を持つので、
  * 閉じたままでも送ると、入れていない日に既定の値（体調 7 など）が入ってしまう
  */
-export function ConditionSection() {
+export function ConditionSection({
+  weatherAccess,
+  units,
+}: {
+  weatherAccess: WeatherAccess;
+  units: Units;
+}) {
   const t = useTranslations('today');
   const [open, setOpen] = useState(false);
   return (
@@ -156,6 +171,8 @@ export function ConditionSection() {
       </summary>
       <fieldset disabled={!open} className="mt-3 flex flex-col gap-4">
         <ConditionFields log={null} />
+        {/* 天気は開いてから置く（閉じたまま位置を読んで Open-Meteo に送らない） */}
+        {open && <WeatherField initial={null} access={weatherAccess} units={units} />}
       </fieldset>
     </details>
   );

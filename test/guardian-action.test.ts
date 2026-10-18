@@ -88,6 +88,7 @@ const athlete = (overrides: Partial<Profile> = {}): Profile => ({
   aiConsentVersion: null,
   aiGuardianConsentVersion: null,
   ageDeclared16Plus: null,
+  jointUseVersion: null,
   ...overrides,
 });
 

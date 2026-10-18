@@ -47,6 +47,11 @@ export default function PrivacyEn() {
           practice notes for each day
         </li>
         <li>
+          If you add the weather to your condition, that day&apos;s weather (conditions,
+          temperature, wind direction and speed, and whether it was day or night; your location is
+          not stored)
+        </li>
+        <li>
           Your competitions (name, date, venue, call room place and time, start time, notes and
           whether it is a goal meet)
         </li>
@@ -183,12 +188,12 @@ export default function PrivacyEn() {
         <dd>
           The following information in section 2: your Google account identifier, email address,
           display name and profile image URL; your profile; your marks, including attempt details;
-          your condition, fatigue, sleep, injuries or discomfort and practice notes; your
-          competitions; your goal marks and the bests you enter by hand; your videos; your plan;
-          your AI coach menus, conversations, consent time and usage times and counts; whether you
-          are 16 or older; a parent or guardian&apos;s email address and the time they agreed; your
-          notification destinations and their language; team information (team names, coach and
-          membership records, consent records and invite links); and team comments
+          your condition, fatigue, sleep, injuries or discomfort and practice notes; the day&apos;s
+          weather; your competitions; your goal marks and the bests you enter by hand; your videos;
+          your plan; your AI coach menus, conversations, consent time and usage times and counts;
+          whether you are 16 or older; a parent or guardian&apos;s email address and the time they
+          agreed; your notification destinations and their language; team information (team names,
+          coach and membership records, consent records and invite links); and team comments
         </dd>
         <dt>Joint users</dt>
         <dd>kk-web and Renya Nakamoto (中元廉弥)</dd>
@@ -217,8 +222,10 @@ export default function PrivacyEn() {
         <dt>Open-Meteo</dt>
         <dd>
           The latitude and longitude of your location, rounded to about 100 m. Sent directly from
-          your browser only when you ask to show the weather. It is not sent to our servers and is
-          not stored
+          your browser only when the weather is shown on the home screen or added to your condition.
+          The latitude and longitude are not sent to our servers and are not stored. When you add
+          the weather to your condition, we store only the weather that comes back (conditions,
+          temperature, wind direction and speed, and whether it was day or night)
         </dd>
         <dt>Vercel Web Analytics</dt>
         <dd>

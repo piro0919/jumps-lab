@@ -221,6 +221,16 @@
     "showers": "Showers",
     "thunder": "Thunderstorm"
   },
+  "compass": {
+    "n": "N",
+    "ne": "NE",
+    "e": "E",
+    "se": "SE",
+    "s": "S",
+    "sw": "SW",
+    "w": "W",
+    "nw": "NW"
+  },
   "today": {
     "condition": "Condition",
     "editCondition": "Edit condition",
@@ -285,7 +295,15 @@
     "noHeightCleared": "No height cleared yet",
     "seriesItem": "{height}: {results}",
     "trialWord": "{result, select, cleared {cleared} missed {missed} other {passed}}",
-    "lineMisses": "Misses: {total} in total, {atBest} at the best height"
+    "lineMisses": "Misses: {total} in total, {atBest} at the best height",
+    "weather": "Weather",
+    "weatherLine": "{weather}, {temperature}°{unit, select, f {F} other {C}}",
+    "weatherWind": "{direction} wind {speed} m/s",
+    "useWeather": "Add the weather here",
+    "removeWeather": "Remove the weather",
+    "weatherFailed": "Couldn't get the weather",
+    "weatherConsent": "Saving the weather adds \"the day's weather\" to the jointly used items in section 4 of the <privacy>Privacy Policy</privacy> (joint users: kk-web and Renya Nakamoto). Only the weather, temperature, wind direction and wind speed are saved, never your location.",
+    "weatherAgree": "Agree and add the weather"
   },
   "calendar": {
     "add": "Add",

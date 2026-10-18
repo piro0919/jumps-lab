@@ -3,7 +3,10 @@ import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { Badge, Card, CardTitle, LABEL, Stat, EmptyState } from '@/components/layout-ui';
 import { buttonVariants } from '@/components/ui/button';
+import { WeatherSummary } from '@/components/weather-summary';
 import type { DayLog } from '@/lib/data';
+import type { Units } from '@/lib/units';
+import type { Weather } from '@/lib/weather';
 import { stillHurts } from '@/lib/injury';
 
 /**
@@ -16,14 +19,18 @@ export async function ConditionCard({
   editHref,
   title,
   sample = false,
+  units = 'metric',
 }: {
-  log: DayLog | null;
+  /** 天気は本人の画面でだけ読む（getDayLog）。コーチの画面の行には無い */
+  log: (DayLog & { weather?: Weather | null }) | null;
   /** 直す画面。無ければ見るだけ（コーチが選手の記録を見る画面） */
   editHref?: string;
   /** 題。無ければ「コンディション」 */
   title?: string;
   /** LP の見本。リンクの先読みをしない（押せない枠の中でも、Next は画面に入ったリンクを先読みする） */
   sample?: boolean;
+  /** 天気の気温の単位 */
+  units?: Units;
 }) {
   const t = await getTranslations('today');
   const tUnits = await getTranslations('units');
@@ -42,7 +49,8 @@ export async function ConditionCard({
     },
     { label: t('note'), value: log?.note, alert: false },
   ].filter((row) => row.value);
-  const empty = numbers.length === 0 && texts.length === 0;
+  const weather = log?.weather ?? null;
+  const empty = numbers.length === 0 && texts.length === 0 && !weather;
 
   return (
     <Card>
@@ -80,6 +88,12 @@ export async function ConditionCard({
                   label={row.label}
                 />
               ))}
+            </div>
+          )}
+          {weather && (
+            <div className="flex flex-col gap-1">
+              <span className={LABEL}>{t('weather')}</span>
+              <WeatherSummary weather={weather} units={units} />
             </div>
           )}
           {texts.map((row) => (

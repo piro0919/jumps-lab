@@ -14,6 +14,7 @@ import {
 import { addDays, todayIn } from '@/lib/dates';
 import { INJURY_LOOKBACK_DAYS, injuryToAsk } from '@/lib/injury';
 import { GUARDIAN_LINK_DAYS, maskEmail } from '@/lib/guardian';
+import { weatherAccess } from '@/lib/joint-use';
 import { requireProfile, requireViewer } from '@/lib/viewer';
 
 /**
@@ -54,6 +55,8 @@ export default async function NewMenu({ params }: PageProps<'/log/[day]/menu/new
             meetDay={meets.length > 0}
             askCondition={!logs.some((log) => log.day === today)}
             injury={injuryToAsk(logs, today)}
+            weatherAccess={weatherAccess(profile, today, today)}
+            units={profile.units}
           />
         ) : (
           <div className="flex flex-col gap-4 text-sm">

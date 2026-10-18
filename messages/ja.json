@@ -221,6 +221,16 @@
     "showers": "にわか雨",
     "thunder": "雷雨"
   },
+  "compass": {
+    "n": "北",
+    "ne": "北東",
+    "e": "東",
+    "se": "南東",
+    "s": "南",
+    "sw": "南西",
+    "w": "西",
+    "nw": "北西"
+  },
   "today": {
     "condition": "コンディション",
     "editCondition": "コンディションを編集",
@@ -285,7 +295,15 @@
     "noHeightCleared": "まだ越えた高さがありません",
     "seriesItem": "{height}：{results}",
     "trialWord": "{result, select, cleared {成功} missed {失敗} other {パス}}",
-    "lineMisses": "失敗 合計{total}回・最高の高さで{atBest}回"
+    "lineMisses": "失敗 合計{total}回・最高の高さで{atBest}回",
+    "weather": "天気",
+    "weatherLine": "{weather}・{temperature}°{unit, select, f {F} other {C}}",
+    "weatherWind": "{direction}の風 {speed} m/s",
+    "useWeather": "現在地の天気を入れる",
+    "removeWeather": "天気を外す",
+    "weatherFailed": "天気を取れませんでした",
+    "weatherConsent": "天気を記録に残すと、<privacy>プライバシーポリシー</privacy>の「4. 誰に見えるか」にある共同利用の項目に「その日の天気」が加わります（共同利用者は kk-web と中元廉弥）。残すのは天気・気温・風向・風速だけで、位置は残しません。",
+    "weatherAgree": "同意して天気を入れる"
   },
   "calendar": {
     "add": "追加",

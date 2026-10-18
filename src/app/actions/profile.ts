@@ -3,7 +3,13 @@
 import { refresh } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
-import { getProfile, saveProfile, saveProfileDetails, saveRecordSettings } from '@/lib/data';
+import {
+  consentToJointUse,
+  getProfile,
+  saveProfile,
+  saveProfileDetails,
+  saveRecordSettings,
+} from '@/lib/data';
 import { isTimeZone, todayIn } from '@/lib/dates';
 import { EVENTS } from '@/lib/events';
 import { type ActionResult, optionalNumber } from '@/lib/form';
@@ -17,6 +23,7 @@ import {
   WEIGHT_MAX_KG,
   WEIGHT_MIN_KG,
 } from '@/lib/limits';
+import { JOINT_USE_VERSION, weatherAccess } from '@/lib/joint-use';
 import { GRADES } from '@/lib/profile-options';
 import { joinReturnPath } from '@/lib/safe-next';
 import { requireViewer } from '@/lib/viewer';
@@ -161,4 +168,23 @@ export async function saveRecordSettingsAction(
   const result = await run(() => saveRecordSettings(viewer.userId, parsed.data));
   refresh();
   return result;
+}
+
+/**
+ * 共同利用の項目に「その日の天気」を足すことへの同意（コンディションの天気の欄から。2026-10-18）。
+ * 本人が同意できる人（16歳以上）だけ。同意したら、その画面のまま天気を取りにいく
+ */
+export async function consentWeatherAction(): Promise<ActionResult> {
+  const viewer = await requireViewer();
+  const profile = await getProfile(viewer.userId);
+  if (!profile) return { ok: false, error: 'generic' };
+  const today = todayIn(profile.timeZone);
+  if (weatherAccess(profile, today, today) === 'none') return { ok: false, error: 'generic' };
+  try {
+    await consentToJointUse(viewer.userId, JOINT_USE_VERSION);
+  } catch (error) {
+    console.error(error);
+    return { ok: false, error: 'generic' };
+  }
+  return { ok: true };
 }

@@ -19,6 +19,7 @@ import {
 } from '@/components/layout-ui';
 import { CountInput, MarkInput, ShortLengthInput, WindInput } from '@/components/measure-inputs';
 import { ConditionSection } from '@/components/day-log-form';
+import type { WeatherAccess } from '@/lib/joint-use';
 import { FormActions } from '@/components/form-actions';
 import {
   completeSeries,
@@ -145,6 +146,7 @@ export function AttemptForm({
   backHref,
   initial,
   askCondition = false,
+  weatherAccess = 'none',
 }: {
   day: string;
   events: JumpEvent[];
@@ -156,6 +158,8 @@ export function AttemptForm({
   initial?: Attempt;
   /** その日のコンディションがまだ無い。閉じた「コンディションを入力」を出す（足すときだけ） */
   askCondition?: boolean;
+  /** コンディションの天気の欄の扱い（src/lib/joint-use.ts の weatherAccess） */
+  weatherAccess?: WeatherAccess;
 }) {
   const t = useTranslations('today');
   const tEvents = useTranslations('events');
@@ -279,7 +283,7 @@ export function AttemptForm({
         <TextArea name="note" maxLength={NOTE_MAX_LENGTH} defaultValue={initial?.note ?? ''} />
       </Field>
       <DetailsFields event={event} units={units} initial={initial?.details ?? EMPTY_DETAILS} />
-      {askCondition && <ConditionSection />}
+      {askCondition && <ConditionSection weatherAccess={weatherAccess} units={units} />}
       <FormActions
         label={t('save')}
         pending={pending}

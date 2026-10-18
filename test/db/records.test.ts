@@ -27,7 +27,7 @@ import {
 } from '@/lib/data';
 import { type AttemptDetails, EMPTY_DETAILS } from '@/lib/attempt-details';
 import type { HeightSeries } from '@/lib/height-series';
-import { addProfile } from './seed';
+import { addProfile, query } from './seed';
 
 /**
  * 試技・大会・日の体調の表。id を受け取る関数は、本人の行のほかは読みも書きもしない
@@ -52,7 +52,14 @@ const meet: Omit<Competition, 'id' | 'name' | 'day'> = {
   entryUrl: 'https://example.com/entry',
 };
 
-const log = { condition: 7, fatigue: 3, sleepHours: 7.5, injury: null, note: 'easy' };
+const log = {
+  condition: 7,
+  fatigue: 3,
+  sleepHours: 7.5,
+  injury: null,
+  note: 'easy',
+  weather: null,
+};
 
 /** 1人目の試技を1本入れ、その id を返す */
 async function attemptOf(userId: string, day = '2026-10-14') {
@@ -313,6 +320,36 @@ describe('大会', () => {
 });
 
 describe('日の体調', () => {
+  const weather = { code: 61, temperatureC: -3.5, windMs: 12.3, windDeg: 315, isDay: false };
+
+  it('天気をコンディションと一緒に残し、外して保存すると消す。コーチとアドバイスの読み出しは天気を返さない', async () => {
+    const userId = await addProfile();
+    await saveDayLog(userId, '2026-10-14', { ...log, weather });
+    const saved = await getDayLog(userId, '2026-10-14');
+    const { note: _note, ...condition } = log;
+    await addDayConditionIfMissing(userId, '2026-10-15', { ...condition, weather });
+    const added = await getDayLog(userId, '2026-10-15');
+    await saveDayLog(userId, '2026-10-14', log);
+
+    expect({
+      saved: saved?.weather,
+      added: added?.weather,
+      removed: (await getDayLog(userId, '2026-10-14'))?.weather,
+      advice: (await listConditionsBetween(userId, '2026-10-14', '2026-10-15')).map(
+        (row) => 'weather' in row,
+      ),
+    }).toEqual({ saved: weather, added: weather, removed: null, advice: [false, false] });
+  });
+
+  it('天気の列は全部あるか全部無いか（DB の check）', async () => {
+    const userId = await addProfile();
+    await expect(
+      query(`insert into day_log ("userId", day, "weatherCode") values ($1, '2026-10-14', 1)`, [
+        userId,
+      ]),
+    ).rejects.toThrow(/day_log_weather_all_or_none/);
+  });
+
   it('試技やメニューの画面からのコンディションは、行が無い日だけ入れ、ある日は書き換えない', async () => {
     const userId = await addProfile();
     const { note: _note, ...condition } = log;
@@ -386,6 +423,7 @@ describe('日の体調', () => {
         injury: null,
         note: null,
         injuryStatus: 'same',
+        weather: null,
       },
       both: { ...log, condition: 3, injuryStatus: 'better' },
       read: ['same', 'better'],

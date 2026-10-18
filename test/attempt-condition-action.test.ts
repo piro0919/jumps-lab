@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
  * 1. 欄が送られてきたら、試技より先に「まだ無ければ入れる」で書く
  * 2. 欄が無ければ（閉じたまま）書かない。書き換えのときも書かない
  * 3. 範囲の外なら試技も書かない
+ * 4. 天気は、共同利用の天気の項目に同意した16歳以上の人の分だけ残す（src/lib/joint-use.ts）
  */
 
 vi.mock('next/cache', () => ({ refresh: vi.fn() }));
@@ -13,7 +14,13 @@ vi.mock('@/lib/viewer', () => ({
 }));
 const calls: string[] = [];
 const data = vi.hoisted(() => ({
-  getProfile: vi.fn(async () => ({ events: ['long_jump'], timeZone: 'UTC' })),
+  getProfile: vi.fn(async () => ({
+    events: ['long_jump'],
+    timeZone: 'UTC',
+    birthdate: '2000-05-01' as string | null,
+    ageDeclared16Plus: true as boolean | null,
+    jointUseVersion: 2 as number | null,
+  })),
   getAttempt: vi.fn(async () => ({ id: 'a', event: 'long_jump' })),
   addAttempt: vi.fn<(...args: unknown[]) => Promise<void>>(async () => {}),
   updateAttempt: vi.fn(async () => {}),
@@ -62,9 +69,36 @@ describe('saveAttemptAction のコンディション', () => {
       args: [
         'me',
         '2026-10-01',
-        { condition: 6, fatigue: 8, sleepHours: 6.5, injury: '内転筋が少し痛い' },
+        { condition: 6, fatigue: 8, sleepHours: 6.5, injury: '内転筋が少し痛い', weather: null },
       ],
     });
+  });
+
+  it('天気は、同意した16歳以上の人の分だけ残し、ほかの人の分は外してコンディションだけ入れる', async () => {
+    const weather = { code: 3, temperatureC: 14.2, windMs: 3.1, windDeg: 270, isDay: true };
+    const withWeather = form({ ...condition, weather: JSON.stringify(weather) });
+    await saveAttemptAction(null, withWeather);
+    data.getProfile.mockResolvedValueOnce({
+      events: ['long_jump'],
+      timeZone: 'UTC',
+      birthdate: '2000-05-01',
+      ageDeclared16Plus: true,
+      jointUseVersion: null,
+    });
+    await saveAttemptAction(null, withWeather);
+    data.getProfile.mockResolvedValueOnce({
+      events: ['long_jump'],
+      timeZone: 'UTC',
+      birthdate: '2015-05-01',
+      ageDeclared16Plus: false,
+      jointUseVersion: 2,
+    });
+    await saveAttemptAction(null, withWeather);
+    expect(
+      data.addDayConditionIfMissing.mock.calls.map(
+        (args) => (args[2] as { weather: unknown }).weather,
+      ),
+    ).toEqual([weather, null, null]);
   });
 
   it('欄が無いとき（閉じたまま）と、試技の書き換えでは入れない', async () => {
