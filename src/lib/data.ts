@@ -748,6 +748,24 @@ export async function saveDayLog(userId: string, day: string, log: DayLog): Prom
   );
 }
 
+/**
+ * その日のコンディションを、まだ行が無いときだけ入れる（試技を足す画面とメニューを作る画面から。2026-10-18）。
+ * 行があれば何もしない。入れたら true
+ */
+export async function addDayConditionIfMissing(
+  userId: string,
+  day: string,
+  log: Omit<DayLog, 'note'>,
+): Promise<boolean> {
+  const { rowCount } = await db().query(
+    `insert into day_log ("userId", day, condition, fatigue, "sleepHours", injury)
+     values ($1, $2, $3, $4, $5, $6)
+     on conflict ("userId", day) do nothing`,
+    [userId, day, log.condition, log.fatigue, log.sleepHours, log.injury],
+  );
+  return rowCount === 1;
+}
+
 export type Competition = {
   id: string;
   name: string;

@@ -4,6 +4,7 @@ import { refresh } from 'next/cache';
 import { z } from 'zod';
 import {
   addAttempt,
+  addDayConditionIfMissing,
   deleteAttempt,
   getAttempt,
   getProfile,
@@ -14,13 +15,13 @@ import { isDay, todayIn } from '@/lib/dates';
 import { attemptDetailsSchema, detailsError, keepDetailsFor } from '@/lib/attempt-details';
 import { EVENTS, hasWind } from '@/lib/events';
 import { checkSeries, hasHeightSeries, heightSeriesSchema } from '@/lib/height-series';
+import { conditionFrom, conditionSchema } from '@/lib/condition-input';
 import { type ActionResult, optionalNumber, optionalText } from '@/lib/form';
 import {
   LONG_NOTE_MAX_LENGTH,
   MARK_MAX_M,
   MARK_MIN_M,
   NOTE_MAX_LENGTH,
-  SCALE_MAX,
   WIND_LIMIT_MS,
 } from '@/lib/limits';
 import { requireViewer } from '@/lib/viewer';
@@ -33,12 +34,8 @@ function openDay(date: string, timeZone: string): boolean {
   return date <= todayIn(timeZone);
 }
 
-const dayLogSchema = z.object({
+const dayLogSchema = conditionSchema.extend({
   day,
-  condition: optionalNumber(1, SCALE_MAX),
-  fatigue: optionalNumber(1, SCALE_MAX),
-  sleepHours: optionalNumber(0, 24),
-  injury: optionalText(NOTE_MAX_LENGTH),
   note: optionalText(LONG_NOTE_MAX_LENGTH),
 });
 
@@ -119,6 +116,9 @@ export async function saveAttemptAction(
     // どの欄が範囲の外かを返す（ブラウザを通らない要求と、ブラウザの検査をすり抜けた値）
     return { ok: false, error: detailsError(details.error) };
   }
+  // その日のコンディションがまだ無い日に、足す画面で一緒に入れたもの（2026-10-18）
+  const condition = conditionFrom(raw);
+  if (condition === false) return { ok: false, error: 'generic' };
   const profile = await getProfile(viewer.userId);
   const { id, ...input } = parsed.data;
   const event = input.event;
@@ -141,7 +141,12 @@ export async function saveAttemptAction(
   };
   try {
     if (id) await updateAttempt(viewer.userId, id, values);
-    else await addAttempt(viewer.userId, values);
+    else {
+      // コンディションを先に入れる。すでにある日は上書きしない（別の画面で入れたものを消さない）。
+      // 試技の保存が失敗して押し直しても、二重にならない
+      if (condition) await addDayConditionIfMissing(viewer.userId, input.day, condition);
+      await addAttempt(viewer.userId, values);
+    }
   } catch (error) {
     console.error(error);
     return { ok: false, error: 'generic' };

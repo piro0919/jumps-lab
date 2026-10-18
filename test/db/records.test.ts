@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   addAttempt,
+  addDayConditionIfMissing,
   type AttemptInput,
   type Competition,
   deleteAttempt,
@@ -311,6 +312,21 @@ describe('大会', () => {
 });
 
 describe('日の体調', () => {
+  it('試技やメニューの画面からのコンディションは、行が無い日だけ入れ、ある日は書き換えない', async () => {
+    const userId = await addProfile();
+    const { note: _note, ...condition } = log;
+    await saveDayLog(userId, '2026-10-13', log);
+    const added = [
+      await addDayConditionIfMissing(userId, '2026-10-14', condition),
+      await addDayConditionIfMissing(userId, '2026-10-14', { ...condition, condition: 1 }),
+      await addDayConditionIfMissing(userId, '2026-10-13', { ...condition, condition: 1 }),
+    ];
+
+    expect(added).toEqual([true, false, false]);
+    expect(await getDayLog(userId, '2026-10-14')).toEqual({ ...condition, note: null });
+    expect(await getDayLog(userId, '2026-10-13')).toEqual(log);
+  });
+
   it('1日1行。保存し直すと上書きし、ほかの人の同じ日には触れない', async () => {
     const [userId, other] = await Promise.all([addProfile(), addProfile()]);
     await saveDayLog(other, '2026-10-14', log);

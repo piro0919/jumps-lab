@@ -31,6 +31,7 @@ const data = vi.hoisted(() => ({
   saveMenu: vi.fn(async () => {}),
   saveMenuExchange: vi.fn(async () => true),
   consentToAi: vi.fn(async () => true),
+  addDayConditionIfMissing: vi.fn(async () => true),
 }));
 vi.mock('@/lib/data', () => data);
 
@@ -124,6 +125,25 @@ describe('createMenuAction', () => {
       result: { ok: false, error: 'menuFailed' },
       asked: 1,
       saved: 0,
+    });
+  });
+
+  it('一緒に送られた今日のコンディションは、材料を読む前に「まだ無ければ入れる」で書く', async () => {
+    await createMenuAction(
+      { ok: true },
+      form({ minutes: '60', condition: '5', fatigue: '9', sleepHours: '6', injury: '' }),
+    );
+    await createMenuAction({ ok: true }, form({ minutes: '60' }));
+    const [written] = data.addDayConditionIfMissing.mock.invocationCallOrder;
+    const [read] = data.listConditionsBetween.mock.invocationCallOrder;
+    expect({
+      calls: data.addDayConditionIfMissing.mock.calls,
+      before: written! < read!,
+    }).toEqual({
+      calls: [
+        ['u1', expect.any(String), { condition: 5, fatigue: 9, sleepHours: 6, injury: null }],
+      ],
+      before: true,
     });
   });
 });

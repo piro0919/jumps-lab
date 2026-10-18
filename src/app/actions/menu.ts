@@ -7,6 +7,7 @@ import { AI_CONSENT_VERSION, AiError, aiConsenter, aiEnabled, aiUsable, askJson 
 import { claimAiCallWithinLimit } from '@/lib/ai-limit';
 import { eventBests } from '@/lib/bests';
 import {
+  addDayConditionIfMissing,
   consentToAi,
   getMenu,
   getProfile,
@@ -21,6 +22,7 @@ import {
   saveMenuExchange,
 } from '@/lib/data';
 import { addDays, daysBetween, todayIn } from '@/lib/dates';
+import { conditionFrom } from '@/lib/condition-input';
 import { type ActionResult, optionalText } from '@/lib/form';
 import { NOTE_MAX_LENGTH } from '@/lib/limits';
 import {
@@ -195,11 +197,17 @@ export async function createMenuAction(
   const viewer = await requireViewer();
   const profile = await getProfile(viewer.userId);
   if (!profile || !aiUsable(profile)) return { ok: false, error: 'generic' };
-  const parsed = createSchema.safeParse(Object.fromEntries(formData));
+  const raw = Object.fromEntries(formData);
+  const parsed = createSchema.safeParse(raw);
   if (!parsed.success) return { ok: false, error: 'menuMinutes' };
+  // 今日のコンディションがまだ無い人が、この画面で一緒に入れたもの（2026-10-18）
+  const condition = conditionFrom(raw);
+  if (condition === false) return { ok: false, error: 'generic' };
   const today = todayIn(profile.timeZone);
 
   try {
+    // メニューの材料（強さの判定）に入るよう、先に入れる。すでにある日は上書きしない
+    if (condition) await addDayConditionIfMissing(viewer.userId, today, condition);
     if (await getMenu(viewer.userId, today)) return { ok: true };
     // 呼ぶ前に数えて記録する（失敗しても上限に数える。同時に送られても上限を超えない）。
     // 1回目は材料を読む前に取る（上限に達した人の押し直しで、重い読みを走らせない）

@@ -7,6 +7,7 @@ import { useActionState } from 'react';
 import { createMenuAction } from '@/app/actions/menu';
 import { safely } from '@/lib/safe-action';
 import { ActionForm } from '@/components/action-form';
+import { ConditionSection } from '@/components/day-log-form';
 import { FormActions } from '@/components/form-actions';
 import { ErrorText, Field, Input, TextArea } from '@/components/layout-ui';
 import { NOTE_MAX_LENGTH } from '@/lib/limits';
@@ -20,7 +21,14 @@ const DEFAULT_WARMUP_MINUTES = 60;
  * 今日のメニューを作る前に、今日の練習の時間と場所・器具を聞く（/log/today/menu/new）。
  * 作り終えたらメニューの画面へ移る。AI の返事に十数秒かかるので、ボタンは作っている間押せない
  */
-export function MenuForm({ meetDay }: { meetDay: boolean }) {
+export function MenuForm({
+  meetDay,
+  askCondition,
+}: {
+  meetDay: boolean;
+  /** 今日のコンディションがまだ無い。閉じた「コンディションを入力」を一番上に出す（2026-10-18） */
+  askCondition: boolean;
+}) {
   const router = useRouter();
   const t = useTranslations('menu');
   const tErrors = useTranslations('errors');
@@ -32,6 +40,7 @@ export function MenuForm({ meetDay }: { meetDay: boolean }) {
 
   return (
     <ActionForm action={action} className="flex flex-col gap-4">
+      {askCondition && <ConditionSection />}
       {/* 大会の当日は練習ではなく、招集時刻から逆算したアップの段取りを作る */}
       <Field label={t(meetDay ? 'warmupMinutes' : 'minutes')}>
         <Input

@@ -21,6 +21,9 @@ export const WIND_LIMIT_MS = 20;
 /** 体調と疲れの段階の上限（1〜10） */
 export const SCALE_MAX = 10;
 
+/** 睡眠時間の上限（時間） */
+export const SLEEP_MAX_HOURS = 24;
+
 /** 身長（cm）と体重（kg）の範囲 */
 export const HEIGHT_MIN_CM = 50;
 export const HEIGHT_MAX_CM = 250;

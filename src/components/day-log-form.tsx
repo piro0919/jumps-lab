@@ -2,10 +2,12 @@
 
 // 線（components/progress.tsx）を出すため、移るのは @bprogress の useRouter で
 import { useRouter } from '@bprogress/next/app';
+import { ChevronDown } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { ActionForm } from '@/components/action-form';
 import { useActionState, useState } from 'react';
 import { saveDayLogAction } from '@/app/actions/today';
+import { cn } from '@/lib/cn';
 import { safely } from '@/lib/safe-action';
 import { ErrorText, Field, LABEL, TextArea } from '@/components/layout-ui';
 import { FormActions } from '@/components/form-actions';
@@ -74,7 +76,6 @@ export function DayLogForm({
   backHref: string;
 }) {
   const t = useTranslations('today');
-  const tUnits = useTranslations('units');
   const tErrors = useTranslations('errors');
   const router = useRouter();
   const [state, action, pending] = useActionState(async (previous: unknown, formData: FormData) => {
@@ -86,6 +87,25 @@ export function DayLogForm({
   return (
     <ActionForm action={action} className="flex flex-col gap-4">
       <input type="hidden" name="day" value={day} />
+      <ConditionFields log={log} />
+      <Field label={t('note')}>
+        <TextArea name="note" defaultValue={log?.note ?? ''} maxLength={LONG_NOTE_MAX_LENGTH} />
+      </Field>
+      <FormActions
+        label={t('save')}
+        pending={pending}
+        message={<ErrorText>{state?.ok === false ? tErrors('generic') : null}</ErrorText>}
+      />
+    </ActionForm>
+  );
+}
+
+/** 体調・疲労度・睡眠・ケガの欄。この画面と、試技を足す画面・メニューを作る画面の「コンディション」で使う */
+function ConditionFields({ log }: { log: DayLog | null }) {
+  const t = useTranslations('today');
+  const tUnits = useTranslations('units');
+  return (
+    <>
       <Slider
         name="condition"
         label={t('physical')}
@@ -116,14 +136,27 @@ export function DayLogForm({
       <Field label={t('injury')}>
         <TextArea name="injury" defaultValue={log?.injury ?? ''} maxLength={NOTE_MAX_LENGTH} />
       </Field>
-      <Field label={t('note')}>
-        <TextArea name="note" defaultValue={log?.note ?? ''} maxLength={LONG_NOTE_MAX_LENGTH} />
-      </Field>
-      <FormActions
-        label={t('save')}
-        pending={pending}
-        message={<ErrorText>{state?.ok === false ? tErrors('generic') : null}</ErrorText>}
-      />
-    </ActionForm>
+    </>
+  );
+}
+
+/**
+ * その日のコンディションがまだ無いときに、試技を足す画面とメニューを作る画面に置く閉じた「コンディションを入力」
+ * （中元さんの弟さんの要望、2026-10-18）。開いたときだけ欄を送る：つまみは最初から値を持つので、
+ * 閉じたままでも送ると、入れていない日に既定の値（体調 7 など）が入ってしまう
+ */
+export function ConditionSection() {
+  const t = useTranslations('today');
+  const [open, setOpen] = useState(false);
+  return (
+    <details className="group" onToggle={(e) => setOpen(e.currentTarget.open)}>
+      <summary className={cn('flex cursor-pointer list-none items-center gap-1', LABEL)}>
+        {t('newCondition')}
+        <ChevronDown aria-hidden className="size-4 transition-transform group-open:rotate-180" />
+      </summary>
+      <fieldset disabled={!open} className="mt-3 flex flex-col gap-4">
+        <ConditionFields log={null} />
+      </fieldset>
+    </details>
   );
 }

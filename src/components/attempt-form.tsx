@@ -18,6 +18,7 @@ import {
   TextArea,
 } from '@/components/layout-ui';
 import { CountInput, MarkInput, ShortLengthInput, WindInput } from '@/components/measure-inputs';
+import { ConditionSection } from '@/components/day-log-form';
 import { FormActions } from '@/components/form-actions';
 import {
   completeSeries,
@@ -143,6 +144,7 @@ export function AttemptForm({
   units,
   backHref,
   initial,
+  askCondition = false,
 }: {
   day: string;
   events: JumpEvent[];
@@ -152,6 +154,8 @@ export function AttemptForm({
   backHref: string;
   /** 直すときの元の試技。無ければ足す */
   initial?: Attempt;
+  /** その日のコンディションがまだ無い。閉じた「コンディションを入力」を出す（足すときだけ） */
+  askCondition?: boolean;
 }) {
   const t = useTranslations('today');
   const tEvents = useTranslations('events');
@@ -269,6 +273,7 @@ export function AttemptForm({
         <TextArea name="note" maxLength={NOTE_MAX_LENGTH} defaultValue={initial?.note ?? ''} />
       </Field>
       <DetailsFields event={event} units={units} initial={initial?.details ?? EMPTY_DETAILS} />
+      {askCondition && <ConditionSection />}
       <FormActions
         label={t('save')}
         pending={pending}
