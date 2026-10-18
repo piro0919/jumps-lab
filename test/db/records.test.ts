@@ -22,6 +22,7 @@ import {
   nextCompetition,
   saveCompetition,
   saveDayLog,
+  setInjuryStatus,
   updateAttempt,
 } from '@/lib/data';
 import { type AttemptDetails, EMPTY_DETAILS } from '@/lib/attempt-details';
@@ -323,8 +324,12 @@ describe('日の体調', () => {
     ];
 
     expect(added).toEqual([true, false, false]);
-    expect(await getDayLog(userId, '2026-10-14')).toEqual({ ...condition, note: null });
-    expect(await getDayLog(userId, '2026-10-13')).toEqual(log);
+    expect(await getDayLog(userId, '2026-10-14')).toEqual({
+      ...condition,
+      note: null,
+      injuryStatus: null,
+    });
+    expect(await getDayLog(userId, '2026-10-13')).toEqual({ ...log, injuryStatus: null });
   });
 
   it('1日1行。保存し直すと上書きし、ほかの人の同じ日には触れない', async () => {
@@ -333,8 +338,13 @@ describe('日の体調', () => {
     await saveDayLog(userId, '2026-10-14', log);
     await saveDayLog(userId, '2026-10-14', { ...log, condition: 2, sleepHours: 5 });
 
-    expect(await getDayLog(userId, '2026-10-14')).toEqual({ ...log, condition: 2, sleepHours: 5 });
-    expect(await getDayLog(other, '2026-10-14')).toEqual(log);
+    expect(await getDayLog(userId, '2026-10-14')).toEqual({
+      ...log,
+      condition: 2,
+      sleepHours: 5,
+      injuryStatus: null,
+    });
+    expect(await getDayLog(other, '2026-10-14')).toEqual({ ...log, injuryStatus: null });
     expect(await listDayLogs(userId)).toEqual([{ day: '2026-10-14', condition: 2, note: 'easy' }]);
   });
 
@@ -350,5 +360,42 @@ describe('日の体調', () => {
       ['2026-10-14', 7.5],
     ]);
     expect(await getDayLog(userId, '2026-10-13')).toBeNull();
+  });
+
+  it('ケガの経過は、行が無ければ経過だけの行を作り、あれば経過だけを書き換え、コンディションの保存では消えない', async () => {
+    const userId = await addProfile();
+    await setInjuryStatus(userId, '2026-10-14', 'same');
+    await saveDayLog(userId, '2026-10-15', log);
+    await setInjuryStatus(userId, '2026-10-15', 'worse');
+    await setInjuryStatus(userId, '2026-10-15', 'better');
+    await saveDayLog(userId, '2026-10-15', { ...log, condition: 3 });
+    const { note: _note, ...condition } = log;
+    await addDayConditionIfMissing(userId, '2026-10-14', condition);
+
+    expect({
+      onlyStatus: await getDayLog(userId, '2026-10-14'),
+      both: await getDayLog(userId, '2026-10-15'),
+      read: (await listConditionsBetween(userId, '2026-10-14', '2026-10-15')).map(
+        (r) => r.injuryStatus,
+      ),
+    }).toEqual({
+      onlyStatus: {
+        condition: null,
+        fatigue: null,
+        sleepHours: null,
+        injury: null,
+        note: null,
+        injuryStatus: 'same',
+      },
+      both: { ...log, condition: 3, injuryStatus: 'better' },
+      read: ['same', 'better'],
+    });
+  });
+
+  it('ケガの経過は4つの値のほかを DB が弾く', async () => {
+    const userId = await addProfile();
+    await expect(
+      setInjuryStatus(userId, '2026-10-14', 'gone' as unknown as 'healed'),
+    ).rejects.toThrow();
   });
 });

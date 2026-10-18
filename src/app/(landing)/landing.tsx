@@ -276,6 +276,7 @@ export async function Landing() {
               sleepHours: 7.5,
               injury: null,
               note: t('sampleDayNote'),
+              injuryStatus: null,
             }}
             editHref="/"
           />

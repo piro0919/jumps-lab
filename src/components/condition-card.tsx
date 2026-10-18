@@ -4,6 +4,7 @@ import { getTranslations } from 'next-intl/server';
 import { Badge, Card, CardTitle, LABEL, Stat, EmptyState } from '@/components/layout-ui';
 import { buttonVariants } from '@/components/ui/button';
 import type { DayLog } from '@/lib/data';
+import { stillHurts } from '@/lib/injury';
 
 /**
  * コンディション。見るだけで、直すのは「編集」から移る /log/[day]/condition の画面。入れていない欄は出さない。
@@ -34,6 +35,11 @@ export async function ConditionCard({
   ].filter((row) => row.value !== null && row.value !== undefined);
   const texts = [
     { label: t('injury'), value: log?.injury, alert: true },
+    {
+      label: t('injuryStatusLabel'),
+      value: log?.injuryStatus ? t(`injuryStatus.${log.injuryStatus}`) : null,
+      alert: stillHurts(log?.injuryStatus),
+    },
     { label: t('note'), value: log?.note, alert: false },
   ].filter((row) => row.value);
   const empty = numbers.length === 0 && texts.length === 0;

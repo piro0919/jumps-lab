@@ -32,6 +32,7 @@ const data = vi.hoisted(() => ({
   saveMenuExchange: vi.fn(async () => true),
   consentToAi: vi.fn(async () => true),
   addDayConditionIfMissing: vi.fn(async () => true),
+  setInjuryStatus: vi.fn(async () => {}),
 }));
 vi.mock('@/lib/data', () => data);
 
@@ -144,6 +145,18 @@ describe('createMenuAction', () => {
         ['u1', expect.any(String), { condition: 5, fatigue: 9, sleepHours: 6, injury: null }],
       ],
       before: true,
+    });
+  });
+
+  it('ケガの経過は4つの値なら材料を読む前に書き、ほかの値は弾いて何もしない', async () => {
+    await createMenuAction({ ok: true }, form({ minutes: '60', injuryStatus: 'same' }));
+    const [written] = data.setInjuryStatus.mock.invocationCallOrder;
+    const [read] = data.listConditionsBetween.mock.invocationCallOrder;
+    const bad = await createMenuAction({ ok: true }, form({ minutes: '60', injuryStatus: 'gone' }));
+    expect({ calls: data.setInjuryStatus.mock.calls, before: written! < read!, bad }).toEqual({
+      calls: [['u1', expect.any(String), 'same']],
+      before: true,
+      bad: { ok: false, error: 'generic' },
     });
   });
 });

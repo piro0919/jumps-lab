@@ -9,6 +9,7 @@ import { eventBests } from '@/lib/bests';
 import {
   addDayConditionIfMissing,
   consentToAi,
+  setInjuryStatus,
   getMenu,
   getProfile,
   getTargets,
@@ -23,6 +24,7 @@ import {
 } from '@/lib/data';
 import { addDays, daysBetween, todayIn } from '@/lib/dates';
 import { conditionFrom } from '@/lib/condition-input';
+import { INJURY_STATUSES } from '@/lib/injury';
 import { type ActionResult, optionalText } from '@/lib/form';
 import { NOTE_MAX_LENGTH } from '@/lib/limits';
 import {
@@ -106,6 +108,8 @@ async function menuContext(userId: string, profile: Profile, today: string) {
           fatigue: log.fatigue,
           sleepHours: log.sleepHours,
           pain: log.injury,
+          // ケガの経過（healed / better / same / worse）。メニューを作る画面で聞く（2026-10-18）
+          painStatus: log.injuryStatus,
           practiceNote: log.note,
         })),
       // 跳躍の細かい記録と走高跳・棒高跳の高さごとの結果は送らない（読みもしない: listAttemptMarksBetween）。
@@ -203,11 +207,18 @@ export async function createMenuAction(
   // 今日のコンディションがまだ無い人が、この画面で一緒に入れたもの（2026-10-18）
   const condition = conditionFrom(raw);
   if (condition === false) return { ok: false, error: 'generic' };
+  // 直近14日に痛みのメモがある人に聞いたケガの経過。答えなくてもよい
+  const injuryStatus = z
+    .enum(INJURY_STATUSES)
+    .optional()
+    .safeParse(raw.injuryStatus || undefined);
+  if (!injuryStatus.success) return { ok: false, error: 'generic' };
   const today = todayIn(profile.timeZone);
 
   try {
     // メニューの材料（強さの判定）に入るよう、先に入れる。すでにある日は上書きしない
     if (condition) await addDayConditionIfMissing(viewer.userId, today, condition);
+    if (injuryStatus.data) await setInjuryStatus(viewer.userId, today, injuryStatus.data);
     if (await getMenu(viewer.userId, today)) return { ok: true };
     // 呼ぶ前に数えて記録する（失敗しても上限に数える。同時に送られても上限を超えない）。
     // 1回目は材料を読む前に取る（上限に達した人の押し直しで、重い読みを走らせない）

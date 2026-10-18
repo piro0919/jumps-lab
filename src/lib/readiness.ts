@@ -1,4 +1,5 @@
 import { addDays, daysBetween, ISO_MONTH_START, ISO_YEAR_END } from './dates';
+import { stillHurts, type InjuryStatus } from './injury';
 
 /**
  * 今日のアドバイス（ホームのカード）。その日の体調と大会の予定から、今日の練習の強さを決める。
@@ -73,6 +74,8 @@ export type ConditionLog = {
   fatigue: number | null;
   sleepHours: number | null;
   injury: string | null;
+  /** ケガの経過。治った以外は、今日の痛みのメモと同じく守る（2026-10-18） */
+  injuryStatus?: InjuryStatus | null;
 };
 
 /** 理由ごとの出典。画面で「出典」のリンクにする */
@@ -130,7 +133,7 @@ export function readiness({
   const reasons: ReadinessReason[] = [];
   const todayLog = logs.find((log) => log.day === today) ?? null;
 
-  if (todayLog?.injury) reasons.push({ key: 'injury' });
+  if (todayLog?.injury || stillHurts(todayLog?.injuryStatus)) reasons.push({ key: 'injury' });
 
   const next = competitions.find((c) => c.day >= today);
   const daysToNext = next ? daysBetween(today, next.day) : null;

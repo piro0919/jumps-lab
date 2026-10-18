@@ -5,8 +5,14 @@ import { AiConsentDetails } from '@/components/ai-consent-details';
 import { Card, PageTitle, FORM_PAGE, SectionTitle } from '@/components/layout-ui';
 import { MenuForm } from '@/components/menu-form';
 import { aiConsenter, aiEnabled, aiUsable, asksAge, consentNotice } from '@/lib/ai';
-import { getDayLog, getMenu, latestGuardianRequest, listCompetitionsBetween } from '@/lib/data';
-import { todayIn } from '@/lib/dates';
+import {
+  getMenu,
+  latestGuardianRequest,
+  listCompetitionsBetween,
+  listConditionsBetween,
+} from '@/lib/data';
+import { addDays, todayIn } from '@/lib/dates';
+import { INJURY_LOOKBACK_DAYS, injuryToAsk } from '@/lib/injury';
 import { GUARDIAN_LINK_DAYS, maskEmail } from '@/lib/guardian';
 import { requireProfile, requireViewer } from '@/lib/viewer';
 
@@ -24,11 +30,11 @@ export default async function NewMenu({ params }: PageProps<'/log/[day]/menu/new
   const requested = (await params).day;
   if (!aiEnabled(profile) || (requested !== 'today' && requested !== today)) redirect('/analysis');
   const usable = aiUsable(profile);
-  const [menu, meets, request, log] = await Promise.all([
+  const [menu, meets, request, logs] = await Promise.all([
     getMenu(viewer.userId, today),
     listCompetitionsBetween(viewer.userId, today, today),
     usable ? null : latestGuardianRequest(viewer.userId),
-    getDayLog(viewer.userId, today),
+    listConditionsBetween(viewer.userId, addDays(today, -INJURY_LOOKBACK_DAYS), today),
   ]);
   // 同意する前に作ったメニューがある人も、相談の前にここで同意してもらう
   if (menu && usable) redirect('/log/today/menu');
@@ -44,7 +50,11 @@ export default async function NewMenu({ params }: PageProps<'/log/[day]/menu/new
       </PageTitle>
       <Card>
         {usable ? (
-          <MenuForm meetDay={meets.length > 0} askCondition={log === null} />
+          <MenuForm
+            meetDay={meets.length > 0}
+            askCondition={!logs.some((log) => log.day === today)}
+            injury={injuryToAsk(logs, today)}
+          />
         ) : (
           <div className="flex flex-col gap-4 text-sm">
             <SectionTitle>{tConsent('title')}</SectionTitle>

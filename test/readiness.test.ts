@@ -33,6 +33,17 @@ describe('readiness', () => {
     expect(r.reasons.map((x) => x.key)).toEqual(['injury', 'preMeet', 'shortNight']);
   });
 
+  it('今日のケガの経過が治った以外なら患部を守る。治った・前の日の経過では守らない', () => {
+    const level = (logs: ConditionLog[]) => readiness({ ...base, logs }).level;
+    expect([
+      level([log(today, { injuryStatus: 'better' })]),
+      level([log(today, { injuryStatus: 'same' })]),
+      level([log(today, { injuryStatus: 'worse' })]),
+      level([log(today, { injuryStatus: 'healed' })]),
+      level([log(addDays(today, -1), { injuryStatus: 'worse' })]),
+    ]).toEqual(['protect', 'protect', 'protect', 'normal', 'normal']);
+  });
+
   it('大会まで3日以内は試合前の軽め、4日先は通常', () => {
     expect(
       readiness({ ...base, competitions: [{ day: addDays(today, 3), isTarget: false }] }).level,

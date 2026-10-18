@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 /** プライバシーポリシーの英訳。節は日本語版（/privacy）と1対1 */
 export default function PrivacyEn() {
   return (
-    <Legal title="Privacy Policy" doc="privacy" locale="en" updated="October 15, 2026">
+    <Legal title="Privacy Policy" doc="privacy" locale="en" updated="October 18, 2026">
       <h2>1. Operator</h2>
       <dl>
         <dt>Operator</dt>
@@ -43,7 +43,8 @@ export default function PrivacyEn() {
           pole vault)
         </li>
         <li>
-          Your condition, fatigue, sleep, injuries or discomfort and practice notes for each day
+          Your condition, fatigue, sleep, injuries or discomfort with how they are healing, and
+          practice notes for each day
         </li>
         <li>
           Your competitions (name, date, venue, call room place and time, start time, notes and
@@ -149,9 +150,9 @@ export default function PrivacyEn() {
           The coaches of a team you join can see, without being able to change anything, your
           display name and events, your attempts (date, event, practice or competition, mark, wind,
           note, the approach, board and pole details and per-height results), your condition,
-          fatigue, sleep, injuries or discomfort and practice notes for each day, your competitions
-          and their results, and your videos and their notes. They do not see your email address.
-          Coaches cannot change or delete your records
+          fatigue, sleep, injuries or discomfort with how they are healing, and practice notes for
+          each day, your competitions and their results, and your videos and their notes. They do
+          not see your email address. Coaches cannot change or delete your records
         </dd>
         <dt>Comments</dt>
         <dd>
@@ -231,15 +232,16 @@ export default function PrivacyEn() {
           under 16, after your parent or guardian agrees), we send the following to make your menu
           and answer your questions: the date; your age, gender, height, weight and events; your
           personal best and season best for each event; your condition, fatigue, sleep, injuries or
-          discomfort and practice notes for the last 14 days; your attempts in the last 14 days
-          (event, practice or competition, mark, wind and note); the days left to each competition
-          in the next 8 weeks and which one is your main goal meet; the day&apos;s training level
-          and its reasons; the practice time and note you enter; your messages and the current menu;
-          and on a competition day, that meet&apos;s venue, call room place and time, start time and
-          notes. When you import competitions, we send the address and content of the page, or the
-          PDF or photo, you choose; only the competitions are read from it, and it is not saved. We
-          never send your name or email address. OpenAI is a US company. The United States has no
-          single federal privacy law; sector-specific federal laws and state laws apply (
+          discomfort with how they are healing, and practice notes for the last 14 days; your
+          attempts in the last 14 days (event, practice or competition, mark, wind and note); the
+          days left to each competition in the next 8 weeks and which one is your main goal meet;
+          the day&apos;s training level and its reasons; the practice time and note you enter; your
+          messages and the current menu; and on a competition day, that meet&apos;s venue, call room
+          place and time, start time and notes. When you import competitions, we send the address
+          and content of the page, or the PDF or photo, you choose; only the competitions are read
+          from it, and it is not saved. We never send your name or email address. OpenAI is a US
+          company. The United States has no single federal privacy law; sector-specific federal laws
+          and state laws apply (
           <a
             href="https://www.ppc.go.jp/enforcement/infoprovision/laws/offshore_report_america/"
             target="_blank"

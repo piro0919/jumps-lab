@@ -11,6 +11,7 @@ import {
   type DetailKey,
 } from '@/lib/attempt-details';
 import type { HeightSeries } from '@/lib/height-series';
+import type { InjuryStatus } from '@/lib/injury';
 import type { Locale } from '@/i18n/locales';
 import type { ReminderRow } from '@/lib/meet-reminder';
 import type { Menu, MenuLevel } from '@/lib/menu';
@@ -724,11 +725,16 @@ export type DayLog = {
   sleepHours: number | null;
   injury: string | null;
   note: string | null;
+  /** ケガの経過（メニューを作る画面で聞く。2026-10-18）。コンディションの画面では直さない */
+  injuryStatus: InjuryStatus | null;
 };
+
+/** コンディションの画面が書く欄（ケガの経過は除く） */
+export type DayLogInput = Omit<DayLog, 'injuryStatus'>;
 
 export async function getDayLog(userId: string, day: string): Promise<DayLog | null> {
   const { rows } = await db().query<Omit<DayLog, 'sleepHours'> & { sleepHours: string | null }>(
-    `select condition, fatigue, "sleepHours", injury, note from day_log
+    `select condition, fatigue, "sleepHours", injury, note, "injuryStatus" from day_log
       where "userId" = $1 and day = $2`,
     [userId, day],
   );
@@ -736,7 +742,7 @@ export async function getDayLog(userId: string, day: string): Promise<DayLog | n
   return row ? { ...row, sleepHours: num(row.sleepHours) } : null;
 }
 
-export async function saveDayLog(userId: string, day: string, log: DayLog): Promise<void> {
+export async function saveDayLog(userId: string, day: string, log: DayLogInput): Promise<void> {
   await db().query(
     `insert into day_log ("userId", day, condition, fatigue, "sleepHours", injury, note)
      values ($1, $2, $3, $4, $5, $6, $7)
@@ -755,7 +761,7 @@ export async function saveDayLog(userId: string, day: string, log: DayLog): Prom
 export async function addDayConditionIfMissing(
   userId: string,
   day: string,
-  log: Omit<DayLog, 'note'>,
+  log: Omit<DayLogInput, 'note'>,
 ): Promise<boolean> {
   const { rowCount } = await db().query(
     `insert into day_log ("userId", day, condition, fatigue, "sleepHours", injury)
@@ -764,6 +770,19 @@ export async function addDayConditionIfMissing(
     [userId, day, log.condition, log.fatigue, log.sleepHours, log.injury],
   );
   return rowCount === 1;
+}
+
+/** その日のケガの経過を書く（行が無ければ経過だけの行を作る。メニューを作る画面から。2026-10-18） */
+export async function setInjuryStatus(
+  userId: string,
+  day: string,
+  status: InjuryStatus,
+): Promise<void> {
+  await db().query(
+    `insert into day_log ("userId", day, "injuryStatus") values ($1, $2, $3)
+     on conflict ("userId", day) do update set "injuryStatus" = excluded."injuryStatus", "updatedAt" = now()`,
+    [userId, day, status],
+  );
 }
 
 export type Competition = {
@@ -870,8 +889,8 @@ export async function listConditionsBetween(
   to: string,
 ): Promise<(DayLog & { day: string })[]> {
   const { rows } = await db().query<DayLog & { day: string; sleepHours: string | null }>(
-    `select to_char(day, 'YYYY-MM-DD') as day, condition, fatigue, "sleepHours", injury, note
-       from day_log where "userId" = $1 and day between $2 and $3 order by day`,
+    `select to_char(day, 'YYYY-MM-DD') as day, condition, fatigue, "sleepHours", injury, note,
+       "injuryStatus" from day_log where "userId" = $1 and day between $2 and $3 order by day`,
     [userId, from, to],
   );
   return rows.map((row) => ({ ...row, sleepHours: num(row.sleepHours) }));
@@ -2025,7 +2044,7 @@ export async function listMemberDayLogsForCoach(
   to: string,
 ): Promise<(DayLog & { day: string })[]> {
   const { rows } = await db().query<DayLog & { day: string; sleepHours: string | null }>(
-    `select to_char(day, 'YYYY-MM-DD') as day, condition, fatigue, "sleepHours", injury, note
+    `select to_char(day, 'YYYY-MM-DD') as day, condition, fatigue, "sleepHours", injury, note, "injuryStatus"
        from day_log where "userId" = $3 and day between $4 and $5 and ${COACH_SEES} order by day`,
     [...accessParams(access), from, to],
   );

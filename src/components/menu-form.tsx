@@ -2,14 +2,24 @@
 
 // 線（components/progress.tsx）を出すため、移るのは @bprogress の useRouter で
 import { useRouter } from '@bprogress/next/app';
-import { useTranslations } from 'next-intl';
-import { useActionState } from 'react';
+import { useFormatter, useTranslations } from 'next-intl';
+import { useActionState, useState } from 'react';
 import { createMenuAction } from '@/app/actions/menu';
 import { safely } from '@/lib/safe-action';
 import { ActionForm } from '@/components/action-form';
 import { ConditionSection } from '@/components/day-log-form';
 import { FormActions } from '@/components/form-actions';
-import { ErrorText, Field, Input, TextArea } from '@/components/layout-ui';
+import {
+  ErrorText,
+  Field,
+  FieldLabel,
+  Input,
+  SEGMENT_GRID,
+  segmentClass,
+  TextArea,
+} from '@/components/layout-ui';
+import { cn } from '@/lib/cn';
+import { INJURY_STATUSES, type InjuryStatus } from '@/lib/injury';
 import { NOTE_MAX_LENGTH } from '@/lib/limits';
 import { SESSION_MAX_MINUTES, SESSION_MIN_MINUTES } from '@/lib/menu';
 
@@ -24,10 +34,13 @@ const DEFAULT_WARMUP_MINUTES = 60;
 export function MenuForm({
   meetDay,
   askCondition,
+  injury,
 }: {
   meetDay: boolean;
   /** 今日のコンディションがまだ無い。閉じた「コンディションを入力」を一番上に出す（2026-10-18） */
   askCondition: boolean;
+  /** 直近14日の痛み・違和感のメモ（src/lib/injury.ts の injuryToAsk）。あれば今の具合を4択で聞く */
+  injury: { day: string; injury: string } | null;
 }) {
   const router = useRouter();
   const t = useTranslations('menu');
@@ -41,6 +54,7 @@ export function MenuForm({
   return (
     <ActionForm action={action} className="flex flex-col gap-4">
       {askCondition && <ConditionSection />}
+      {injury && <InjuryStatusField injury={injury} />}
       {/* 大会の当日は練習ではなく、招集時刻から逆算したアップの段取りを作る */}
       <Field label={t(meetDay ? 'warmupMinutes' : 'minutes')}>
         <Input
@@ -64,5 +78,43 @@ export function MenuForm({
         }
       />
     </ActionForm>
+  );
+}
+
+/**
+ * 前に書いた痛み・違和感の今の具合（中元さんの弟さんの要望、2026-10-18）。答えなくてもよいので、選んだものを
+ * もう一度押すと外れる。完全に治った以外は今日のアドバイスを「痛む箇所を守る」にし、AI にも送る
+ */
+function InjuryStatusField({ injury }: { injury: { day: string; injury: string } }) {
+  const t = useTranslations('menu');
+  const tToday = useTranslations('today');
+  const format = useFormatter();
+  const [status, setStatus] = useState<InjuryStatus | null>(null);
+  const day = format.dateTime(new Date(`${injury.day}T00:00:00Z`), {
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'UTC',
+  });
+  return (
+    <div className="flex flex-col gap-1.5">
+      <input type="hidden" name="injuryStatus" value={status ?? ''} />
+      <FieldLabel label={t('injuryStatus')} />
+      <p className="text-xs break-words text-muted-foreground">
+        {t('injuryNote', { day, note: injury.injury })}
+      </p>
+      <div className={cn(SEGMENT_GRID, 'grid-cols-2')}>
+        {INJURY_STATUSES.map((option) => (
+          <button
+            key={option}
+            type="button"
+            aria-pressed={status === option}
+            onClick={() => setStatus(status === option ? null : option)}
+            className={segmentClass(status === option)}
+          >
+            {tToday(`injuryStatus.${option}`)}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }

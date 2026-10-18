@@ -27,8 +27,9 @@ export function aiEnabled(profile: Pick<Profile, 'plan' | 'inTeamPlan'>): boolea
  * 前の版に同意した人には、もう一度同意の画面を出す。
  * 2: 自己ベストと今季ベストを足した（2026-10-14）
  * 3: 大会の取り込みで選んだページ・PDF・写真を足した（2026-10-15、src/app/actions/meet-import.ts）
+ * 4: ケガの経過（メニューを作る画面で聞く4択）を足した（2026-10-18）
  */
-export const AI_CONSENT_VERSION = 3;
+export const AI_CONSENT_VERSION = 4;
 
 /** 同意を取る相手を決めるのに使うプロフィールの項目 */
 type ConsentProfile = Pick<
