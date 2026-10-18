@@ -51,6 +51,27 @@ export const conditionSchema = z.object({
 export type ConditionInput = z.infer<typeof conditionSchema>;
 
 /**
+ * その日にコンディションを入れたか。ケガの経過だけの行（メニューを作る画面で経過だけ答えた日）は入れていない扱いにし、
+ * 試技を足す画面とメニューを作る画面に「コンディションを入力」を出す（addDayConditionIfMissing もその行に書き足す）
+ */
+export function hasCondition(
+  log: {
+    condition: number | null;
+    fatigue: number | null;
+    sleepHours: number | null;
+    injury: string | null;
+  } | null,
+): boolean {
+  return (
+    log !== null &&
+    (log.condition !== null ||
+      log.fatigue !== null ||
+      log.sleepHours !== null ||
+      log.injury !== null)
+  );
+}
+
+/**
  * 試技やメニューの送信に添えられたその日のコンディション（2026-10-18）。
  * 欄を閉じたまま送ると欄は送られないので null（入れなかった）。範囲の外は false
  */

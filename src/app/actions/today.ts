@@ -7,6 +7,7 @@ import {
   addDayConditionIfMissing,
   deleteAttempt,
   getAttempt,
+  getDayLog,
   getProfile,
   saveDayLog,
   updateAttempt,
@@ -52,10 +53,14 @@ export async function saveDayLogAction(
   const profile = await getProfile(viewer.userId);
   if (!profile || !openDay(date, profile.timeZone)) return { ok: false, error: 'generic' };
   try {
+    const today = todayIn(profile.timeZone);
+    // 過ぎた日は、残してある天気より新しい天気を受け付けない（keepWeatherIfAllowed）
+    const stored =
+      date === today ? null : ((await getDayLog(viewer.userId, date))?.weather ?? null);
     await saveDayLog(
       viewer.userId,
       date,
-      keepWeatherIfAllowed(log, profile, todayIn(profile.timeZone)),
+      keepWeatherIfAllowed(log, profile, { today, day: date, stored }),
     );
   } catch (error) {
     console.error(error);
@@ -150,7 +155,10 @@ export async function saveAttemptAction(
       // コンディションを先に入れる。すでにある日は上書きしない（別の画面で入れたものを消さない）。
       // 試技の保存が失敗して押し直しても、二重にならない
       if (condition) {
-        const kept = keepWeatherIfAllowed(condition, profile, todayIn(profile.timeZone));
+        const kept = keepWeatherIfAllowed(condition, profile, {
+          today: todayIn(profile.timeZone),
+          day: input.day,
+        });
         await addDayConditionIfMissing(viewer.userId, input.day, kept);
       }
       await addAttempt(viewer.userId, values);

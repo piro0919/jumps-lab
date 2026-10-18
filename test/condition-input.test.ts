@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { conditionFrom, weatherSchema } from '@/lib/condition-input';
+import { conditionFrom, hasCondition, weatherSchema } from '@/lib/condition-input';
 
 const weather = { code: 61, temperatureC: 18.44, windMs: 2.36, windDeg: 45, isDay: false };
 
@@ -43,5 +43,17 @@ describe('conditionFrom', () => {
       },
       { condition: 6, fatigue: 4, sleepHours: 7, injury: null, weather: null },
     ]);
+  });
+});
+
+describe('hasCondition', () => {
+  it('ケガの経過だけの行は、コンディションを入れていない扱いにする', () => {
+    const empty = { condition: null, fatigue: null, sleepHours: null, injury: null };
+    expect([
+      hasCondition(null),
+      hasCondition(empty),
+      hasCondition({ ...empty, sleepHours: 6 }),
+      hasCondition({ ...empty, injury: '右膝' }),
+    ]).toEqual([false, false, true, true]);
   });
 });

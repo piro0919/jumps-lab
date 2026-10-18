@@ -15,6 +15,8 @@ import { fetchWeather, type Weather } from '@/lib/weather';
 
 /** 前に取った位置を使い回してよい時間（10分。ホームの天気のカードと同じ） */
 const POSITION_MAX_AGE_MINUTES = 10;
+/** 位置が取れるまで待つ時間（屋内で位置が決まらない端末で、ボタンが押せないまま止まらないように。仮決め） */
+const POSITION_TIMEOUT_SECONDS = 15;
 
 type Phase = 'idle' | 'loading' | 'denied' | 'failed';
 
@@ -57,17 +59,25 @@ export function WeatherField({
           setPhase('failed');
         }
       },
-      () => setPhase('denied'),
-      { maximumAge: POSITION_MAX_AGE_MINUTES * 60 * 1000 },
+      // 許可しなかったときだけ「位置情報がオフ」。屋内で位置が決まらない・時間切れは、押し直せるように失敗として出す
+      (error) => setPhase(error.code === error.PERMISSION_DENIED ? 'denied' : 'failed'),
+      {
+        maximumAge: POSITION_MAX_AGE_MINUTES * 60 * 1000,
+        timeout: POSITION_TIMEOUT_SECONDS * 1000,
+      },
     );
   };
 
   // 開いたときに1回だけ、まだ天気が無く、同意も位置の許可も済んでいれば取る
   useEffect(() => {
     if (!autoLoad) return;
-    void navigator.permissions?.query({ name: 'geolocation' }).then((status) => {
-      if (status.state === 'granted') load();
-    });
+    // geolocation の名前を受け付けないブラウザは投げる。そのときは押してから聞く
+    navigator.permissions
+      ?.query({ name: 'geolocation' })
+      .then((status) => {
+        if (status.state === 'granted') load();
+      })
+      .catch(() => {});
   }, [autoLoad]);
 
   const agree = async () => {

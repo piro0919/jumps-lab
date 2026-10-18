@@ -67,7 +67,8 @@ export function toFahrenheit(celsius: number): number {
 
 /**
  * 今いる場所の天気を Open-Meteo から取る（鍵は要らない）。ブラウザから直接呼び、位置は当方のサーバーに送らない。
- * 風向は 0〜360 で来るので、360 を 0 にそろえる（DB の check は 0〜359）
+ * 風向は 0〜360 で来るので、360 を 0 にそろえる（DB の check は 0〜359）。
+ * 失敗の応答や、欠けた値（null）のある応答は投げる：そのまま欄に入れると、保存のときにコンディションごと弾かれる
  */
 export async function fetchWeather(latitude: number, longitude: number): Promise<Weather> {
   const url = new URL('https://api.open-meteo.com/v1/forecast');
@@ -77,7 +78,14 @@ export async function fetchWeather(latitude: number, longitude: number): Promise
     current: 'temperature_2m,weather_code,wind_speed_10m,wind_direction_10m,is_day',
     wind_speed_unit: 'ms',
   }).toString();
-  const body = await (await fetch(url)).json();
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Open-Meteo ${response.status}`);
+  const body = await response.json();
+  const current = body?.current ?? {};
+  const fields = ['weather_code', 'temperature_2m', 'wind_speed_10m', 'wind_direction_10m'];
+  if (!fields.every((field) => Number.isFinite(current[field]))) {
+    throw new Error('Open-Meteo returned no current weather');
+  }
   return {
     code: body.current.weather_code,
     temperatureC: body.current.temperature_2m,

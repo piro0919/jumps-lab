@@ -12,7 +12,7 @@ import {
 } from '@/components/layout-ui';
 import { LogCalendar } from '@/components/log-calendar';
 import { listAllAttempts, listCompetitions, listDayLogs, listRecentAttempts } from '@/lib/data';
-import { EVENT_TEXT, isJumpEvent, isWindAided, type JumpEvent } from '@/lib/events';
+import { EVENT_TEXT, formatWind, isJumpEvent, isWindAided, type JumpEvent } from '@/lib/events';
 import { ISO_MONTH_END, isMonth, todayIn } from '@/lib/dates';
 import { buildLogDays } from '@/lib/log-days';
 import { formatMark, type Units } from '@/lib/units';
@@ -210,9 +210,7 @@ async function RecentView({
                   <span className="text-xs break-words text-muted-foreground">
                     {[
                       tToday(attempt.kind),
-                      attempt.windMs === null
-                        ? null
-                        : `${attempt.windMs > 0 ? '+' : ''}${attempt.windMs.toFixed(1)} m/s`,
+                      attempt.windMs === null ? null : formatWind(attempt.windMs),
                       attempt.note,
                     ]
                       .filter(Boolean)

@@ -44,13 +44,30 @@ describe('weatherAccess', () => {
 });
 
 describe('weatherAllowed と keepWeatherIfAllowed', () => {
+  const on = { today, day: today };
+
+  it('過ぎた日は新しい天気を書き込めない。送られてきたら残してある天気のまま、外したら消す', () => {
+    const input = { condition: 7, weather };
+    const stored = { ...weather, code: 3, temperatureC: 9.1 };
+    const past = { today, day: '2026-10-10' };
+    expect({
+      noStored: keepWeatherIfAllowed(input, adult, past),
+      keepsStored: keepWeatherIfAllowed(input, adult, { ...past, stored }),
+      removed: keepWeatherIfAllowed({ condition: 7, weather: null }, adult, { ...past, stored }),
+    }).toEqual({
+      noStored: { condition: 7, weather: null },
+      keepsStored: { condition: 7, weather: stored },
+      removed: { condition: 7, weather: null },
+    });
+  });
+
   it('同意した16歳以上の人の天気だけ残し、ほかは天気だけを外す', () => {
     const input = { condition: 7, weather };
     expect({
       allowed: weatherAllowed(adult, today),
-      kept: keepWeatherIfAllowed(input, adult, today),
-      notAgreed: keepWeatherIfAllowed(input, { ...adult, jointUseVersion: null }, today),
-      under16: keepWeatherIfAllowed(input, { ...adult, birthdate: '2012-05-01' }, today),
+      kept: keepWeatherIfAllowed(input, adult, on),
+      notAgreed: keepWeatherIfAllowed(input, { ...adult, jointUseVersion: null }, on),
+      under16: keepWeatherIfAllowed(input, { ...adult, birthdate: '2012-05-01' }, on),
     }).toEqual({
       allowed: true,
       kept: input,

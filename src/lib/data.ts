@@ -836,8 +836,8 @@ export async function saveDayLog(userId: string, day: string, log: DayLogInput):
 }
 
 /**
- * その日のコンディションを、まだ行が無いときだけ入れる（試技を足す画面とメニューを作る画面から。2026-10-18）。
- * 行があれば何もしない。入れたら true
+ * その日のコンディションを、まだ入れていないときだけ入れる（試技を足す画面とメニューを作る画面から。2026-10-18）。
+ * 行が無ければ作り、ケガの経過だけの行（setInjuryStatus）なら書き足す。コンディションのある行には触れない。入れたら true
  */
 export async function addDayConditionIfMissing(
   userId: string,
@@ -848,7 +848,14 @@ export async function addDayConditionIfMissing(
     `insert into day_log ("userId", day, condition, fatigue, "sleepHours", injury,
                           "weatherCode", "weatherTempC", "weatherWindMs", "weatherWindDeg", "weatherIsDay")
      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-     on conflict ("userId", day) do nothing`,
+     on conflict ("userId", day) do update set
+       condition = excluded.condition, fatigue = excluded.fatigue,
+       "sleepHours" = excluded."sleepHours", injury = excluded.injury,
+       "weatherCode" = excluded."weatherCode", "weatherTempC" = excluded."weatherTempC",
+       "weatherWindMs" = excluded."weatherWindMs", "weatherWindDeg" = excluded."weatherWindDeg",
+       "weatherIsDay" = excluded."weatherIsDay", "updatedAt" = now()
+     where day_log.condition is null and day_log.fatigue is null and day_log."sleepHours" is null
+       and day_log.injury is null`,
     [
       userId,
       day,

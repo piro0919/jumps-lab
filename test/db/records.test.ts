@@ -341,6 +341,21 @@ describe('日の体調', () => {
     }).toEqual({ saved: weather, added: weather, removed: null, advice: [false, false] });
   });
 
+  it('ケガの経過だけの行には、試技やメニューの画面からのコンディションを書き足し、経過は残す', async () => {
+    const userId = await addProfile();
+    await setInjuryStatus(userId, '2026-10-14', 'better');
+    const { note: _note, ...condition } = log;
+    const added = [
+      await addDayConditionIfMissing(userId, '2026-10-14', { ...condition, weather }),
+      await addDayConditionIfMissing(userId, '2026-10-14', { ...condition, condition: 1 }),
+    ];
+
+    expect({ added, row: await getDayLog(userId, '2026-10-14') }).toEqual({
+      added: [true, false],
+      row: { ...condition, weather, note: null, injuryStatus: 'better' },
+    });
+  });
+
   it('天気の列は全部あるか全部無いか（DB の check）', async () => {
     const userId = await addProfile();
     await expect(
@@ -406,8 +421,6 @@ describe('日の体調', () => {
     await setInjuryStatus(userId, '2026-10-15', 'worse');
     await setInjuryStatus(userId, '2026-10-15', 'better');
     await saveDayLog(userId, '2026-10-15', { ...log, condition: 3 });
-    const { note: _note, ...condition } = log;
-    await addDayConditionIfMissing(userId, '2026-10-14', condition);
 
     expect({
       onlyStatus: await getDayLog(userId, '2026-10-14'),

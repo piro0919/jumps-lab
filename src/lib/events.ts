@@ -23,6 +23,11 @@ export function isWindAided(windMs: number | null): boolean {
   return windMs !== null && windMs > 2.0;
 }
 
+/** 試技の風速の表示（追い風に + を付け、0.1 m/s まで）。日の画面・記録の一覧・大会の一覧で使う */
+export function formatWind(windMs: number): string {
+  return `${windMs > 0 ? '+' : ''}${windMs.toFixed(1)} m/s`;
+}
+
 /** 種目の色（globals.css）。色付きのカードの地に使い、上の字は白にする */
 export const EVENT_BG: Record<JumpEvent, string> = {
   high_jump: 'bg-high-jump',

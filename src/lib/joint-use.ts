@@ -1,4 +1,5 @@
 import { consenterFor } from '@/lib/guardian';
+import type { Weather } from '@/lib/weather';
 
 /**
  * 共同利用（プライバシーポリシー 4.）の項目の版。項目は原則として後から変えられず（個人情報保護委員会の通則ガイドライン）、
@@ -51,11 +52,16 @@ export function weatherAccess(profile: WeatherProfile, day: string, today: strin
   return weatherAgreed(profile) ? 'fetch' : 'consent';
 }
 
-/** 送られてきたコンディションから、残してよくない天気を外す（同意していない人・16歳未満の人の天気は残さない） */
-export function keepWeatherIfAllowed<T extends { weather: unknown }>(
+/**
+ * 送られてきたコンディションから、残してよくない天気を外す。同意していない人・16歳未満の人の天気は残さない。
+ * 新しく取った天気を残せるのは今日だけ（画面と同じ）。過ぎた日は、天気が送られてきたら残してある天気（stored）のまま
+ * にし、外して送られたら消す。過ぎた日に今の天気を書き込めない
+ */
+export function keepWeatherIfAllowed<T extends { weather: Weather | null }>(
   input: T,
   profile: WeatherProfile,
-  today: string,
+  { today, day, stored = null }: { today: string; day: string; stored?: Weather | null },
 ): T {
-  return weatherAllowed(profile, today) ? input : { ...input, weather: null };
+  if (!weatherAllowed(profile, today) || input.weather === null) return { ...input, weather: null };
+  return day === today ? input : { ...input, weather: stored };
 }

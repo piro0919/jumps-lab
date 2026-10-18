@@ -23,7 +23,7 @@ import type { AttemptMark, Competition } from '@/lib/data';
 import type { CompetitionResult } from '@/lib/competition-results';
 import { cn } from '@/lib/cn';
 import { daysBetween } from '@/lib/dates';
-import { EVENT_BG, EVENT_TEXT, isWindAided } from '@/lib/events';
+import { EVENT_BG, EVENT_TEXT, formatWind, isWindAided } from '@/lib/events';
 import { formatMark, formatMarkParts, type Units } from '@/lib/units';
 
 /**
@@ -218,7 +218,7 @@ function CompetitionAttempts({ attempts, units }: { attempts: AttemptMark[]; uni
                       </DisplayNumber>
                       {attempt.windMs !== null && (
                         <span className="text-xs text-muted-foreground">
-                          {`${attempt.windMs > 0 ? '+' : ''}${attempt.windMs.toFixed(1)} m/s`}
+                          {formatWind(attempt.windMs)}
                         </span>
                       )}
                       {isWindAided(attempt.windMs) && (

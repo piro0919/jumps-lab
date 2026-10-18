@@ -219,7 +219,7 @@ export async function createMenuAction(
   try {
     // メニューの材料（強さの判定）に入るよう、先に入れる。すでにある日は上書きしない
     if (condition) {
-      const kept = keepWeatherIfAllowed(condition, profile, today);
+      const kept = keepWeatherIfAllowed(condition, profile, { today, day: today });
       await addDayConditionIfMissing(viewer.userId, today, kept);
     }
     if (injuryStatus.data) await setInjuryStatus(viewer.userId, today, injuryStatus.data);

@@ -10,7 +10,7 @@ import { Badge, Card, CardTitle, DisplayNumber, EmptyState } from '@/components/
 import { Button, buttonVariants } from '@/components/ui/button';
 import type { AttemptDetails, DetailKey } from '@/lib/attempt-details';
 import type { Attempt } from '@/lib/data';
-import { EVENT_BG, isWindAided, type JumpEvent } from '@/lib/events';
+import { EVENT_BG, formatWind, isWindAided, type JumpEvent } from '@/lib/events';
 import { summarize, trialSymbols, type HeightSeries } from '@/lib/height-series';
 import { formatMark, formatShortLength, type Units } from '@/lib/units';
 
@@ -129,9 +129,7 @@ export function AttemptsCard({
                         <span className="text-xs break-words text-muted-foreground">
                           {[
                             t(attempt.kind),
-                            attempt.windMs === null
-                              ? null
-                              : `${attempt.windMs > 0 ? '+' : ''}${attempt.windMs.toFixed(1)} m/s`,
+                            attempt.windMs === null ? null : formatWind(attempt.windMs),
                             attempt.note,
                           ]
                             .filter(Boolean)

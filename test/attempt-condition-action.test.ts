@@ -74,9 +74,11 @@ describe('saveAttemptAction のコンディション', () => {
     });
   });
 
-  it('天気は、同意した16歳以上の人の分だけ残し、ほかの人の分は外してコンディションだけ入れる', async () => {
+  it('天気は、同意した16歳以上の人の今日の分だけ残し、ほかの人と過ぎた日の分は外してコンディションだけ入れる', async () => {
     const weather = { code: 3, temperatureC: 14.2, windMs: 3.1, windDeg: 270, isDay: true };
-    const withWeather = form({ ...condition, weather: JSON.stringify(weather) });
+    // 本人の時間帯（UTC）の今日
+    const today = new Date().toISOString().slice(0, 10);
+    const withWeather = form({ ...condition, day: today, weather: JSON.stringify(weather) });
     await saveAttemptAction(null, withWeather);
     data.getProfile.mockResolvedValueOnce({
       events: ['long_jump'],
@@ -94,11 +96,12 @@ describe('saveAttemptAction のコンディション', () => {
       jointUseVersion: 2,
     });
     await saveAttemptAction(null, withWeather);
+    await saveAttemptAction(null, form({ ...condition, weather: JSON.stringify(weather) }));
     expect(
       data.addDayConditionIfMissing.mock.calls.map(
         (args) => (args[2] as { weather: unknown }).weather,
       ),
-    ).toEqual([weather, null, null]);
+    ).toEqual([weather, null, null, null]);
   });
 
   it('欄が無いとき（閉じたまま）と、試技の書き換えでは入れない', async () => {
