@@ -12,6 +12,10 @@ import {
   kgToLb,
   lbToKg,
   metersToFeetInches,
+  cmToMeters,
+  meterCmToMeters,
+  metersToMeterCm,
+  metersToWholeCm,
   type Units,
 } from '@/lib/units';
 import { WIND_LIMIT_MS } from '@/lib/limits';
@@ -140,9 +144,37 @@ function sentValue(stored: number | null, untouched: boolean, typed: string): st
 export type MeterRange = { min: number; max: number; message: string };
 
 /**
+ * metric の記録の入れ方（2026-10-18、中元さんの弟さんの要望）。m は「6.91」、cm は走高跳・棒高跳の「205」、
+ * mcm は走幅跳・三段跳の「6 m 91 cm」。cm の欄は整数だけ（公式の計測も 1cm 未満を切り捨てる）
+ */
+export type MetricStyle = 'm' | 'cm' | 'mcm';
+
+/** mcm の cm の欄の上限 */
+const CM_FIELD_MAX = 99;
+
+/** はじめに出す文字（metric の入れ方ごと） */
+function metricText(meters: number | null, style: MetricStyle): { first: string; second: string } {
+  if (meters === null) return { first: '', second: '' };
+  if (style === 'cm') return { first: String(metersToWholeCm(meters)), second: '' };
+  if (style === 'mcm') {
+    const { m, cm } = metersToMeterCm(meters);
+    return { first: String(m), second: String(cm) };
+  }
+  return { first: meters.toFixed(2), second: '' };
+}
+
+/** metric の欄の文字をメートルの文字へ。空なら '' */
+function metricMeters({ first, second }: { first: string; second: string }, style: MetricStyle) {
+  if (style === 'm') return first;
+  if (style === 'cm') return first === '' ? '' : String(cmToMeters(Number(first)));
+  if (first === '' && second === '') return '';
+  return String(meterCmToMeters(Number(first || 0), Number(second || 0)));
+}
+
+/**
  * 記録（メートル）。imperial は 4分の1インチ刻み。ポールの長さ・グリップ・助走の距離にも使う（range で範囲を付ける）。
- * imperial はフィートとインチの2つの欄に分かれていて、ブラウザの min・max では範囲を言えないので、
- * 合わせた長さが外れたらフィートの欄に自前の検査を付けて止める
+ * imperial と metric の mcm は2つの欄に分かれていて、ブラウザの min・max では範囲を言えないので、
+ * 合わせた長さが外れたら1つ目の欄に自前の検査を付けて止める
  */
 export function MarkInput({
   name,
@@ -151,6 +183,7 @@ export function MarkInput({
   autoFocus,
   range,
   disabled,
+  metricStyle = 'm',
 }: {
   name: string;
   units: Units;
@@ -159,43 +192,105 @@ export function MarkInput({
   range?: MeterRange;
   /** 止める。送る値にもブラウザの検査にも入らず、入れた文字は残る（高さごとに入れている記録の欄） */
   disabled?: boolean;
+  /** metric の入れ方。既定は m */
+  metricStyle?: MetricStyle;
 }) {
   const t = useTranslations('units');
   // はじめに出した文字（両方の単位）。いまの文字と比べて、触られたかを見る
   const [initial] = useState(() => ({
-    meters: defaultMeters === null ? '' : defaultMeters.toFixed(2),
+    metric: metricText(defaultMeters, metricStyle),
     fi: toFeetInches(defaultMeters, metersToFeetInches),
   }));
-  const [meters, setMeters] = useState(initial.meters);
+  const [metricFields, setMetricFields] = useState(initial.metric);
   const [fi, setFi] = useState(initial.fi);
-  const feetRef = useRef<HTMLInputElement>(null);
+  const firstRef = useRef<HTMLInputElement>(null);
   const metric = units === 'metric';
 
   const untouched = metric
-    ? meters === initial.meters
+    ? metricFields.first === initial.metric.first && metricFields.second === initial.metric.second
     : fi.feet === initial.fi.feet && fi.inches === initial.fi.inches;
   const typedFeetInches =
     fi.feet === '' && fi.inches === ''
       ? null
       : feetInchesToMeters({ feet: Number(fi.feet || 0), inches: Number(fi.inches || 0) });
-  const typed = metric ? meters : typedFeetInches === null ? '' : String(typedFeetInches);
+  const typed = metric
+    ? metricMeters(metricFields, metricStyle)
+    : typedFeetInches === null
+      ? ''
+      : String(typedFeetInches);
   const value = sentValue(defaultMeters, untouched, typed);
 
+  // 2つの欄に分かれた入れ方（フィート・インチ、m と cm）は、合わせた長さで範囲を見る
+  const split = !metric || metricStyle === 'mcm';
   const outside =
-    !metric &&
+    split &&
     range !== undefined &&
     !untouched &&
-    typedFeetInches !== null &&
-    (typedFeetInches < range.min || typedFeetInches > range.max);
+    typed !== '' &&
+    (Number(typed) < range.min || Number(typed) > range.max);
   const message = outside ? range.message : '';
   useEffect(() => {
-    feetRef.current?.setCustomValidity(message);
+    firstRef.current?.setCustomValidity(message);
   }, [message, metric]);
+
+  const setFirst = (first: string) => setMetricFields((fields) => ({ ...fields, first }));
+  const setSecond = (second: string) => setMetricFields((fields) => ({ ...fields, second }));
 
   return (
     <>
       <input type="hidden" name={name} value={value} disabled={disabled} />
-      {metric ? (
+      {!metric ? (
+        <FeetInchesInput
+          feet={fi.feet}
+          inches={fi.inches}
+          inchStep={0.25}
+          autoFocus={autoFocus}
+          disabled={disabled}
+          feetRef={firstRef}
+          onChange={(feet, inches) => setFi({ feet, inches })}
+        />
+      ) : metricStyle === 'mcm' ? (
+        <div className="flex items-center gap-2">
+          <Input
+            ref={firstRef}
+            inputMode="numeric"
+            type="number"
+            min={0}
+            step={1}
+            value={metricFields.first}
+            disabled={disabled}
+            autoFocus={autoFocus}
+            onChange={(e) => setFirst(e.target.value)}
+          />
+          <Unit>{t('m')}</Unit>
+          <Input
+            inputMode="numeric"
+            type="number"
+            min={0}
+            max={CM_FIELD_MAX}
+            step={1}
+            value={metricFields.second}
+            disabled={disabled}
+            onChange={(e) => setSecond(e.target.value)}
+          />
+          <Unit>{t('cm')}</Unit>
+        </div>
+      ) : metricStyle === 'cm' ? (
+        <div className="flex items-center gap-2">
+          <Input
+            inputMode="numeric"
+            type="number"
+            min={metersToWholeCm(range?.min ?? 0)}
+            max={range ? metersToWholeCm(range.max) : undefined}
+            step={1}
+            value={metricFields.first}
+            disabled={disabled}
+            autoFocus={autoFocus}
+            onChange={(e) => setFirst(e.target.value)}
+          />
+          <Unit>{t('cm')}</Unit>
+        </div>
+      ) : (
         <div className="flex items-center gap-2">
           <Input
             inputMode="decimal"
@@ -203,23 +298,13 @@ export function MarkInput({
             min={range?.min ?? 0}
             max={range?.max}
             step={0.01}
-            value={meters}
+            value={metricFields.first}
             disabled={disabled}
             autoFocus={autoFocus}
-            onChange={(e) => setMeters(e.target.value)}
+            onChange={(e) => setFirst(e.target.value)}
           />
           <Unit>{t('m')}</Unit>
         </div>
-      ) : (
-        <FeetInchesInput
-          feet={fi.feet}
-          inches={fi.inches}
-          inchStep={0.25}
-          autoFocus={autoFocus}
-          disabled={disabled}
-          feetRef={feetRef}
-          onChange={(feet, inches) => setFi({ feet, inches })}
-        />
       )}
     </>
   );

@@ -82,7 +82,7 @@ describe('AttemptForm の高さごとの結果', () => {
     const before = { markField: markFieldShown(), series: sentSeries() };
     addHeight();
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Bar height 1' }), {
-      target: { value: '1.80' },
+      target: { value: '180' },
     });
     press('1.80 m', 1);
     // 次の高さは前の高さに 3cm 足した高さで入る
@@ -107,7 +107,7 @@ describe('AttemptForm の高さごとの結果', () => {
         .disabled,
     }).toEqual({
       before: { markField: true, series: null },
-      next: '1.83',
+      next: '183',
       markField: false,
       mark: 'Mark (best height cleared)1.83 m',
       series: [
@@ -123,7 +123,7 @@ describe('AttemptForm の高さごとの結果', () => {
     renderForm('metric');
     addHeight();
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Bar height 1' }), {
-      target: { value: '2.00' },
+      target: { value: '200' },
     });
     const symbols = () => [1, 2, 3].map((n) => slot('2.00 m', n).textContent);
     const disabled = () => [1, 2, 3].map((n) => (slot('2.00 m', n) as HTMLButtonElement).disabled);
@@ -147,16 +147,16 @@ describe('AttemptForm の高さごとの結果', () => {
     ]);
   });
 
-  it('越えた高さが無いあいだは記録を出さず、高さはサーバーと同じ 0.1mm に丸めてからその場で確かめる', () => {
+  it('越えた高さが無いあいだは記録を出さず、前と同じ高さはその場で弾く', () => {
     renderForm('metric');
     addHeight();
-    setHeight(1, '1.80');
+    setHeight(1, '180');
     press('1.80 m', 1, 2);
     const noClear = screen.queryByText('No height cleared yet') !== null;
     press('1.80 m', 1, 3);
     addHeight();
-    // 1.80004 m はサーバーで 1.8 m になり、前の高さと同じになる
-    setHeight(2, '1.80004');
+    // 前と同じ高さ
+    setHeight(2, '180');
     fireEvent.click(screen.getAllByRole('button', { name: /^1\.80 m, trial 1:/ })[1]!);
 
     expect({
@@ -173,7 +173,7 @@ describe('AttemptForm の高さごとの結果', () => {
   it('欄には規則どおりになる値しか入らず、失敗のままの高さと続けて3回失敗したあとには高さを足せない', () => {
     renderForm('metric');
     addHeight();
-    setHeight(1, '1.80');
+    setHeight(1, '180');
     press('1.80 m', 1, 2);
     press('1.80 m', 2, 2);
     const afterTwoMisses = addButton().disabled;
@@ -206,14 +206,14 @@ describe('AttemptForm の高さごとの結果', () => {
     });
     renderForm('metric');
     addHeight();
-    setHeight(1, '1.80');
+    setHeight(1, '180');
     press('1.80 m', 1);
     addHeight();
     press('1.83 m', 1);
     fireEvent.submit(form());
     const message = 'Each height must be above the one before (1.83 m).';
     const shown = (await screen.findByText(message)).textContent;
-    setHeight(2, '1.84');
+    setHeight(2, '184');
 
     expect({ shown, after: screen.queryByText(/Each height must be above/) }).toEqual({
       shown: message,
@@ -224,16 +224,16 @@ describe('AttemptForm の高さごとの結果', () => {
   it('高さを入れているあいだは、隠した記録の欄を止めて送らない。すべて消すと入れていた記録が戻る', () => {
     renderForm('metric');
     const mark = document.querySelector('input[type=number]') as HTMLInputElement;
-    fireEvent.change(mark, { target: { value: '1.805' } });
+    fireEvent.change(mark, { target: { value: '181' } });
     addHeight();
-    setHeight(1, '1.70');
+    setHeight(1, '170');
     // 止めた欄はブラウザの検査にも入らない（happy-dom は step の検査が実物と違うので、止めたことを見る）
     const bySeries = { sent: new FormData(form()).has('markM'), disabled: mark.disabled };
     fireEvent.click(screen.getByRole('button', { name: 'Remove 1.70 m' }));
 
     expect({ bySeries, back: new FormData(form()).get('markM') }).toEqual({
       bySeries: { sent: false, disabled: true },
-      back: '1.805',
+      back: '1.81',
     });
   });
 
@@ -241,7 +241,7 @@ describe('AttemptForm の高さごとの結果', () => {
     renderForm('metric', ['high_jump', 'long_jump']);
     addHeight();
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Bar height 1' }), {
-      target: { value: '1.70' },
+      target: { value: '170' },
     });
     press('1.70 m', 1);
     fireEvent.click(screen.getByRole('button', { name: 'Long jump' }));
@@ -262,7 +262,7 @@ describe('AttemptForm の高さごとの結果', () => {
     renderForm('metric');
     addHeight();
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Bar height 1' }), {
-      target: { value: '1.70' },
+      target: { value: '170' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Remove 1.70 m' }));
     expect({ markField: markFieldShown(), series: sentSeries() }).toEqual({
@@ -297,7 +297,7 @@ describe('AttemptForm の高さを直さずに保存する', () => {
     const shown = (screen.getByRole('spinbutton', { name: 'Bar height 1' }) as HTMLInputElement)
       .value;
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Bar height 3' }), {
-      target: { value: '1.91' },
+      target: { value: '191' },
     });
     const edited = sentSeries().map((row: { heightM: number }) => row.heightM);
     cleanup();
@@ -306,7 +306,7 @@ describe('AttemptForm の高さを直さずに保存する', () => {
 
     expect({ metric, shown, edited, imperial }).toEqual({
       metric: series,
-      shown: '1.85',
+      shown: '184',
       edited: [1.8478, 1.8732, 1.91],
       imperial: series,
     });

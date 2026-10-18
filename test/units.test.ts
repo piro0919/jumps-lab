@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  cmToMeters,
+  meterCmToMeters,
+  metersToMeterCm,
+  metersToWholeCm,
   cmToFeetInches,
   cmToQuarterInches,
   feetInchesToCm,
@@ -115,5 +119,23 @@ describe('formatMarkParts', () => {
 
   it('imperial は記号ごと数字にする', () => {
     expect(formatMarkParts(1.8542, 'imperial')).toEqual({ value: `6' 1"`, unit: '' });
+  });
+});
+
+describe('センチの入力（走高跳・棒高跳の cm、走幅跳・三段跳の m と cm）', () => {
+  it('センチは切り捨て、0.1mm で持っている値も入れた値に戻る', () => {
+    expect({
+      whole: [metersToWholeCm(2.05), metersToWholeCm(2.0599), metersToWholeCm(1.0)],
+      split: [metersToMeterCm(6.91), metersToMeterCm(14.0), metersToMeterCm(6.9159)],
+      back: [cmToMeters(205), meterCmToMeters(6, 91), meterCmToMeters(14, 5)],
+    }).toEqual({
+      whole: [205, 205, 100],
+      split: [
+        { m: 6, cm: 91 },
+        { m: 14, cm: 0 },
+        { m: 6, cm: 91 },
+      ],
+      back: [2.05, 6.91, 14.05],
+    });
   });
 });

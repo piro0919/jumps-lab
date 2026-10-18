@@ -223,7 +223,7 @@ export function trialSymbols(trials: readonly Trial[]): string {
 }
 
 /** メートルを DB と同じ 0.1mm に丸める。サーバーの読み（heightSeriesSchema）と入力の欄の両方で同じ値を確かめるため */
-export const toTenthMm = (meters: number) => Math.round(meters * TENTH_MM_PER_M) / TENTH_MM_PER_M;
+const toTenthMm = (meters: number) => Math.round(meters * TENTH_MM_PER_M) / TENTH_MM_PER_M;
 
 /**
  * 送られてきた高さごとの結果（フォームの隠しの欄の JSON）。空なら null。

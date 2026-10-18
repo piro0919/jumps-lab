@@ -182,6 +182,8 @@ export function AttemptForm({
     };
   }, [rows, units]);
   const [kind, setKind] = useState<'practice' | 'competition'>(initial?.kind ?? 'practice');
+  // metric の記録の入れ方。走高跳・棒高跳は cm、走幅跳・三段跳は m と cm（中元さんの弟さんの要望、2026-10-18）
+  const markStyle = hasHeightSeries(event) ? 'cm' : 'mcm';
   const [state, action, pending] = useActionState(async (previous: unknown, formData: FormData) => {
     setRowsEdited(false);
     const result = await safely(() => saveAttemptAction(null, formData));
@@ -236,8 +238,11 @@ export function AttemptForm({
       <div hidden={bySeries}>
         <Field label={t('mark')} required={tProfile('required')}>
           <MarkInput
+            // 入れ方が変わる種目の切り替えでは欄を作り直す（205 cm と 6 m 91 cm を取り違えない）
+            key={markStyle}
             name="markM"
             units={units}
+            metricStyle={markStyle}
             defaultMeters={initial?.markM ?? null}
             autoFocus
             disabled={bySeries}

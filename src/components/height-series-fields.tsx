@@ -11,7 +11,6 @@ import {
   canAddHeight,
   nextHeight,
   setTrial,
-  toTenthMm,
   TRIAL_SYMBOL,
   trialOptions,
   TRIALS_PER_HEIGHT,
@@ -20,10 +19,18 @@ import {
   type Trial,
 } from '@/lib/height-series';
 import { BAR_HEIGHT_MAX_M, BAR_HEIGHT_MIN_M } from '@/lib/limits';
-import { feetInchesToMeters, formatMark, metersToFeetInches, type Units } from '@/lib/units';
+import {
+  cmToMeters,
+  feetInchesToMeters,
+  formatMark,
+  metersToFeetInches,
+  metersToWholeCm,
+  type Units,
+} from '@/lib/units';
 
 /** 高さの欄の文字（両方の単位） */
-type HeightText = { meters: string; feet: string; inches: string };
+// metric は整数のセンチ（「185」。走高跳・棒高跳の記録の欄と同じ。2026-10-18）
+type HeightText = { cm: string; feet: string; inches: string };
 
 /**
  * 入力中の1つの高さ。stored は欄が触られるまで送る値（保存してある高さか、足したときに出した次の高さ）。
@@ -40,9 +47,9 @@ export type HeightRowState = {
 const SLOTS = Array.from({ length: TRIALS_PER_HEIGHT }, (_, i) => i);
 
 function textOf(meters: number | null): HeightText {
-  if (meters === null) return { meters: '', feet: '', inches: '' };
+  if (meters === null) return { cm: '', feet: '', inches: '' };
   const { feet, inches } = metersToFeetInches(meters);
-  return { meters: meters.toFixed(2), feet: String(feet), inches: String(inches) };
+  return { cm: String(metersToWholeCm(meters)), feet: String(feet), inches: String(inches) };
 }
 
 function rowOf(key: number, meters: number | null, trials: Trial[] = []): HeightRowState {
@@ -59,10 +66,8 @@ export function toRows(series: HeightSeries | null): HeightRowState[] {
 function heightOf(row: HeightRowState, units: Units): number | null {
   const { text, initial } = row;
   if (units === 'metric') {
-    if (text.meters === initial.meters && row.stored !== null) return row.stored;
-    // サーバー（heightSeriesSchema）と同じ 0.1mm に丸めてから確かめ、送る。丸めずに確かめると、
-    // ここでは通った並びがサーバーで弾かれる（1.80 と 1.80004 が同じ高さになる）
-    return text.meters.trim() === '' ? null : toTenthMm(Number(text.meters));
+    if (text.cm === initial.cm && row.stored !== null) return row.stored;
+    return text.cm.trim() === '' ? null : cmToMeters(Number(text.cm));
   }
   if (text.feet === initial.feet && text.inches === initial.inches && row.stored !== null) {
     return row.stored;
@@ -206,18 +211,18 @@ export function HeightSeriesFields({
                     <>
                       <Input
                         type="number"
-                        inputMode="decimal"
-                        step={0.01}
-                        min={BAR_HEIGHT_MIN_M}
-                        max={BAR_HEIGHT_MAX_M}
+                        inputMode="numeric"
+                        step={1}
+                        min={metersToWholeCm(BAR_HEIGHT_MIN_M)}
+                        max={metersToWholeCm(BAR_HEIGHT_MAX_M)}
                         required
                         aria-label={t('barHeightN', { n: index + 1 })}
-                        value={row.text.meters}
+                        value={row.text.cm}
                         onChange={(e) =>
-                          update(row.key, { text: { ...row.text, meters: e.target.value } })
+                          update(row.key, { text: { ...row.text, cm: e.target.value } })
                         }
                       />
-                      <Unit>{tUnits('m')}</Unit>
+                      <Unit>{tUnits('cm')}</Unit>
                     </>
                   ) : (
                     <FeetInchesInput

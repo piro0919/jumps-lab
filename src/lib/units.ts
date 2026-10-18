@@ -39,6 +39,29 @@ export function feetInchesToMeters({ feet, inches }: FeetInches): number {
   return Math.round((feet * INCHES_PER_FOOT + inches) * INCH_M * TENTH_MM_PER_M) / TENTH_MM_PER_M;
 }
 
+const CM_PER_M = 100;
+
+/** メートルを整数のセンチへ。切り捨て（記録の表示と同じ向き。2026-10-18 の cm の入力） */
+export function metersToWholeCm(meters: number): number {
+  return Math.floor(meters * CM_PER_M + FLOAT_SLACK);
+}
+
+/** センチ（整数）をメートルへ */
+export function cmToMeters(cm: number): number {
+  return cm / CM_PER_M;
+}
+
+/** メートルを「何 m 何 cm」へ（走幅跳・三段跳の入力。センチは切り捨て） */
+export function metersToMeterCm(meters: number): { m: number; cm: number } {
+  const cm = metersToWholeCm(meters);
+  return { m: Math.floor(cm / CM_PER_M), cm: cm % CM_PER_M };
+}
+
+/** 「何 m 何 cm」をメートルへ */
+export function meterCmToMeters(m: number, cm: number): number {
+  return (m * CM_PER_M + cm) / CM_PER_M;
+}
+
 /**
  * 記録の表示。metric は「1.85 m」（センチで切り捨て。陸上の計測と同じ向き）、imperial は「6' 0¾"」
  */
