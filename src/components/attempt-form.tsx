@@ -243,6 +243,7 @@ export function AttemptForm({
             name="markM"
             units={units}
             metricStyle={markStyle}
+            label={t('mark')}
             defaultMeters={initial?.markM ?? null}
             autoFocus
             disabled={bySeries}

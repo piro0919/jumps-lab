@@ -42,7 +42,8 @@
     "lb": "lb",
     "ms": "m/s",
     "hours": "h",
-    "steps": "steps"
+    "steps": "steps",
+    "fieldPart": "{label} ({unit})"
   },
   "nav": {
     "home": "Home",

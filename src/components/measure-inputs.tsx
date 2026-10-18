@@ -184,6 +184,7 @@ export function MarkInput({
   range,
   disabled,
   metricStyle = 'm',
+  label,
 }: {
   name: string;
   units: Units;
@@ -194,6 +195,9 @@ export function MarkInput({
   disabled?: boolean;
   /** metric の入れ方。既定は m */
   metricStyle?: MetricStyle;
+  /** 欄の名前。2つの欄に分かれる入れ方（m と cm、フィートとインチ）で、それぞれの読み上げの名前にする
+      （包んだ label は最初の欄にしか名前を付けない） */
+  label?: string;
 }) {
   const t = useTranslations('units');
   // はじめに出した文字（両方の単位）。いまの文字と比べて、触られたかを見る
@@ -235,6 +239,13 @@ export function MarkInput({
 
   const setFirst = (first: string) => setMetricFields((fields) => ({ ...fields, first }));
   const setSecond = (second: string) => setMetricFields((fields) => ({ ...fields, second }));
+  const part = (unit: string) => (label ? t('fieldPart', { label, unit }) : undefined);
+  const feetInchesLabels = label
+    ? {
+        feet: t('fieldPart', { label, unit: t('ft') }),
+        inches: t('fieldPart', { label, unit: t('in') }),
+      }
+    : undefined;
 
   return (
     <>
@@ -247,6 +258,7 @@ export function MarkInput({
           autoFocus={autoFocus}
           disabled={disabled}
           feetRef={firstRef}
+          labels={feetInchesLabels}
           onChange={(feet, inches) => setFi({ feet, inches })}
         />
       ) : metricStyle === 'mcm' ? (
@@ -257,6 +269,7 @@ export function MarkInput({
             type="number"
             min={0}
             step={1}
+            aria-label={part(t('m'))}
             value={metricFields.first}
             disabled={disabled}
             autoFocus={autoFocus}
@@ -264,6 +277,7 @@ export function MarkInput({
           />
           <Unit>{t('m')}</Unit>
           <Input
+            aria-label={part(t('cm'))}
             inputMode="numeric"
             type="number"
             min={0}

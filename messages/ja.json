@@ -42,7 +42,8 @@
     "lb": "lb",
     "ms": "m/s",
     "hours": "時間",
-    "steps": "歩"
+    "steps": "歩",
+    "fieldPart": "{label}（{unit}）"
   },
   "nav": {
     "home": "ホーム",

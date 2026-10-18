@@ -49,7 +49,10 @@ test('登録から試技を足して直し、大会を足す', async ({ page, co
   await page.getByRole('link', { name: '今日を記録' }).filter({ visible: true }).first().click();
   await expect(page).toHaveURL(/\/log\/today\/new$/);
   const form = page.locator('main form');
-  await form.getByRole('spinbutton', { name: /^記録/ }).fill('6.12');
+  // 走幅跳の記録は m と cm の2つの欄（2026-10-18）
+  const mark = form.getByRole('spinbutton', { name: /^記録/ });
+  await mark.nth(0).fill('6');
+  await mark.nth(1).fill('12');
   await form.getByRole('spinbutton', { name: /^風速/ }).fill('1.5');
   await page.getByRole('button', { name: '保存' }).click();
   await expect(page).toHaveURL(/\/log\/today$/);
@@ -57,7 +60,8 @@ test('登録から試技を足して直し、大会を足す', async ({ page, co
 
   // 試技を直す
   await page.getByRole('link', { name: '試技を編集' }).click();
-  await expect(form.getByRole('spinbutton', { name: /^記録/ })).toHaveValue('6.12');
+  await expect(mark.nth(0)).toHaveValue('6');
+  await expect(mark.nth(1)).toHaveValue('12');
   await form.getByRole('textbox', { name: 'メモ' }).fill('追い風が強い');
   await page.getByRole('button', { name: '保存' }).click();
   await expect(page).toHaveURL(/\/log\/today$/);
