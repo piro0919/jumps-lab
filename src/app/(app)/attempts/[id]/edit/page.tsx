@@ -9,10 +9,14 @@ import { requireProfile, requireViewer } from '@/lib/viewer';
 
 /**
  * 試技を1本直す画面。日の画面の行の鉛筆から来て、保存したらその日の画面へ戻る。
+ * 大会の画面の試技から来たら（?from=competitions）、大会の画面へ戻る（2026-10-18）。
  * 試技は消して足し直すしかなかった（2026-10-11）。本人の試技でなければ開かない。
  * 種目から外した種目の試技は、その種目も選べるように並べる
  */
-export default async function EditAttempt({ params }: PageProps<'/attempts/[id]/edit'>) {
+export default async function EditAttempt({
+  params,
+  searchParams,
+}: PageProps<'/attempts/[id]/edit'>) {
   const viewer = await requireViewer();
   const { id } = await params;
   const attempt = z.uuid().safeParse(id).success ? await getAttempt(viewer.userId, id) : null;
@@ -27,9 +31,13 @@ export default async function EditAttempt({ params }: PageProps<'/attempts/[id]/
   const tLog = await getTranslations('log');
   const tNav = await getTranslations('nav');
   const format = await getFormatter();
-  const backHref = `/log/${attempt.day === today ? 'today' : attempt.day}`;
-  const dayLabel =
-    attempt.day === today
+  const fromCompetitions = (await searchParams).from === 'competitions';
+  const backHref = fromCompetitions
+    ? '/competitions'
+    : `/log/${attempt.day === today ? 'today' : attempt.day}`;
+  const dayLabel = fromCompetitions
+    ? tNav('competitions')
+    : attempt.day === today
       ? tLog('today')
       : format.dateTime(new Date(`${attempt.day}T00:00:00Z`), {
           month: 'short',

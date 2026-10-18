@@ -82,6 +82,7 @@
     "noUpcoming": "これからの大会はありません",
     "noPast": "過去の大会はありません",
     "result": "結果",
+    "attempts": "試技 {count}本",
     "entry": "エントリー",
     "prefectureSchedules": "都道府県の大会日程",
     "prefecture": "都道府県",
@@ -301,9 +302,8 @@
     "deleteConfirm": "この大会を削除しますか？",
     "callRoom": "招集 {time}",
     "start": "開始 {time}",
-    "target": "主目標",
-    "targetBadge": "主目標",
-    "targetNo": "ふつうの大会",
+    "target": "目標",
+    "targetBadge": "目標",
     "entryUrl": "エントリーサイト"
   },
   "analysis": {
@@ -466,7 +466,7 @@
     "reason": {
       "injury": "痛み・違和感の記録があります。その部位を使う跳躍・ダッシュ・負荷は避けましょう。",
       "preMeet": "{days, plural, =0 {今日は大会です。} =1 {明日は大会です。} other {大会まであと#日です。}}量を減らし、スピードと跳躍の質は保ちましょう。",
-      "taper": "主目標の大会まであと{days}日。量を少しずつ減らし、強さと練習の回数は保ちましょう。",
+      "taper": "目標の大会まであと{days}日。量を少しずつ減らし、強さと練習の回数は保ちましょう。",
       "shortNight": "昨夜の睡眠は{hours}時間でした。",
       "shortWeek": "直近1週間の睡眠の平均は{average}時間で、{target}時間を下回っています。",
       "fatigue": "疲労度{value}/10は、ふだんより高めです。",
@@ -474,7 +474,7 @@
     },
     "doctor": "安静にしていても・夜も痛む、腫れている、骨の一点を押すと痛む、足を引きずる、翌朝まで引かない、何週間も続くときは、病院で診てもらいましょう。",
     "source": "出典",
-    "toward": "主目標の大会まで{weeks}週",
+    "toward": "目標の大会まで{weeks}週",
     "build": "準備期"
   },
   "menu": {

@@ -1,6 +1,6 @@
 'use client';
 
-import { ExternalLink, MapPin, Pencil, Plus, Trash2 } from 'lucide-react';
+import { ChevronDown, ExternalLink, MapPin, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
 import { deleteCompetitionAction } from '@/app/actions/competitions';
@@ -19,11 +19,12 @@ import {
 } from '@/components/layout-ui';
 import Link from 'next/link';
 import { Button, buttonVariants } from '@/components/ui/button';
-import type { Competition } from '@/lib/data';
+import type { AttemptMark, Competition } from '@/lib/data';
 import type { CompetitionResult } from '@/lib/competition-results';
+import { cn } from '@/lib/cn';
 import { daysBetween } from '@/lib/dates';
-import { EVENT_TEXT } from '@/lib/events';
-import { formatMarkParts, type Units } from '@/lib/units';
+import { EVENT_BG, EVENT_TEXT, isWindAided } from '@/lib/events';
+import { formatMark, formatMarkParts, type Units } from '@/lib/units';
 
 /**
  * 大会1件。日付・名前・会場・招集・開始・注意事項。これからの大会には残りの日数と申し込みのサイトを出す。
@@ -32,6 +33,7 @@ import { formatMarkParts, type Units } from '@/lib/units';
 export function CompetitionItem({
   competition,
   results,
+  attempts = [],
   units,
   today,
   onDelete,
@@ -41,6 +43,8 @@ export function CompetitionItem({
   competition: Competition;
   /** その日に大会として入れた記録の、種目ごとの最高 */
   results: CompetitionResult[];
+  /** その日に大会として入れた試技（古い順）。種目ごとに並べ、直す画面へ進める（本人の大会の画面だけ） */
+  attempts?: AttemptMark[];
   units: Units;
   today: string;
   /** LP の見本では渡さない（押せない枠の中に置く） */
@@ -169,8 +173,72 @@ export function CompetitionItem({
             </div>
           </div>
         )}
+        {attempts.length > 0 && !readOnly && !sample && (
+          <CompetitionAttempts attempts={attempts} units={units} />
+        )}
       </div>
     </div>
+  );
+}
+
+/**
+ * 大会の試技を種目ごとに（閉じた「試技」の中）。各試技から直す画面へ進む。
+ * 複数種目に出る人が、大会から記録の画面へ移らずに確かめて直せるように（中元さんの弟さんの要望、2026-10-18）
+ */
+function CompetitionAttempts({ attempts, units }: { attempts: AttemptMark[]; units: Units }) {
+  const t = useTranslations('competitions');
+  const tToday = useTranslations('today');
+  const tEvents = useTranslations('events');
+  const events = [...new Set(attempts.map((a) => a.event))];
+  return (
+    <details className="group mt-2">
+      <summary className={cn('flex cursor-pointer list-none items-center gap-1', LABEL)}>
+        {t('attempts', { count: attempts.length })}
+        <ChevronDown aria-hidden className="size-4 transition-transform group-open:rotate-180" />
+      </summary>
+      <div className="mt-2 flex flex-col gap-3">
+        {events.map((event) => (
+          <section key={event} className="flex flex-col gap-1">
+            <h3 className="flex">
+              <Badge tone="solid" className={EVENT_BG[event]}>
+                {tEvents(event)}
+              </Badge>
+            </h3>
+            <ol className="flex flex-col divide-y divide-border">
+              {attempts
+                .filter((a) => a.event === event)
+                .map((attempt, index) => (
+                  <li key={attempt.id} className="flex items-center gap-3 py-1.5">
+                    <span className="w-5 text-sm text-muted-foreground tabular-nums">
+                      {index + 1}
+                    </span>
+                    <span className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2 gap-y-1">
+                      <DisplayNumber size="sm" className="whitespace-nowrap">
+                        {formatMark(attempt.markM, units)}
+                      </DisplayNumber>
+                      {attempt.windMs !== null && (
+                        <span className="text-xs text-muted-foreground">
+                          {`${attempt.windMs > 0 ? '+' : ''}${attempt.windMs.toFixed(1)} m/s`}
+                        </span>
+                      )}
+                      {isWindAided(attempt.windMs) && (
+                        <Badge tone="neutral">{tToday('windAided')}</Badge>
+                      )}
+                    </span>
+                    <Link
+                      href={`/attempts/${attempt.id}/edit?from=competitions`}
+                      aria-label={tToday('editAttempt')}
+                      className={buttonVariants({ variant: 'ghost', size: 'icon' })}
+                    >
+                      <Pencil aria-hidden />
+                    </Link>
+                  </li>
+                ))}
+            </ol>
+          </section>
+        ))}
+      </div>
+    </details>
   );
 }
 
@@ -183,6 +251,7 @@ export function CompetitionsBoard({
   upcoming,
   past,
   results,
+  attempts,
   units,
   today,
   prefectureLinks,
@@ -193,6 +262,8 @@ export function CompetitionsBoard({
   past: Competition[];
   /** 日付ごとの大会の結果 */
   results: Record<string, CompetitionResult[]>;
+  /** 日付ごとの、大会として入れた試技 */
+  attempts: Record<string, AttemptMark[]>;
   units: Units;
   today: string;
   /** 都道府県の陸協の大会日程を出すか（日本の人だけ） */
@@ -220,6 +291,7 @@ export function CompetitionsBoard({
               <CompetitionItem
                 competition={competition}
                 results={results[competition.day] ?? []}
+                attempts={attempts[competition.day]}
                 units={units}
                 today={today}
                 onDelete={() => setRemoving(competition.id)}

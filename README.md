@@ -15,7 +15,7 @@ https://jumpslab.kkweb.io
 - Compare two videos of the same event side by side or overlaid, synced at a chosen moment (such as take-off), in slow motion and frame by frame
 - Mark moments on a video (approach start, last three steps, take-off, landing) and compare the times between them with another jump
 - Measure angles by hand on a paused frame (a 3-point angle such as the knee, or a lean from vertical such as the trunk) and compare them with another jump
-- Competitions with venue, call room and start time, an entry site link, a countdown to the next one (at the top of home when it is within 14 days), the result from the marks logged that day, and a main goal meet
+- Competitions with venue, call room and start time, an entry site link, a countdown to the next one (at the top of home when it is within 14 days), the result from the marks logged that day, and goal meets
 - In Japan: new competitions start with the JAAF entry site, and the competitions page links to each prefecture's meet schedule
 - Import competitions from a schedule page's address, a meet notice PDF or a photo of a printed schedule: AI lists the upcoming meets in it, and picking one opens the competition form filled in to check and save. Nothing you send is stored (Premium, after the same consent as the AI coach)
 - Today's advice at the top of Analysis: how hard to train today from condition, sleep, injuries and the competition schedule, with a source for each reason

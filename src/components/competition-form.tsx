@@ -7,15 +7,7 @@ import { useActionState, useState } from 'react';
 import { saveCompetitionAction } from '@/app/actions/competitions';
 import { safely } from '@/lib/safe-action';
 import { ActionForm } from '@/components/action-form';
-import {
-  ErrorText,
-  Field,
-  FieldLabel,
-  Input,
-  SEGMENTS,
-  segmentClass,
-  TextArea,
-} from '@/components/layout-ui';
+import { ErrorText, Field, Input, TextArea } from '@/components/layout-ui';
 import { cn } from '@/lib/cn';
 import { FormActions } from '@/components/form-actions';
 import type { Competition } from '@/lib/data';
@@ -77,29 +69,21 @@ export function CompetitionForm({
           <Input name="startTime" type="time" defaultValue={values?.startTime ?? ''} />
         </Field>
       </div>
-      {/* 主目標の大会。今日のアドバイスが、この大会の前2週間を調整期にする */}
-      <div className="flex flex-col gap-1.5">
+      {/* 目標の大会。今日のアドバイスが、いちばん近い目標の大会の前2週間を調整期にする。
+          「主目標／ふつうの大会」の切り替えを、押すと付く「目標」1つにした（中元さんの弟さんの要望、2026-10-18） */}
+      <div className="flex">
         <input type="hidden" name="isTarget" value={String(isTarget)} />
-        <FieldLabel label={t('target')} />
-        {/* 1つだけ選ぶので切り替えの形（性別と同じ） */}
-        <div
-          role="radiogroup"
-          aria-label={t('target')}
-          className={cn(SEGMENTS, 'grid w-full grid-cols-2')}
+        <button
+          type="button"
+          aria-pressed={isTarget}
+          onClick={() => setIsTarget(!isTarget)}
+          className={cn(
+            'h-9 rounded-full px-3 text-sm font-semibold transition active:scale-press',
+            isTarget ? 'bg-secondary text-primary' : 'bg-muted text-muted-foreground',
+          )}
         >
-          {([false, true] as const).map((value) => (
-            <button
-              key={String(value)}
-              type="button"
-              role="radio"
-              aria-checked={isTarget === value}
-              onClick={() => setIsTarget(value)}
-              className={cn(segmentClass(isTarget === value), 'px-2')}
-            >
-              {value ? t('targetBadge') : t('targetNo')}
-            </button>
-          ))}
-        </div>
+          {t('target')}
+        </button>
       </div>
       <Field label={t('entryUrl')}>
         <Input

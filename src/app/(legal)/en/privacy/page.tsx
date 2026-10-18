@@ -48,7 +48,7 @@ export default function PrivacyEn() {
         </li>
         <li>
           Your competitions (name, date, venue, call room place and time, start time, notes and
-          whether it is your main goal meet)
+          whether it is a goal meet)
         </li>
         <li>Your goal marks and the bests you enter by hand</li>
         <li>
@@ -234,8 +234,8 @@ export default function PrivacyEn() {
           personal best and season best for each event; your condition, fatigue, sleep, injuries or
           discomfort with how they are healing, and practice notes for the last 14 days; your
           attempts in the last 14 days (event, practice or competition, mark, wind and note); the
-          days left to each competition in the next 8 weeks and which one is your main goal meet;
-          the day&apos;s training level and its reasons; the practice time and note you enter; your
+          days left to each competition in the next 8 weeks and which ones are goal meets; the
+          day&apos;s training level and its reasons; the practice time and note you enter; your
           messages and the current menu; and on a competition day, that meet&apos;s venue, call room
           place and time, start time and notes. When you import competitions, we send the address
           and content of the page, or the PDF or photo, you choose; only the competitions are read

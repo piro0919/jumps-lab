@@ -1,7 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import { CompetitionsBoard } from '@/components/competitions-board';
 import { competitionResults } from '@/lib/competition-results';
-import { listAllAttempts, listCompetitions } from '@/lib/data';
+import { type AttemptMark, listAllAttempts, listCompetitions } from '@/lib/data';
 import { todayIn } from '@/lib/dates';
 import { inJapan } from '@/lib/japan';
 import { requireProfile, requireViewer } from '@/lib/viewer';
@@ -27,6 +27,15 @@ export default async function Competitions() {
         upcoming={all.filter((c) => c.day >= today)}
         past={all.filter((c) => c.day < today).reverse()}
         results={Object.fromEntries(competitionResults(attempts))}
+        // groupBy は prototype の無い物を返し、Client Component に渡せないので、ふつうの物に写す
+        attempts={
+          {
+            ...Object.groupBy(
+              attempts.filter((a) => a.kind === 'competition'),
+              (a) => a.day,
+            ),
+          } as Record<string, AttemptMark[]>
+        }
         units={profile.units}
         today={today}
         prefectureLinks={inJapan(profile.timeZone)}

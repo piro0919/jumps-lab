@@ -82,6 +82,7 @@
     "noUpcoming": "No upcoming competitions",
     "noPast": "No past competitions",
     "result": "Result",
+    "attempts": "{count, plural, one {# attempt} other {# attempts}}",
     "entry": "Enter",
     "prefectureSchedules": "Meets by prefecture",
     "prefecture": "Prefecture",
@@ -301,9 +302,8 @@
     "deleteConfirm": "Delete this competition?",
     "callRoom": "Call room {time}",
     "start": "Start {time}",
-    "target": "Main goal",
-    "targetBadge": "Main goal",
-    "targetNo": "Regular meet",
+    "target": "Goal",
+    "targetBadge": "Goal",
     "entryUrl": "Entry site"
   },
   "analysis": {
@@ -466,7 +466,7 @@
     "reason": {
       "injury": "You noted pain or discomfort. Skip jumps, sprints and loading that use that area.",
       "preMeet": "{days, plural, =0 {Meet today.} one {Meet tomorrow.} other {Meet in # days.}} Cut volume; keep speed and jump quality.",
-      "taper": "{days} days to your main goal meet. Reduce volume step by step; keep intensity and how often you train.",
+      "taper": "{days} days to your goal meet. Reduce volume step by step; keep intensity and how often you train.",
       "shortNight": "You slept {hours} hours last night.",
       "shortWeek": "Your sleep over the last week averaged {average} hours, below {target} hours.",
       "fatigue": "Fatigue {value}/10 is high for you.",
@@ -474,7 +474,7 @@
     },
     "doctor": "See a doctor or physio if it hurts at rest or at night, is swollen, hurts when you press one spot on a bone, makes you limp, is not gone by the next morning, or keeps coming back for weeks.",
     "source": "Source",
-    "toward": "{weeks, plural, one {# week} other {# weeks}} to your main goal meet",
+    "toward": "{weeks, plural, one {# week} other {# weeks}} to your goal meet",
     "build": "Building phase"
   },
   "menu": {
@@ -526,7 +526,7 @@
     "sentBests": "Personal best and season best for each event",
     "sentCondition": "Condition, fatigue, sleep, pain notes with how they are healing, and practice notes from the last 14 days",
     "sentAttempts": "Attempts from the last 14 days: event, practice or competition, mark, wind and note",
-    "sentCompetitions": "How many days are left to competitions in the next 8 weeks, and which one is the main goal",
+    "sentCompetitions": "How many days are left to competitions in the next 8 weeks, and which ones are goals",
     "sentSession": "Today's intensity and its reasons, the practice time and note entered, and in the chat the current menu and the messages",
     "sentMeet": "On a competition day, that meet's venue, call room place and time, start time and notes",
     "sentImport": "When you import competitions, the address of the page and its content, or the PDF or photo you choose. It is not saved; only the competitions read from it are shown to you",
