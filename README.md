@@ -10,7 +10,7 @@ https://jumpslab.kkweb.io
 - For high jump and pole vault, record a competition height by height (O / X / –); the mark is the best height cleared, with misses counted the way ties are broken
 - Personal best, season best and practice best per event, with wind-aided marks kept out of PB and SB
 - A day page with every event's attempts, plus condition (physical condition, fatigue, sleep, injury) and a practice note
-- A log of past days, as a list or a calendar
+- A log of the last 10 attempts per event, and a calendar of past days
 - Practice and competition videos on each day, optionally linked to an attempt (up to 60 seconds and 100 MB each, 1 GB per person, deleted 90 days after upload with a save button)
 - Compare two videos of the same event side by side or overlaid, synced at a chosen moment (such as take-off), in slow motion and frame by frame
 - Mark moments on a video (approach start, last three steps, take-off, landing) and compare the times between them with another jump
@@ -18,7 +18,7 @@ https://jumpslab.kkweb.io
 - Competitions with venue, call room and start time, an entry site link, a countdown to the next one (at the top of home when it is within 14 days), the result from the marks logged that day, and a main goal meet
 - In Japan: new competitions start with the JAAF entry site, and the competitions page links to each prefecture's meet schedule
 - Import competitions from a schedule page's address, a meet notice PDF or a photo of a printed schedule: AI lists the upcoming meets in it, and picking one opens the competition form filled in to check and save. Nothing you send is stored (Premium, after the same consent as the AI coach)
-- Today's advice on the home screen: how hard to train today from condition, sleep, injuries and the competition schedule, with a source for each reason
+- Today's advice at the top of Analysis: how hard to train today from condition, sleep, injuries and the competition schedule, with a source for each reason
 - Today's practice menu written by AI inside that intensity, with capped jump counts, and a chat to adjust it, for people on the Premium plan after they agree to sending their data to OpenAI; people under 16 need a parent or guardian to agree through an emailed link (only when `OPENAI_API_KEY` is set; the email needs `RESEND_API_KEY` and `MAIL_FROM`)
 - Teams: anyone can create a team and invite athletes with a link (14 days, revocable). Athletes join after seeing exactly what the coach will see and agreeing (under 16: a parent or guardian agrees through an emailed link), and can leave anytime. Coaches get a roster with flags for recent pain notes and high fatigue, and a read-only view of each athlete's days, competitions and videos. Coaches and athletes exchange plain-text comments on each of the athlete's last 14 days, one thread per team; the other side gets a push notification that never contains the comment text
 - An admin screen at `/admin` to switch people between the Free and Premium plans (only for the emails in `ADMIN_EMAILS`)

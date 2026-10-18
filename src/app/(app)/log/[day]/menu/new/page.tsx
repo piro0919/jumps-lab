@@ -22,7 +22,7 @@ export default async function NewMenu({ params }: PageProps<'/log/[day]/menu/new
   const profile = await requireProfile(viewer.userId);
   const today = todayIn(profile.timeZone);
   const requested = (await params).day;
-  if (!aiEnabled(profile) || (requested !== 'today' && requested !== today)) redirect('/');
+  if (!aiEnabled(profile) || (requested !== 'today' && requested !== today)) redirect('/analysis');
   const usable = aiUsable(profile);
   const [menu, meets, request] = await Promise.all([
     getMenu(viewer.userId, today),
@@ -38,7 +38,7 @@ export default async function NewMenu({ params }: PageProps<'/log/[day]/menu/new
 
   return (
     <main className={FORM_PAGE}>
-      <PageTitle back={{ href: '/', label: tNav('backTo', { page: tNav('home') }) }}>
+      <PageTitle back={{ href: '/analysis', label: tNav('backTo', { page: tNav('analysis') }) }}>
         {t('newTitle')}
       </PageTitle>
       <Card>

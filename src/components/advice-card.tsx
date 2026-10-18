@@ -5,7 +5,7 @@ import { buttonVariants } from '@/components/ui/button';
 import { REASON_SOURCES, type Readiness } from '@/lib/readiness';
 
 /**
- * 今日のアドバイス（ホーム）。今日の練習の強さを大きく出し、その理由を出典つきで並べる。
+ * 今日のアドバイス（分析の画面の一番上）。今日の練習の強さを大きく出し、その理由を出典つきで並べる。
  * 判定は src/lib/readiness.ts。痛みの記入がある日は、病院で診てもらう目安を決まった文で必ず出す
  * （AI には書かせない。2026-10-11 に調べた根拠に沿って本人と決めた）
  */

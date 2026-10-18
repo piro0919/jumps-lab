@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { getFormatter, getLocale, getTranslations } from 'next-intl/server';
+import { AdviceCard } from '@/components/advice-card';
 import { TrendChart } from '@/components/trend-chart';
 import {
   Card,
@@ -14,7 +15,10 @@ import {
   EmptyState,
 } from '@/components/layout-ui';
 import { analyze } from '@/lib/analysis';
-import { listAttempts } from '@/lib/data';
+import { aiEnabled } from '@/lib/ai';
+import { hasMenu, listAttempts, listCompetitionsBetween, listConditionsBetween } from '@/lib/data';
+import { todayIn } from '@/lib/dates';
+import { readiness, readinessFrom, readinessUntil } from '@/lib/readiness';
 import { EVENT_BG, EVENT_MARK, EVENT_TEXT, isJumpEvent } from '@/lib/events';
 import { formatMark, formatMarkParts } from '@/lib/units';
 import { requireProfile, requireViewer } from '@/lib/viewer';
@@ -23,7 +27,9 @@ const KINDS = ['all', 'practice', 'competition'] as const;
 
 /**
  * 1種目の記録の数字。総数・平均・月別ベスト・直近10本の推移。
- * 種目は ?event= で選び、無ければ本人の選んだ種目の先頭（種目で絞るのはこの画面だけ）
+ * 種目は ?event= で選び、無ければ本人の選んだ種目の先頭（種目で絞るのはこの画面だけ）。
+ * 一番上に今日のアドバイスと AI のメニュー（ホームから移した。中元さんの弟さんの要望、2026-10-18）。
+ * タブの名前は「分析」のまま：アドバイスは決まった規則で決め、AI のメニューは Premium の人にしか出ないため
  */
 export default async function Analysis({ searchParams }: PageProps<'/analysis'>) {
   const viewer = await requireViewer();
@@ -35,7 +41,20 @@ export default async function Analysis({ searchParams }: PageProps<'/analysis'>)
       : profile.events[0]!;
   // 練習と試合を分けて見る。既定は両方
   const kind = KINDS.find((k) => k === params.kind) ?? 'all';
-  const attempts = await listAttempts(viewer.userId, event);
+  const today = todayIn(profile.timeZone);
+  const [attempts, recentLogs, upcoming, menuMade] = await Promise.all([
+    listAttempts(viewer.userId, event),
+    listConditionsBetween(viewer.userId, readinessFrom(today), today),
+    listCompetitionsBetween(viewer.userId, today, readinessUntil(today)),
+    aiEnabled(profile) ? hasMenu(viewer.userId, today) : null,
+  ]);
+  // 今日のアドバイス。体調と大会の予定から今日の強さを決める（src/lib/readiness.ts）
+  const advice = readiness({
+    today,
+    logs: recentLogs,
+    competitions: upcoming,
+    birthdate: profile.birthdate,
+  });
   const result = analyze(kind === 'all' ? attempts : attempts.filter((a) => a.kind === kind));
   const t = await getTranslations('analysis');
   const tLog = await getTranslations('log');
@@ -53,6 +72,7 @@ export default async function Analysis({ searchParams }: PageProps<'/analysis'>)
   return (
     <main className="flex flex-col gap-3">
       <PageTitle>{tNav('analysis')}</PageTitle>
+      <AdviceCard readiness={advice} menu={menuMade === null ? null : menuMade ? 'made' : 'none'} />
 
       <div className="mx-4 flex flex-wrap gap-2">
         {profile.events.length > 1 && (

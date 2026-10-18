@@ -2,22 +2,17 @@ import { ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { DisplayNumber, PageTitle, SectionTitle, MAIN_SIDE } from '@/components/layout-ui';
-import { AdviceCard } from '@/components/advice-card';
 import { EventHero } from '@/components/event-hero';
 import { TeamsCard } from '@/components/teams-card';
 import { WeatherCard } from '@/components/weather-card';
-import { aiEnabled } from '@/lib/ai';
 import { eventBests } from '@/lib/bests';
 import {
   coachedTeamSummaries,
+  getDayLog,
   getTargets,
-  hasMenu,
   listAllAttempts,
-  listCompetitionsBetween,
-  listConditionsBetween,
   nextCompetition,
 } from '@/lib/data';
-import { readiness, readinessFrom, readinessUntil } from '@/lib/readiness';
 import { ConditionCard } from '@/components/condition-card';
 import { daysBetween, seasonOf, todayIn } from '@/lib/dates';
 import { requireProfile, requireViewer } from '@/lib/viewer';
@@ -26,8 +21,8 @@ import { requireProfile, requireViewer } from '@/lib/viewer';
 const NEXT_MEET_ON_TOP_DAYS = 14;
 
 /**
- * ホーム。幅 768px 以上は2列：左に種目ごとの色付きのカード、右に次の大会・今日のアドバイス・コンディション・天気。
- * スマホは今日のアドバイス、種目のカードの順に縦に積む。自分のカード（顔・名前・本数）は外した。顔と名前はユーザーメニューにあり、
+ * ホーム。幅 768px 以上は2列：左に種目ごとの色付きのカード、右に次の大会・コンディション・天気。
+ * 今日のアドバイスと AI のメニューは分析の画面へ移した（中元さんの弟さんの要望、2026-10-18）。自分のカード（顔・名前・本数）は外した。顔と名前はユーザーメニューにあり、
  * 本数は分析で見られるため（本人、2026-10-11）。チームをコーチしている人にだけ、左の列の一番上にチームのカード
  * （選手とコーチの切り替えは置かない。本人、2026-10-14）
  */
@@ -35,25 +30,13 @@ export default async function Home() {
   const viewer = await requireViewer();
   const profile = await requireProfile(viewer.userId);
   const today = todayIn(profile.timeZone);
-  const [targets, attempts, recentLogs, upcoming, menuMade, coachedTeams] = await Promise.all([
+  const [targets, attempts, todayLog, competition, coachedTeams] = await Promise.all([
     getTargets(viewer.userId, profile.events),
     listAllAttempts(viewer.userId),
-    listConditionsBetween(viewer.userId, readinessFrom(today), today),
-    listCompetitionsBetween(viewer.userId, today, readinessUntil(today)),
-    aiEnabled(profile) ? hasMenu(viewer.userId, today) : null,
+    getDayLog(viewer.userId, today),
+    nextCompetition(viewer.userId, today),
     coachedTeamSummaries(viewer.userId),
   ]);
-  // 今日の体調と次の大会は、アドバイスのために読んだ範囲から取る（DB への問い合わせを減らす）。
-  // 8週より先の大会だけは範囲の外なので、そのときだけ読み直す
-  const todayLog = recentLogs.find((log) => log.day === today) ?? null;
-  const competition = upcoming[0] ?? (await nextCompetition(viewer.userId, today));
-  // 今日のアドバイス。体調と大会の予定から今日の強さを決める（src/lib/readiness.ts）
-  const advice = readiness({
-    today,
-    logs: recentLogs,
-    competitions: upcoming,
-    birthdate: profile.birthdate,
-  });
   const t = await getTranslations('home');
   const tNav = await getTranslations('nav');
   const days = competition ? daysBetween(today, competition.day) : null;
@@ -85,10 +68,6 @@ export default async function Home() {
     </Link>
   );
 
-  const adviceCard = (
-    <AdviceCard readiness={advice} menu={menuMade === null ? null : menuMade ? 'made' : 'none'} />
-  );
-
   return (
     <main className="flex flex-col gap-3">
       <PageTitle>{tNav('home')}</PageTitle>
@@ -98,8 +77,6 @@ export default async function Home() {
         <div className="flex flex-col gap-3">
           {/* チームをコーチしている人にだけ、種目のカードの上にチームのカード（2026-10-14） */}
           <TeamsCard teams={coachedTeams} />
-          {/* スマホでは今日のアドバイスを種目のカードより上に。種目が4つだと2画面ぶん下にあった（2026-10-15） */}
-          <div className="contents md:hidden">{adviceCard}</div>
           {profile.events.map((event) => {
             const target = targets.get(event)!;
             return (
@@ -123,7 +100,6 @@ export default async function Home() {
         </div>
         <div className="flex flex-col gap-3">
           {soon ? <div className="hidden md:contents">{nextCard}</div> : nextCard}
-          <div className="hidden md:contents">{adviceCard}</div>
           {/* 今日のコンディション。押すと直す画面へ移り、保存したらホームへ戻る */}
           <ConditionCard
             log={todayLog}
