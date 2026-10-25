@@ -66,7 +66,7 @@
     "eslint-config-next": "16.3.8",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-hollow-tests": "0.3.0",
-    "happy-dom": "^20.14.6",
+    "happy-dom": "^21.0.4",
     "knip": "^6.39.0",
     "lefthook": "^2.1.16",
     "prettier": "^3.9.9",
@@ -77,5 +77,5 @@
     "typescript": "^5",
     "vitest": "^5.0.3"
   },
-  "packageManager": "pnpm@11.1.2"
+  "packageManager": "pnpm@12.15.0"
 }
