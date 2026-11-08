@@ -34,13 +34,13 @@ jobs:
     env:
       DATABASE_URL: postgres://jumpslab:jumpslab@localhost:5436/jumpslab
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v7
         with:
-          node-version: 24.22.1
+          node-version: 26.13.0
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
@@ -89,13 +89,13 @@ jobs:
       GOOGLE_CLIENT_ID: e2e-client-id
       GOOGLE_CLIENT_SECRET: e2e-client-secret
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v7
         with:
-          node-version: 24.22.1
+          node-version: 26.13.0
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
