@@ -58,7 +58,7 @@
     "@secretlint/secretlint-rule-preset-recommend": "^13.0.7",
     "@tailwindcss/postcss": "^4",
     "@testing-library/react": "^16.3.3",
-    "@types/node": "^24.19.1",
+    "@types/node": "^26.6.6",
     "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
