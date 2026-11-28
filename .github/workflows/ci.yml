@@ -22,7 +22,7 @@ jobs:
     timeout-minutes: 10
     services:
       db:
-        image: postgres:17-alpine
+        image: postgres:19-alpine
         env:
           POSTGRES_USER: jumpslab
           POSTGRES_PASSWORD: jumpslab
@@ -73,7 +73,7 @@ jobs:
     timeout-minutes: 15
     services:
       db:
-        image: postgres:17-alpine
+        image: postgres:19-alpine
         env:
           POSTGRES_USER: jumpslab
           POSTGRES_PASSWORD: jumpslab
